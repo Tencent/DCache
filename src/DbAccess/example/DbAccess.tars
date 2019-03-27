@@ -1,0 +1,83 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+#include "../TarsComm/CacheShare.tars"
+module DCache
+{
+    const int eDbSucc = 0;                //成功
+    const int eDbRecordNotExist = 1;         //记录不存在
+    const int eDbError = -1;              //数据库操作错误
+    const int eDbNotImplement = -2;       //接口没有实现
+    const int eDbDecodeError = -3;     //解码失败
+    const int eDbUnknownError = -4;       //未知错误
+    const int eDbTableNameError = -5;     //获取库连接或表名错误
+    const int eDbErrorNeedDel = -6;     //需要删除cache中的相应数据
+    
+    
+    interface DbAccess
+    {
+        /***********************
+        ******for KVCache *****
+        **********************/
+        
+        /**
+        *查找key对应的值是多少
+        */
+        int get( string keyItem, out string value, out int expireTime );
+        
+        /**
+        * 设置key-value。
+        */
+        int set( string keyItem, string value, int expireTime );
+        
+        /**
+        * 删除key对应的值
+        */
+        int del( string keyItem );
+        
+        /***********************
+        ******for MKVCache *****
+        **********************/
+        
+        /**
+        * 从数据库查询记录
+        * @param mainKey, 主key
+        * @param field, 以","分隔的字段名，"*"表示查询所有字段
+        * @param vtCond, 查询条件
+        * @param vtData, 返回查询结果
+        *
+        * @return int, 返回记录数, 0表示没有数据，< 0表示出错
+        */
+        int select( string mainKey, string field, vector<DbCondition> vtCond, out vector<map<string, string>> vtData );
+        
+        /**
+        * 更新数据库记录
+        * @param mainKey, 主key
+        * @param mpValue, 需要更新的字段
+        * @param vtCond, 更新条件
+        *
+        * @return int, 返回更新的记录数, 0表示无影响，< 0表示出错
+        */
+        int replace( string mainKey, map<string, DbUpdateValue> mpValue, vector<DbCondition> vtCond );
+        
+        /**
+        * 删除数据库记录
+        * @param mainKey, 主key
+        * @param vtCond, 删除条件
+        *
+        * @return int, 返回删除的记录数, 0表示无影响，< 0表示出错
+        */
+        int delCond( string mainKey, vector<DbCondition> vtCond );
+        
+    };
+};

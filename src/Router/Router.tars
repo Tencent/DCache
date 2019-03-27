@@ -1,0 +1,166 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+#include "RouterShare.tars"
+module DCache
+{
+    const int ROUTER_SUCC = 0;
+    const int ROUTER_INFO_ERR = -1;
+    const int ROUTER_SYS_ERR = -2;
+
+    //router server端接口
+    interface Router
+    {
+        /*
+        * 获取路由表信息，返回压缩的路由表
+        * 0 成功，其他失败
+        */
+        int getRouterInfo(string moduleName,out PackTable packTable);
+        
+    
+        /*
+        * 获取路由表信息，返回压缩的路由表
+        * 0 成功，其他失败
+        */
+        int getRouterInfoFromCache(string moduleName,out PackTable packTable);
+    
+        /*
+        * Cache处于迁移状态时获取路由表信息
+        * 0 成功， 其他失败
+        */
+        int getTransRouterInfo(string moduleName, out int transInfoListVer, out vector<TransferInfo> transferingInfoList, out PackTable packTable);	
+
+        /*
+        * 获取服务器端的版本号，RecordInfo、ServerInfo、GroupInfo的更改，都会导致版本号的增加
+        */
+        int getVersion(string moduleName);
+
+        /*
+        * 获取服务器路由信息的版本号，RecordInfo、ServerInfo、GroupInfo的更改，都会导致版本号的增加
+        */
+        int getRouterVersion(string moduleName, out int version);	
+
+        /*
+        * 获取服务器路由信息的版本号，RecordInfo、ServerInfo、GroupInfo的更改，都会导致版本号的增加
+        */
+        int getRouterVersionBatch(vector<string> moduleList, out map<string,int> mapModuleVersion);	
+
+        /*
+        * 主机的心跳上报
+        */
+        int heartBeatReport(string moduleName, string groupName, string serverName);
+
+        /*
+        *proxy获取router支持模块信息
+        */
+        int getModuleList(out vector<string> moduleList);
+
+        /**
+        *功能: 恢复镜像在Router,proxy中的状态到正常状态
+        *@param sModuleName:模块名
+        *@param sGroupName:组名
+        *@param sMirrorIdc:所在idc
+        *@return int: 0时调用成功，非0则失败
+        */
+        int recoverMirrorStat(string sModuleName, string sGroupName, string sMirrorIdc, out string err);
+
+        /**
+        *功能: 发起主备切换
+        *@param sModuleName:模块名
+        *@param sGroupName:组名
+        *@param bForceSwitch:是否强制切换: true强制切换，不考虑binlog差异，false如果binlog时间差异小于或等于iDifBinlogTime,可以切换
+        *@param iDifBinlogTime:binlog时间差异，当bForceSwitch为false时，表示当binlog的时间差异最大为该值
+        *@return int: 0时调用成功，非0则失败
+        */
+        int switchByGroup(string sModuleName, string sGroupName, bool bForceSwitch, int iDifBinlogTime, out string err);
+
+        /**
+        *功能: 查询idc
+        *@param sModuleName:模块名
+        *@param machineInfo:机器基本信息
+        *@return int: 0时调用成功，非0则失败
+        */
+        int getIdcInfo(string sModuleName, MachineInfo machineInfo, out IDCInfo idcInfo);
+
+        /**
+        *功能: 主机重启上报
+        *@param sModuleName:模块名
+        *@param sGroupName:组名
+        *@return int: 0时调用成功，非0则失败
+        */
+        int serviceRestartReport(string moduleName, string groupName);
+    };
+
+    /*迁移操作结果*/
+    enum TransferReturn
+    {
+        e_Succ,
+        e_Transfer_ModuleName_Not_Found,	// 找不着模块名
+        e_Transfer_Page_Incorrect, 	// 迁移页范围有误
+        e_Transfer_GroupName_Equal, 	// 迁移的源机器与目的机器相同，不用迁移
+        e_Transfer_Module_Conflict,	// 当前模块执行多服务器同时迁移时存在冲突
+        e_TransferPage_Route_Incorrect, // 迁移页路由错误
+        //e_Transfer_Module_Has_Tranfering, 	// 当前模块已经在迁移，当前不能再迁移了
+        e_Correspond_Record_Not_Found, 	// 迁移记录不存在
+        e_ModuleName_Not_Found, 	// 迁移模块的路由信息不存在
+        e_GroupName_Not_Found, 	// 服务器组不存在
+        e_ServerName_Not_Found, 	// 服务器不存在
+        e_fromTransferStart_Get_TarsException, 	// 通知源服务器准备迁移发生异常
+        e_fromTransferDo_Get_TarsException,      // 通知源服务器迁移发生异常
+        e_toTransferStart_Get_TarsException, 	// 通知目的服务器准备迁移发生异常
+        e_NotifySrcServer_Clean_Fail,		// 通知源服务器清除迁移记录失败
+        e_NotifyDestSever_Clean_Fail,           // 通知目的服务器清除迁移记录失败
+        e_fromTransferStart_Fail, 	// 源服务器迁移准备失败
+        e_fromTransferDo_Fail,          // 源服务器迁移失败
+        e_toTransferStart_Fail, 	// 目的服务器迁移准备失败
+        e_NotifySrcSever_Result_Fail, 	// 通知源服务器迁移结果失败
+        e_NotifyDestSever_Result_Fail, 	// 通知目的服务器迁移结果失败
+        e_Restore_MemTrans_Record_Fail, 	// 回退内存路由信息失败，需要人工检查，手工重载路由
+        e_SetRouterInfo_Fail, 	        // 设置服务器路由信息失败
+        e_SetRouterInfo_Get_TarsException, // 设置服务器路由信息时发生异常 
+        e_Modify_DbRecord_Fail, 	   // 迁移成功后，修改数据库路由信息失败，需要人工检查
+        e_Modify_DbRecordBefTrans_Fail,    // 迁移开始前，修改数据库路由表失败，需要人工检查
+        e_Modify_MemRecordAfterTrans_Fail, // 迁移成功后，修改内存路由信息失败，需要人工检查
+        e_Modify_MemRecordBefTrans_Fail,   // 迁移开始前，修改内存路由信息失败，需要人工检查
+        e_loadToNormalFromDb_Fail, 	// 从数据库装载路由信息失败，需要人工检查
+        e_loadToTransferFromDb_Fail, // 从数据库装载路由信息失败，需要人工检查
+        e_DefragDbRecord_Fail, 	// 整理数据库路由碎片失败，需要人工检查
+        e_DefragMemRecord_Fail, 	// 整理内存路由碎片失败，需要人工检查，手工重载路由
+        e_removeMemTransferRecord_Fail, 	// 去除内存中的迁移记录失败，需要人工检查，手工清理迁移记录
+        e_writeDbTransferRecord_Fail, 	// 记录迁移记录失败，需要人工检查
+        e_SetTransfering_Fail, 	// 修改数据库迁移记录状态为正在迁移失败，需要人工检查
+        e_SetTransfered_Fail, 	// 修改数据库迁移记录状态为迁移完成失败，需要人工检查
+        e_getProxy_Fail, 	// 获取代理失败
+        e_Transfer_GroupName_Incorrect, 	// 分组错误
+        e_Transfer_GroupName_Not_Found, 	// 分组不存在
+        e_Transfer_TransGroupName_Not_Found,	// 目的分组不存在
+        e_SetTransferedPage_Fail_Stop, 	// 设置迁移页失败，停止迁移，需要人工检查
+        e_PageNo_NotOwnedBySrcGroupName, 	// 迁移页不属于源服务器
+        e_NotReloadRouter_Transfering, // 当前仍有迁移在进行，不能重载路由，非异常
+        e_ReloadRouter_Fail, // 重载路由时失败，需要人工检查
+        e_Router_Role_NO_Leader_Stop, // 自动切换，RouterServer采用集群方式时，如果该RouterServer不是leader，则不能执行迁移
+        e_Transfer_ServerName_Not_Found, // 迁移源服务器不存在
+        e_Transfer_TransServerName_Not_Found, // 迁移目的服务器不存在
+        e_Transfer_ServerInfo_Not_Found, // 迁移源服务器信息不存在
+        e_Transfer_TransServerInfo_Not_Found, // 迁移目的服务器信息不存在
+        e_Transfer_Server_ServerStatus_Not_M, // 当前迁移源服务器并不是真正的主服务器，可能是由于主备切换后，原来的备机转换成主服务器的角色
+        e_Transfer_TransServer_ServerStatus_Not_M, // 当前迁移目的服务器并不是真正的主服务器，可能是由于主备切换后，原来的备机转换成主服务器的角色
+        e_ServerInfo_Not_Found, // 服务器信息不存在
+        e_ServerStatus_Not_M, // 服务器并非真正主机
+        e_CleanFromTransferData_Fail, //清理源服务器数据失败
+        e_CleanFromTransferData_Get_TarsException, //清理源服务器数据发生异常
+        e_fromTransfer_RestartSwitch_Fail,        //源组重启或切换导致迁移停止
+        e_toTransfer_RestartSwitch_Fail,          //目的组重启或切换导致迁移停止
+        e_Unknown	// 未知错误
+    };
+};

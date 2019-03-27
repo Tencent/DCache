@@ -1,0 +1,96 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+#include "../TarsComm/ProxyShare.tars"
+
+module DCache
+{
+    struct SKey
+    {
+        1 require string keyItem;
+        2 require int hash;
+    };
+    struct SValue
+    {
+        1 require string value;
+    };
+    
+    //一期迁移用
+    struct Data
+    {
+        1 require SKey k;
+        2 require SValue v;
+        3 require unsigned int expireTimeSecond = 0;
+        4 require bool dirty = true;
+        5 require bool bIsOnlyKey = false;
+    };
+    
+    enum DataType
+    {
+        INT,    // 整形
+        STR     // 字符串
+    };
+    
+    
+    // DbAccess参数结构
+    // 字段值数据结构
+    struct DbUpdateValue
+    {
+        1 require Op op;                //操作 set/add/sub
+        2 require string value;             //要修改的值
+        3 require DataType type;            //数据类型
+    };
+    
+    // 查询条件结构
+    struct DbCondition
+    {
+        1 require string fieldName;         //字段名称
+        2 require Op op;                //操作 ==/!=/</>/<=/>=
+        3 require string value;             //值
+        4 require DataType type;            //数据类型
+    };
+    
+    //BinLog同步结构体
+    struct BinLogReq
+    {
+        1 require string logfile;   //要同步的binlog日志文件名
+        2 require long seek;        //要同步的binlog日志文件偏移量
+        3 require int lineCount;    //同步binlog的行数
+        4 require int logSize;      //同步binlog的大小
+    };
+    
+    struct BinLogRsp
+    {
+        1 require vector<string> logContent;
+        2 require string compLog;       //压缩后的binlog
+        3 require string curLogfile;    //同步后binlog日志文件名
+        4 require long curSeek;         //同步后binlog日志文件偏移量
+        5 require int syncTime;         //binlog的同步时间点
+        6 require int lastTime;         //binlog的最近一次记录时间点
+    };
+    
+    struct BinLogCompPartRsp
+    {
+        1 require BinLogRsp data;
+        2 require bool isPart;  //是否分块
+        3 require int partNum;  //第几块
+        4 require bool isEnd;   //分块是否结束
+    };
+    
+    //API直连模式下，返回新的组信息
+    struct RspUpdateServant
+    {
+        1 require map<string, vector<int> > mpServant;  //string为obj, vector<>是请求key的下标
+        2 require map<string, vector<string> > mpServantKey;    //string为obj, vector<>是key,一期部分接口使用
+    };
+};

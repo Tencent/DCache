@@ -1,0 +1,736 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+module DCache
+{
+    //proxy返回值定义
+    const int ET_SUCC = 0;
+    const int ET_SYS_ERR = -1;
+    const int ET_MODULE_NAME_INVALID = -2;
+    const int ET_KEY_INVALID = -3;
+    const int ET_KEY_AREA_ERR = -4;
+    const int ET_KEY_TYPE_ERR = -5;
+    const int ET_NO_DATA = -6;
+    const int ET_COMMAND_INVALID = -7;
+    const int ET_FORBID_DEL = -8;
+    const int ET_SERVER_TYPE_ERR = -9;
+    const int ET_DATA_EXIST = -10;
+    const int ET_FORBID_OPT = -11;
+    const int ET_INPUT_PARAM_ERROR = -12;
+    const int ET_ONLY_KEY = -13;
+    const int ET_DIRTY_DATA = -14;
+    const int ET_DATA_VER_MISMATCH = -15;
+    const int ET_PARTIAL_FAIL = -16;  //用于二期批量insert数据时，表示部分数据set失败
+    const int ET_GZIP_UNCOMPRESS_ERR = -17; //用于数据有压缩时的解压缩失败
+    const int ET_CACHE_TYPE_ERR = -18; //用于节点间同步数据时，表示cache类型错误
+    const int ET_SYNC_SET_SAME = -19;  //用于节点间同步数据时，表示同步set等于本地set
+    const int ET_SET_SYNC_NOENABLE = -20;  //用于节点间同步数据时，表示该Proxy不支持节点间数据同步
+    const int ET_MEM_FULL = -21;  //cache内存满
+    const int ET_DATA_TOO_MUCH = -22;  //数据超过2w条
+    const int ET_READ_ONLY = -23;  //cache只读，一般是在主备切换过程中产生
+    const int ET_DB_ERR = -24;  //访问DB异常
+    const int ET_CACHE_ERR = -25;  //访问cache异常
+    const int ET_PARAM_REDUNDANT = -26;  //有重复字段或无效字段
+    const int ET_PARAM_MISSING = -27;  //字段缺失
+    const int ET_PARAM_TOO_LONG = -28;  //字段超长
+    const int ET_PARAM_DIGITAL_ERR = -29;  //数字字段参数错误
+    const int ET_PARAM_NOT_EXIST = -30;  //字段不存在，无效字段
+    const int ET_PARAM_OP_ERR = -31;  //op错误
+    const int ET_PARAM_UKEY_MISSING = -32;  //联合key字段缺失
+    const int ET_PARAM_UPDATE_UKEY_ERR = -33;  //不允许更新联合key
+    const int ET_PARAM_LIMIT_VALUE_ERR = -34;  //limit条件参数错误
+    const int ET_ERASE_DIRTY_ERR = -35;  //不允许擦除脏数据
+    const int ET_DB_TO_CACHE_ERR = -36;  //写DB返回数据到cache失败
+    
+    const string DVER = "@DataVer";
+    const string EXPIRETIME = "@ExpireTime";
+    const string SCOREVALUE = "@ScoreValue";
+    
+    //KV批量查询ret字段定义
+    const int VALUE_SUCC = 0;
+    const int VALUE_NO_DATA = 1;
+    
+    //KV批量写入ret字段的定义
+    const int SET_SUCC  = 0;  //set成功
+    const int SET_ERROR = -1; //set失败
+    const int SET_DATA_VER_MISMATCH = -2; //set失败，具体原因是数据版本错误
+    
+    //KV,MKV批量erase、del返回值字段的定义
+    const int DEL_SUCC  = 0;  //删除成功
+    const int DEL_ERROR = -1; //删除失败
+    const int DEL_DATA_VER_MISMATCH = -2; //删除失败，具体原因是数据版本错误
+
+    //KV,MKV批量写时返回值字段的定义 
+    const int WRITE_SUCC  = 0;  //写成功
+    const int WRITE_ERROR = -1; //写失败
+    const int WRITEL_DATA_VER_MISMATCH = -2; //写失败，具体原因是数据版本错误
+    
+    enum Op
+    {
+        SET,
+        ADD,
+        SUB,
+        EQ, // ==
+        NE, // !=
+        GT, // >
+        LT, // <
+        LE, // <=
+        GE, // >=
+        LIMIT,
+        PREPEND,
+        APPEND,
+        ADD_INSERT, //记录不存在，则插入新纪录0，并在0的基础上进行ADD
+        SUB_INSERT  //记录不存在，则插入新纪录0，并在0的基础上进行SUB
+    };
+    
+    struct Entry
+    {
+        1 require map<string, string> data;
+    };
+    
+    /*************structures for querying KV **************/
+    
+    struct SKeyValue
+    {
+        1 require string keyItem;
+        2 require string value;
+        3 require int ret; // VALUE_SUCC 成功、 VALUE_NO_DATA 没有数据、 其他 失败
+        4 require byte ver;
+        5 require int expireTime = 0;
+    };
+    
+    struct GetKVReq
+    {
+        1 require string moduleName;
+        2 require string keyItem;
+        3 require string idcSpecified = "";
+    };
+    
+    struct GetKVRsp
+    {
+        1 require string value;
+        2 require byte   ver;
+        3 require int    expireTime = 0;
+    };
+    
+    struct GetKVBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<string> keys;
+        3 require string idcSpecified = "";
+    };
+    
+    struct GetKVBatchRsp
+    {
+        1 require vector<SKeyValue> values;
+    };
+    
+    struct CheckKeyReq
+    {
+        1 require string moduleName;
+        2 require vector<string> keys;
+        3 require string idcSpecified = "";
+    };
+    
+    struct SKeyStatus
+    {
+        1 require bool exist;
+        2 require bool dirty;
+    };
+    
+    struct CheckKeyRsp
+    {
+        1 require map<string, SKeyStatus> keyStat;
+    };
+    
+    struct GetAllKeysReq
+    {
+        1 require string moduleName;
+        2 require int index;    //从index指定的hash桶开始遍历，初始从0开始
+        3 require int count;    //遍历多少个hash桶
+        4 require string idcSpecified = "";
+    };
+    
+    struct GetAllKeysRsp
+    {
+        1 require vector<string> keys;
+        2 require bool isEnd;   //是否还有数据，由于桶的数量不定，通过isEnd参数来表示后面是否还有hash桶
+    };
+    
+    /***************** structures for writing KV **************/
+    
+    struct SSetKeyValue
+    {
+        1 require string keyItem;
+        2 require string value;
+        3 require byte   version = 0;
+        4 require bool   dirty = true;
+        5 require int    expireTimeSecond = 0;
+    };
+    
+    struct SetKVReq
+    {
+        1 require string moduleName;
+        2 require SSetKeyValue data;
+    };
+    
+    struct SetKVBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<SSetKeyValue> data;
+    };
+    
+    struct SetKVBatchRsp
+    {
+        1 require map<string, int> keyResult;   //每个key写入的结果 SET_SUCC/SET_ERROR/SET_DATA_VER_MISMATCH
+    };
+    
+    struct UpdateKVReq
+    {
+        1 require string moduleName;
+        2 require SSetKeyValue data;
+        3 require Op option;    //支持ADD/SUB/ADD_INSERT/SUB_INSERT
+    };
+    
+    struct UpdateKVRsp
+    {
+        1 require string retValue;  //更新之后的值
+    };
+    
+    struct KeyInfo
+    {
+        1 require string keyItem;
+        2 require byte   version;
+    };
+    
+    struct RemoveKVReq
+    {
+        1 require string  moduleName;
+        2 require KeyInfo keyInfo;
+    };
+    
+    struct RemoveKVBatchReq
+    {
+        1 require string  moduleName;
+        2 require vector<KeyInfo> data;
+    };
+    
+    struct RemoveKVBatchRsp
+    {
+        1 require map<string, int> keyResult;
+    };
+    
+    /****************** structures for querying MKV **********/
+    
+    struct Condition
+    {
+        1 require string fieldName;     //字段名称
+        2 require Op op;                //操作 ==/!=/</>/<=/>=
+        3 require string value;         //值
+    };
+    
+    struct MainKeyValue
+    {
+        1 require string mainKey;
+        2 require vector<map<string, string> > value;
+        3 require int ret; //ret>=0 成功，其他 失败
+    };
+    
+    //
+    struct GetMKVReq
+    {
+        1 require string moduleName;        //模块名
+        2 require string mainKey;           //主key
+        3 require string field;             //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
+        4 require vector<Condition> cond;   //查询条件集合，除主Key外的其他字段，多个条件直间为And关系
+        5 require bool retEntryCnt = false; //是否返回主key下的总记录条数
+        6 require string idcSpecified = "";
+    };
+    
+    struct GetMKVRsp
+    {
+        1 require vector<map<string, string> > data;
+    };
+    
+    //
+    struct MKVBatchReq
+    {
+        1 require string moduleName;        //模块名
+        2 require vector<string> mainKeys;  //主key集合
+        3 require string field;             //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
+        4 require vector<Condition> cond;   //查询条件集合，除主Key外的其他字段，多个条件直间为And关系
+        5 require string idcSpecified = "";
+    };
+    
+    struct MKVBatchRsp
+    {
+        1 require vector<MainKeyValue> data;
+    };
+    
+    //
+    struct Record
+    {
+        1 require string mainKey;
+        2 require map<string, string> mpRecord;
+        3 require int ret;
+    };
+    
+    struct MUKBatchReq
+    {
+        1 require string moduleName;            //模块名
+        2 require vector<Record> primaryKeys;   //主键集合
+        3 require string field;                 //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
+        4 require string idcSpecified = "";
+    };
+    
+    struct MUKBatchRsp
+    {
+        1 require vector<Record> data;
+    };
+    
+    //
+    struct MainKeyCondition
+    {
+        1 require string mainKey;
+        2 require string field;
+        3 require vector<vector<Condition> > cond;  //查询条件集合，内层为'and'关系，外层为'or'关系
+        4 require Condition limit;                  //查询起始和count限制，op = DCache::LIMIT, value = "startIndex:countLimit"
+        5 require bool bGetMKCout = false;          //是否返回主key下的总记录条数
+    };
+    
+    struct MKVBatchExReq
+    {
+        1 require string moduleName;
+        2 require vector<MainKeyCondition> cond;
+        3 require string idcSpecified = "";
+    };
+    
+    struct MKVBatchExRsp
+    {
+        1 require vector<MainKeyValue> data;
+    };
+
+    struct MainKeyReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string idcSpecified = "";
+    };
+    /******************** structures for writing MKV *****************/
+    
+    struct UpdateValue
+    {
+        1 require Op op;
+        2 require string value;
+    };
+    
+    struct InsertKeyValue
+    {
+        1 require  string mainKey;
+        2 require  map<string, UpdateValue> mpValue;
+        3 require  byte ver = 0;
+        4 require  bool dirty = true;
+        5 require  bool replace = false; //如果记录已存在且replace为true时则覆盖旧记录
+        6 require  int  expireTimeSecond = 0;
+    };
+    
+    struct InsertMKVReq
+    {
+        1 require string moduleName;
+        2 require InsertKeyValue data;
+    };
+    
+    struct InsertMKVBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<InsertKeyValue> data;
+    };
+    
+    struct MKVBatchWriteRsp
+    {
+        1 require map<int, int> rspData;    //键:批量请求中data的index；值:操作结果
+    };
+    
+    struct UpdateMKVReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require map<string, UpdateValue> value;   //需要更新的字段和对应的值，不能填联合key字段
+        4 require vector<Condition> cond;           //数据更新的条件
+        5 require byte ver = 0;
+        6 require bool dirty = true;
+        7 require bool insert = false; //如果要修改的唯一记录不存在且insert为true时则插入一条数据
+        8 require int  expireTimeSecond = 0;
+    };
+    
+    struct UpdateMKVAtomReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require map<string, UpdateValue> value;//需要更新的字段和对应的值，不能填联合key字段，op支持SET、ADD、SUB操作。OP为ADD和SUB时要求更新的字段为数值类型
+        4 require vector<Condition> cond;
+        5 require bool dirty = true;
+        6 require int  expireTimeSecond = 0;
+    };
+    
+    struct UpdateFieldInfo
+    {
+        1 require bool replace = true;
+        2 require UpdateValue upDateValue;
+    };
+    
+    struct UpdateKeyValue
+    {
+        1 require  string mainKey;
+        2 require  map<string, UpdateFieldInfo> mpValue;
+        3 require  byte ver = 0;
+        4 require  bool dirty = true;
+        5 require  bool insert = false; //如果要修改的唯一记录不存在且insert为true时则插入一条数据
+        6 require  int  expireTimeSecond = 0;
+    };
+    
+    struct UpdateMKVBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<UpdateKeyValue> data;
+    };
+    
+    struct DelCondition
+    {
+        1 require string mainKey;
+        2 require vector<Condition> cond;
+        3 require byte ver = 0;
+    };
+    
+    struct DelMKVReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<Condition> cond;
+    };
+    
+    struct DelMKVBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<DelCondition> data;
+    };
+    
+    /******************** structures for querying List/Set/ZSet *****************/
+    
+    //List
+    struct GetListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string field;
+        4 require long index;
+        5 require string idcSpecified = "";
+    };
+    
+    struct GetListRsp
+    {
+        1 require Entry entry;
+    };
+    
+    struct GetRangeListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string field;
+        4 require long startIndex;
+        5 require long endIndex;
+        6 require string idcSpecified = "";
+    };
+    
+    struct BatchEntry
+    {
+        1 require vector<map<string, string> > entries;
+    };
+    
+    //Set
+    struct GetSetReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string field;
+        4 require string idcSpecified = "";
+    };
+    
+    //ZSet
+    struct GetZsetScoreReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<Condition> cond;
+        4 require string idcSpecified = "";
+    };
+    
+    struct GetZsetPosReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<Condition> cond;
+        4 require bool positiveOrder = true;    //true表示按正序查找，false表示逆序查找
+        5 require string idcSpecified = "";
+    };
+    
+    struct GetZsetByPosReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string field;
+        4 require long start;
+        5 require long end;
+        6 require bool positiveOrder = true; //true表示返回的结果按递增排序，false表示递减
+        7 require string idcSpecified = "";
+    };
+    
+    struct GetZsetByScoreReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require string field;
+        4 require double minScore;
+        5 require double maxScore;
+        6 require string idcSpecified = "";
+    };
+    
+    struct GetZSetBatchReq
+    {
+        1 require string moduleName;
+        2 require vector<string> mainKeys;
+        3 require string field;
+        4 require vector<Condition> cond;
+        5 require string idcSpecified = "";
+    };
+    
+    struct GetZSetBatchRsp
+    {
+        1 require vector<MainKeyValue> rspData;
+    };
+    
+    /******************** structures for writing List/Set/ZSet *****************/
+    //List
+    struct PushListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<InsertKeyValue> data;
+        4 require bool atHead = true;   //true表示插入到list头部，false表示插入尾部
+    };
+    
+    struct PopListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require bool atHead = true;   //true表示从list头部pop，false表示尾部pop
+    };
+    
+    struct PopListRsp
+    {
+        1 require Entry entry;
+    };
+    
+    struct ReplaceListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require map<string, UpdateValue> data;
+        4 require long index;
+        5 require int expireTime;
+    };
+    
+    struct TrimListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require long startIndex;
+        4 require long endIndex;
+    };
+    
+    struct RemListReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require bool atHead = true;   //true表示从list头部remove，false表示尾部remove
+        4 require long count;
+    };
+    
+    //Set
+    struct AddSetKeyValue
+    {
+        1 require string mainKey;
+        2 require map<string, UpdateValue> data;
+        3 require int expireTime;
+        4 require bool dirty = true;
+    };
+    
+    struct AddSetReq
+    {
+        1 require string moduleName;
+        2 require AddSetKeyValue value;
+    };
+    
+    struct DelSetReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<Condition> cond;
+    };
+    
+    //ZSet
+    struct AddZSetReq
+    {
+        1 require string moduleName;
+        2 require AddSetKeyValue value;
+        3 require double score;
+    };
+    
+    struct IncZSetScoreReq
+    {
+        1 require string moduleName;
+        2 require AddSetKeyValue value;
+        3 require double scoreDiff;     //score变化值
+    };
+    
+    struct UpdateZSetReq
+    {
+        1 require string moduleName;
+        2 require AddSetKeyValue value;
+        3 require vector<Condition> cond;
+    };
+    
+    struct DelZSetReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require vector<Condition> cond;
+    };
+    
+    struct DelZSetByScoreReq
+    {
+        1 require string moduleName;
+        2 require string mainKey;
+        3 require double minScore;
+        4 require double maxScore;
+    };
+
+
+
+    
+    //===========================================
+    //FIXME, structures for java 'BS' invoking
+    
+    struct SKeyValueBS
+    {
+        1 require vector<byte> keyItem;
+        2 require vector<byte> value;
+        3 optional int ret; // VALUE_SUCC 成功、 VALUE_NO_DATA 没有数据、 其他 失败
+        4 optional byte ver;
+        5 optional long expireTime;
+    };
+    
+    struct SSetKeyValueBS
+    {
+        1 require  vector<byte> keyItem;
+        2 require  vector<byte> valueItem;
+        3 optional byte         version = 0;
+        4 optional bool         dirty = true;
+        5 optional int          expireTimeSecond = 0;
+    };
+    
+    
+    struct SSetKeyResultBS
+    {
+        1 require vector<byte> keyItem;
+        2 require int          ret;
+    };
+    
+    struct SKeyVersionBS
+    {
+        1 require vector<byte> keyItem;
+        2 require byte          ver;
+    };
+    
+    struct SKeyResultBS
+    {
+        1 require vector<byte> keyItem;
+        2 require int          ret;
+    };
+    
+    struct UpdateValueBS
+    {
+        1 require Op op;                //操作 set/add/sub
+        2 require vector<byte> value;           //要修改的值
+    };
+    
+    
+    //条件查询结构
+    struct ConditionBS
+    {
+        1 require string fieldName;         //字段名称
+        2 require Op op;                //操作 ==/!=/</>/<=/>=
+        3 require vector<byte> value;           //值
+    };
+    
+    struct UpdateFieldInfoBS
+    {
+        1 require bool replace = true;
+        2 require UpdateValueBS upDateValue;
+    };
+    
+    struct UpdateKeyValueBS
+    {
+        1 require  vector<byte> mainKey;
+        2 require  map<string, UpdateFieldInfoBS> mpValue;
+        3 require  byte ver = 0;
+        4 require  bool dirty = true;
+        5 require  bool insert = false;
+        6 require  int  expireTimeSecond = 0;
+    };
+    
+    struct InsertKeyValueBS
+    {
+        1 require vector<byte> mainKey;
+        2 require map<string, UpdateValueBS> mpValue;
+        3 require byte ver = 0;
+        4 require bool dirty = true;
+        5 require bool replace = false;
+        6 require int  expireTimeSecond = 0;
+    };
+    
+    struct MainKeyValueBS
+    {
+        1 require vector<byte> mainKey;
+        2 require vector<map<string, vector<byte> > > value;
+        3 require int ret; //ret>=0 成功，其他 失败
+    };
+    
+    
+    struct RecordBS
+    {
+        1 require vector<byte> mainKey;
+        2 require map<string, vector<byte> > mpRecord;
+        3 require int ret;
+    };
+    
+    struct MainKeyConditionBS
+    {
+        1 require vector<byte> mainKey;
+        2 require string field;
+        3 require vector<vector<ConditionBS> > cond;
+        4 require ConditionBS limit;
+        5 require bool bGetMKCout = false;
+    };
+    
+};

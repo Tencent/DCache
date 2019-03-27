@@ -1,0 +1,10 @@
+<Main>
+    <DB>
+        dbhost=
+        dbpass=
+        dbuser=
+        dbname=db_dcache_relation
+        charset=
+        dbport=
+    </DB>
+</Main>

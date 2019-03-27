@@ -1,0 +1,392 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+
+module DCache
+{
+
+struct RouterParam
+{
+    0 require bool installRouter;           //是否安装Router服务
+    1 require string serverName;            //服务名，如MqqRouterServer
+    2 require string appName;               //应用名
+    3 require vector<string> serverIp;      //IP地址集合,支持在不同机器上安装同一路由，installRouter 为true时有效
+    4 require string templateFile;          //服务用的tars模板文件名，bRouter为true时有效
+    5 require string dbName;                //数据库名
+    6 require string dbIp;                  //数据库ip
+    7 require string dbPort;                //数据库Port
+    8 require string dbUser;                //数据库用户
+    9 require string dbPwd;                 //数据库密码
+    10 require string remark;               //备注
+};
+
+struct ProxyAddr
+{
+    0 require string ip;
+    1 require string idcArea;
+};
+
+struct ProxyParam
+{
+    0 require bool installProxy;            //是否安装Proxy服务
+    1 require string serverName;            //服务名， 如MqqProxyServer
+    2 require string appName;               //应用名
+    3 require vector<ProxyAddr> serverIp;   //IP地址，installProxy 为true时有效
+    4 require string templateFile;          //服务用的模板文件名，installProxy为true时有效
+};
+
+struct InstallAppReq
+{
+    0 require string appName;
+    1 require RouterParam routerParam;
+    2 require ProxyParam proxyParam;
+    3 require string version;
+    4 require bool replace=false;
+};
+
+struct InstallAppRsp
+{
+    0 require string errMsg;
+};
+
+struct CacheHostParam
+{
+    0 require string serverName;        //服务名， 如MqqCacheServer
+    1 require string serverIp;          //IP地址
+    2 require string templateFile;      //服务用的taf模板文件名
+    3 require string type;              //表明服务是主还是备， M/S
+    4 require string bakSrcServerName;  //如果服务是备机，指定备份的源机，否则为空
+    5 require string idc;               //服务所在idc
+    6 require string priority;          //服务优先级
+    7 require string groupName;         //所属服务组
+    8 require string shmSize;           //服务开辟共享内存的大小,单位 G
+    9 require string shmKey;            //共享内存key
+    10 require string isContainer;      // is container -> true or false
+    11 optional string binlogPort;      // binlog port
+    12 optional string cachePort;       // cache port
+    13 optional string wcachePort;      // wcache port
+    14 optional string backupPort;      // backup port
+    15 optional string routerPort;      // router client prot
+    16 optional string controlackPort;  // control ack port
+};
+
+struct SingleKeyConfParam
+{
+    0 require string avgDataSize;           //单条记录平均长度
+    1 require string readDbFlag;            //数据库是否可读.
+    2 require string enableErase;           //是否允许淘汰
+    3 require string eraseRadio;            //淘汰比率
+    4 require string saveOnlyKey;           //是否保存OnlyKey，Y/N
+    5 require string dbFlag;                //是否有数据库，Y/N
+    6 require string dbAccessServant;       //DbAccess的Servant名称
+    7 require string startExpireThread;     //是否启动淘汰线程 Y/N
+    8 require string expireDb;              //是否清除数据库
+    9 optional string hotBackupDays;        //模块热备时长
+    10 optional string coldBackupDays;      //模块冷备时长
+};
+
+struct MultiKeyConfParam
+{
+    0 require string avgDataSize;           //单条记录平均长度
+    1 require string readDbFlag;            //数据库是否可读.
+    2 require string enableErase;           //是否允许淘汰
+    3 require string eraseRadio;            //淘汰比率
+    4 require string saveOnlyKey;           //是否保存OnlyKey，Y/N
+    5 require string dbFlag;                //是否有数据库，Y/N
+    6 require string dbAccessServant;       //DbAccess的Servant名称
+    7 require string startExpireThread;     //是否启动淘汰线程 Y/N
+    8 require string expireDb;              //是否清除数据库
+    9 require string cacheType;             //服务类型 hash/list/set/zset
+    10 optional string hotBackupDays;       //模块热备时长
+    11 optional string coldBackupDays;      //模块冷备时长
+};
+
+struct RecordParam
+{
+    0 require string fieldName;     //字段名称
+    1 require string keyType;       //字段类型，mkey/ukey/value
+    2 require string dataType;      //数据类型，int/long/string/byte/float/double
+    3 require string property;      //字段属性，require/optional
+    4 require string defaultValue;  //字段默认值
+    5 require int maxLen;           //string类型的字段最大长度
+};
+
+
+struct RouterConsistRes
+{
+    0 require int      iFlag;   //路由配置数据一致性检查，0:一致,1:不一致,-1:出错
+    1 require string  sInfo;    //一致性信息
+};
+
+struct InstallKVCacheReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require vector<CacheHostParam> kvCacheHost;
+    3 require SingleKeyConfParam kvCacheConf;
+    4 require string version;
+    5 require bool replace=false;
+};
+
+struct InstallKVCacheRsp
+{
+    0 require RouterConsistRes rcRes;
+    1 require string errMsg;
+};
+
+struct InstallMKVCacheReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require vector<CacheHostParam> mkvCacheHost;
+    3 require MultiKeyConfParam mkvCacheConf;
+    4 require vector<RecordParam> fieldParam;
+    5 require string version;
+    6 require bool replace=false;
+};
+
+struct InstallMKVCacheRsp
+{
+    0 require RouterConsistRes rcRes;
+    1 require string errMsg;
+};
+
+struct DBInfo
+{
+    0 require string ip;        //连接ip
+    1 require string user;      //用户名
+    2 require string pwd;       //密码
+    3 require string port;      //端口
+    4 require string charset;   //字符集
+    5 require string dbName;    //数据库名
+};
+
+enum UninstallType
+{
+    SERVER,  //按服务下线
+    GROUP,   //按服务组下线
+    MODULE,  //按模块下线
+    QUOTA_SERVER //按配额服务下线
+};
+
+struct UninstallInfo
+{
+    0 require UninstallType unType;     //下线类型,0为单个Cache服务 1为按服务组,2为按模块,3为配额单服务下线
+    1 require string moduleName;        //模块名
+    2 require string serverName;        //cache服务名, 当unType!=0时可为空
+    3 require string groupName;         //cache服务组名, 当unType!=1时可为空
+    4 require DBInfo routerDb;          //路由数据库信息
+};
+
+struct UninstallRsp
+{
+    0 require string errMsg;    //release 返回信息
+};
+
+struct UninstallProgressRsp
+{
+    0 require string percent;
+    1 require string errMsg;
+};
+
+
+struct ReleaseInfo
+{
+    0 require string appName;       //服务应用名
+    1 require string serverName;    //服务名
+    2 require string nodeName;      //服务IP地址
+    3 require string groupName;     //服务组名 cache发布填“DCacheServerGroup”，proxy填“ProxyServer”，router填“RouterServer”
+    4 require string version;       //发布版本号
+    5 require string user;          //发布用户
+    6 require string md5;           //发布包的md5
+    7 require int status = 0;       //发布线程状态管理，前台不用填写。
+    8 optional string error;
+    9 optional string ostype;
+};
+
+struct ReleaseReq
+{
+    0 require vector<ReleaseInfo> releaseInfo;
+};
+
+struct ReleaseRsp
+{
+    0 require int releaseId;    //release任务id
+    1 require string errMsg;    //release 返回信息
+};
+
+struct ReleaseProgressReq
+{
+    0 require int releaseId;
+};
+
+struct ReleaseProgressRsp
+{
+    0 require int releaseId;
+    1 require string percent;
+    2 require vector<ReleaseInfo> releaseInfo;
+    3 require string errMsg;
+};
+
+
+enum DCacheType
+{
+    KVCACHE = 1,
+    MKVCACHE = 2
+};
+
+// expand/transfer
+struct ExpandReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require vector<CacheHostParam> cacheHost;
+    3 require DCacheType cacheType;
+    4 require string version;
+    5 require bool replace=false;
+};
+
+struct ExpandRsp
+{
+    0 require string errMsg;
+};
+
+struct TransferReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require string srcGroupName;
+    3 require bool hasDestServer;
+    4 require vector<CacheHostParam> cacheHost;
+    5 require DCacheType cacheType;
+    6 require string version;
+};
+
+struct TransferRsp
+{
+    0 require string errMsg;
+};
+
+
+struct CacheConfigReq
+{
+    0 optional string id;       // config item 表索引id
+    1 optional string remark;   // 备注
+    2 optional string item;     // 配置项名，如：ObjName
+    3 optional string path;     // 配置项路径，如：Main, Main/Cache
+    4 optional string reload;   // 重载配置值
+    5 optional string period;   // 公共配置-U, 一期配置-T, 二期配置-MK
+};
+
+struct ServerConfigReq
+{
+    0 optional string appName;      // 应用名，如：TestApp
+    1 optional string moduleName;   // 模块名，如：TestAppModule1
+    2 optional string serverName;   // 服务名，如：DCache.TestAppModule1TCache1-1
+    3 optional string nodeName;     // 服务节点ip
+    4 optional string itemId;       // config item 表索引id
+    5 optional string configValue;  // 配置值
+    6 optional string configFlag;   // 默认填 0
+    7 optional string lastUser;     // 最后修改配置的用户名，默认 system
+    8 optional string indexId;      // config table 表索引id
+};
+
+struct ConfigRsp
+{
+    0 require string errMsg;
+    1 optional vector<map<string, string> > configItemList;
+};
+
+interface DCacheOpt
+{
+    /*
+    *应用安装
+    */
+    int installApp(InstallAppReq installReq, out InstallAppRsp instalRsp);
+
+    /*
+    *模块安装
+    */
+    int installKVCacheModule(InstallKVCacheReq kvCacheReq, out InstallKVCacheRsp kvCacheRsp);
+    int installMKVCacheModule(InstallMKVCacheReq mkvCacheReq, out InstallMKVCacheRsp mkvCacheRsp);
+
+    /*
+    *发布接口
+    */
+    int releaseServer(vector<ReleaseInfo> releaseInfo, out ReleaseRsp releaseRsp);
+
+    /*
+    *获取发布进度
+    */
+    int getReleaseProgress(ReleaseProgressReq progressReq, out ReleaseProgressRsp progressRsp);
+
+    /**
+    *下线接口
+    */
+    int uninstall4DCache(UninstallInfo uninstallInfo, out UninstallRsp uninstallRsp);
+
+    /*
+    *获取下线进度
+    */
+    int getUninstallPercent(UninstallInfo uninstallInfo, out UninstallProgressRsp progressRsp);
+
+    /*
+    *从数据库中重新加载路由配置信息
+    *参数说明:
+    *    sApp: taf应用名,设置为DCache即可
+    *    sRouterServerName: 路由服务名
+    *    sResult: 结果,成功时为空，失败时错误信息
+    *返回值:true 加载成功,false加载失败
+    */
+    bool reloadRouterConfByModuleFromDB(string appName, string moduleName, string sRouterServerName, out string sResult);
+
+    /*
+    * 迁移DCache(包含一期和二期)
+    */
+    int transferDCache(TransferReq transferReq, out TransferRsp transferRsp);
+
+    /*
+    *扩容DCache(包含一期和二期)
+    */
+    int expandDCache(ExpandReq expandReq, out ExpandRsp expandRsq);
+
+
+    /*
+    * 配置中心操作接口
+    */
+
+    int addCacheConfigItem(CacheConfigReq configReq, out ConfigRsp configRsp);
+
+    int updateCacheConfigItem(CacheConfigReq configReq, out ConfigRsp configRsp);
+
+    int deleteCacheConfigItem(CacheConfigReq configReq, out ConfigRsp configRsp);
+
+    int getCacheConfigItemList(CacheConfigReq configReq, out ConfigRsp configRsp);
+
+    int addServerConfigItem(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+    int updateServerConfigItem(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+    int updateServerConfigItemBatch(vector<ServerConfigReq> configReq, out ConfigRsp configRsp);
+
+    int deleteServerConfigItem(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+    int deleteServerConfigItemBatch(vector<ServerConfigReq> configReq, out ConfigRsp configRsp);
+
+    int getServerNodeConfigItemList(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+    int getServerConfigItemList(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+  };
+
+};

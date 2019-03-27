@@ -1,0 +1,35 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+module DCache
+{
+interface MKBackUp
+{
+    /*
+    * dump内存数据到指定路径文件
+    * dumpPath: 存放镜像文件的绝对路径，如果为空则dump到默认路径
+    * mirrorName: 镜像名
+    */
+    int dump(string dumpPath, string mirrorName, out string errmsg);
+
+    /*
+    * 恢复mirror和binlog，路径下没有mirror，则只恢复binlog，有的话先恢复mirror，再恢复binlog
+    * mirrorPath: mirror文件绝对路径
+    * binlogPath: binlog文件绝对路径
+    * lastTime: 表示恢复的最后时间
+    * normal:是否强制恢复，正常的恢复流程再加载完镜像和binlog后，会再从主机同步一条binlog
+    *        强制恢复流程，则是加载完镜像和binlog后，就认为恢复完成
+    */
+    int restore(string mirrorPath, vector<string>binlogPath, int lastTime, bool normal, out string errmsg);
+};
+};

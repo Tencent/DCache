@@ -1,0 +1,66 @@
+<Main>
+    <DB>
+            Sql=CREATE TABLE `${TABLE}` (`stattime` timestamp NOT NULL default  CURRENT_TIMESTAMP,`f_date` date NOT NULL default '1970-01-01',`f_tflag` varchar(8) NOT NULL default '',`app_name` varchar(20) default NULL,`module_name` varchar(50) default NULL,`group_name` varchar(100) default NULL,`idc_area` varchar(10) default NULL,`server_status` varchar(10) default NULL,`master_name` varchar(128) NOT NULL default '',`master_ip` varchar(16) default NULL,`set_name` varchar(15) NOT NULL default '',`set_area` varchar(15) NOT NULL default '',`set_id` varchar(15) NOT NULL default  '',`value1` varchar(255) default NULL,`value2` varchar(255) default NULL,`value3` varchar(255) default NULL,`value4` varchar(255) default NULL,`value5` varchar(255) default NULL,`value6` varchar(255) default NULL,`value7` varchar(255) default NULL,`value8` varchar(255) default NULL,`value9` varchar(255) default NULL,`value10` varchar(255) default NULL,`value11` varchar(255) default NULL,`value12` varchar(255) default NULL,`value13` varchar(255) default NULL,`value14` varchar(255) default NULL,`value15` varchar(255) default NULL,`value16` varchar(255) default NULL,`value17` varchar(255) default NULL,`value18` varchar(255) default NULL,`value19` varchar(255) default NULL,`value20` varchar(255) default NULL,`value21` varchar(255) default NULL,`value22` varchar(255) default NULL,`value23` varchar(255) default NULL,`value24` varchar(255) default NULL,`value25` varchar(255) default NULL,`value26` varchar(255) default NULL,`value27` varchar(255) default NULL,`value28` varchar(255) default NULL,`value29` varchar(255) default NULL,`value30` varchar(255) default NULL,`value31` varchar(255) default NULL,`value32` varchar(255) default NULL,`value33` varchar(255) default NULL,`value34` varchar(255) default NULL,`value35` varchar(255) default NULL,KEY(`f_date`,`f_tflag`,`master_name`,`master_ip`),KEY `IDX_MASTER_NAME` (`master_name`),KEY `IDX_MASTER_IP` (`master_ip`),KEY `IDX_TIME` (`stattime`),KEY `IDX_F_DATE` (`f_date`))ENGINE\=MyISAM
+            TbNamePre=t_property_realtime
+            AppName=dcache_idc5min_147
+        <property>
+            dbhost=TafregistryDB147.mdb.mig
+            dbname=taf_property_147
+            dbuser=taf
+            dbpass=Taf_writer2016
+            dbport=15527
+            charset=gbk
+        </property>
+        <relation>
+            charset=gbk
+            dbname=db_dcache_relation
+            dbhost=147dcachetafserver.mdb.mig
+            dbpass=dcache147_test
+            dbport=16171
+            dbuser=dcache147test
+        </relation>
+    </DB>
+    <HashMap>
+        InsertInterval=1
+    </HashMap>
+    <NameMap>
+        BakCenterError = property1
+        BinLogErr = property2
+        BinLogSyn = property3
+        CacheError = property4
+        Chunks/OnceElement = property5
+        BackUpObjAdapter.connectRate = property6
+        BackUpObjAdapter.queue = property7
+        BinLogObjAdapter.connectRate = property8
+        BinLogObjAdapter.queue = property9
+        CacheObjAdapter.connectRate = property10
+        CacheObjAdapter.queue = property11
+        RouterClientObjAdapter.connectRate = property12
+        RouterClientObjAdapter.queue = property13
+        WCacheObjAdapter.connectRate = property14
+        WCacheObjAdapter.queue = property15
+        asyncqueue = property16
+        memsize = property17
+        DataMemUsedRatio = property18
+        DbError = property19
+        DbException = property20
+        DirtyNum = property21
+        DirtyRatio = property22
+        ElementCount = property23
+        Exception = property24
+        HitCount = property25
+        MemSize = property26
+        getBatchCount = property27
+        setBatchCount = property28
+        MKMemUsedRatio = property29
+        eraseCount = property30
+        eraseCountUnexpire = property31
+        asyncqueue0 = property32
+        Jmem0DataUsedRatio = property33
+        Jmem1DataUsedRatio = property34
+        ColdDataRatio = property35
+        expireCount = property36
+        OnlyKeyCount = property37
+        BigChunk = property38
+    </NameMap>
+</Main>

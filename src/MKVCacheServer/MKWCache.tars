@@ -1,0 +1,126 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+#include "../TarsComm/CacheShare.tars"
+
+module DCache
+{
+interface MKWCache
+{
+    /*********************************************************************
+    *功能：插入一条记录到Cache
+    *@return int,
+    *	ET_SUCC 成功
+    *	ET_SERVER_TYPE_ERR CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID 业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR 传入的Key不在Cache服务范围内
+    *	ET_FORBID_OPT 禁止操作，可能在做迁移
+    *	ET_DATA_EXIST 数据已存在
+    *	ET_DATA_VER_MISMATCH 数据版本冲突
+    *	ET_SYS_ERR 系统错误
+    *********************************************************************/
+    int insertMKV(InsertMKVReq req);
+
+    /*********************************************************************
+    *功能：插入批量数据到Cache
+    *@return int,
+    *	ET_SUCC 成功
+    *	ET_SERVER_TYPE_ERR     ：CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID ：业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR        ：传入的Key不在Cache服务范围内
+    *	ET_INPUT_PARAM_ERROR   : 输入参数错误
+    *	ET_SYS_ERR  	       ：系统错误
+    *	ET_PARTIAL_FAIL	       ：部分数据插入失败，失败key的index和失败原因存储在rsp中
+    *********************************************************************/
+    int insertMKVBatch(InsertMKVBatchReq req, out MKVBatchWriteRsp rsp);
+
+    /*********************************************************************
+    *功能：批量更新接口。只支持指定联合key的更新
+    *@return int,
+    *	ET_SUCC 成功
+    *	ET_SERVER_TYPE_ERR     ：CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID ：业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR        ：传入的Key不在Cache服务范围内
+    *	ET_INPUT_PARAM_ERROR   : 输入参数错误
+    *	ET_SYS_ERR  	       ：系统错误
+    *	ET_PARTIAL_FAIL	       ：部分数据更新失败，失败key的index和失败原因存储在rsp中
+    *********************************************************************/
+    int updateMKVBatch(UpdateMKVBatchReq req, out MKVBatchWriteRsp rsp);
+
+    /*********************************************************************
+    *功能：更新Cache记录，更新接口不能更新联合key字段。
+    *@return int,
+    *	>=0 成功，修改的记录数
+    *	ET_SERVER_TYPE_ERR CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID 业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR 传入的Key不在Cache服务范围内
+    *	ET_FORBID_OPT 禁止操作，可能在做迁移
+    *	ET_DATA_VER_MISMATCH 数据版本冲突
+    *	ET_SYS_ERR 系统错误
+    *********************************************************************/
+    int updateMKV(UpdateMKVReq req);
+
+    /*********************************************************************
+    *功能：原子更新接口。适用于对数据做自增自减操作，多线程操作能保证数据原子更新。不能更新联合key字段。
+    *@return int,
+    *	>=0 成功，修改的记录数
+    *	ET_SERVER_TYPE_ERR CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID 业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR 传入的Key不在Cache服务范围内
+    *	ET_FORBID_OPT 禁止操作，可能在做迁移
+    *	ET_DATA_VER_MISMATCH 数据版本冲突
+    *	ET_SYS_ERR 系统错误
+    *********************************************************************/
+    int updateMKVAtom(UpdateMKVAtomReq req);
+
+    /*********************************************************************
+    *功能：删除 Cache记录
+    *@return int,
+    *	ET_SUCC 成功
+    *	ET_SERVER_TYPE_ERR CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID 业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR 传入的Key不在Cache服务范围内
+    *	ET_SYS_ERR 系统错误
+    *********************************************************************/
+    int eraseMKV(MainKeyReq req);
+
+    /*********************************************************************
+    *功能：删除Cache和Db记录
+    *@return int,
+    *	ET_SUCC 批量删除时，每个key的删除结果存储在rsp中
+    *	ET_SERVER_TYPE_ERR CacheServer的状态不对，一般情况是请求发到SLAVE状态的server了
+    *	ET_MODULE_NAME_INVALID 业务模块不匹配，传入的业务模块名和Cache服务的模块名不一致
+    *	ET_KEY_AREA_ERR 传入的Key不在Cache服务范围内
+    *	ET_FORBID_OPT 禁止操作，可能在做迁移
+    *	ET_SYS_ERR 系统错误
+    *********************************************************************/
+    int delMKV(DelMKVReq req);
+    //批量删除, rsp.rspData中存储了每个删除请求的结果，结果包含DEL_ERROR/DEL_DATA_VER_MISMATCH/ >=0表示删除的符合条件的记录数量
+    int delMKVBatch(DelMKVBatchReq req, out MKVBatchWriteRsp rsp);
+
+    int pushList(PushListReq req);
+    int popList(PopListReq req, out PopListRsp rsp);
+    int replaceList(ReplaceListReq req);
+    int trimList(TrimListReq req);
+    int remList(RemListReq req);
+
+    int addSet(AddSetReq req);
+    int delSet(DelSetReq req);
+
+    int addZSet(AddZSetReq req);
+    int incScoreZSet(IncZSetScoreReq req);
+    int delZSet(DelZSetReq req);
+    int delZSetByScore(DelZSetByScoreReq req);
+    int updateZSet(UpdateZSetReq req);
+};
+};

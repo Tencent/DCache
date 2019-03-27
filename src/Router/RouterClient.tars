@@ -1,0 +1,94 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+#include "RouterShare.tars"
+#include "../TarsComm/CacheShare.tars"
+module DCache
+{
+    //router 客户端接口
+    interface RouterClient
+    {
+        /*
+        * 0 成功，其他失败
+        */
+        int setRouterInfo(string moduleName, PackTable packTable);
+    
+        int setTransRouterInfo(string moduleName, int transInfoVer, vector<TransferInfo> transferingInfoList, PackTable packTable);
+
+        /*
+        * 通知源server做迁移准备
+        * @moduleName 迁移的模块
+        * @transInfoVer 模块正在执行的迁移任务信息列表的版本号
+        * @packTable  当前的路由表
+        */
+        int fromTransferStart(string moduleName, int transInfoVer, vector<TransferInfo> transferingInfoList, PackTable packTable);
+    
+        /*
+        * 通知源server开始执行迁移任务
+        * @transferInfo 通知源server执行的迁移任务
+        */
+        int fromTransferDo(TransferInfo transferInfo);	
+
+        /*
+        * 目标server开始迁移任务
+        * @moduleName 迁移的模块
+        * @pageNo 迁移的页
+        * @packTable 更改迁移任务后的路由表
+        */
+        int toTransferStart(string moduleName, int transInfoVer, vector<TransferInfo> transferingInfoList, TransferInfo transferingInfo, PackTable packTable);
+
+    
+        /*
+        *获取备机binlog同步差异时间,来判断是否可以切换，
+        */
+        int getBinlogdif(out int difBinlogTime);
+
+        /*
+        * 0 成功，其他失败
+        */
+        int setRouterInfoForSwitch(string moduleName, PackTable packTable);
+
+        /*
+        *自动切换的探测接口，供router和proxy探测主机和router探测proxy
+        */
+        int helloBaby();
+
+        int helleBabyByName(string serverName);
+
+        /**
+        *来自一期迁移的批量set
+        */
+        int setBatchFroTrans(string moduleName, vector<Data> keyValue);
+
+        int setBatchFroTransOnlyKey(string moduleName, vector<string> mainKey);
+
+        /**
+        *二期迁移
+        */
+        int setFroCompressTransEx(string moduleName, string mainKey, string transContent, bool compress, bool full);
+
+        int setFroCompressTransOnlyKey(string moduleName, vector<string> mainKey);
+
+        int cleanFromTransferData(string moduleName, int fromPageNo, int toPageNo);
+        int setFroCompressTransWithType(string moduleName, string mainKey, string transContent, byte keyType, bool compress, bool full);
+
+        //备机是否ready for switch
+        int isReadyForSwitch(string moduleName, out bool bReady);
+
+        //通知主机降级
+        int notifyMasterDowngrade(string moduleName);
+
+        //通知备机断开与主机的连接
+        int disconnectFromMaster(string moduleName);
+    };
+};

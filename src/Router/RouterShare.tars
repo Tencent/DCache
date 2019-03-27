@@ -1,0 +1,168 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+module DCache
+{
+
+    const int TRANSFER_CLEAN_VERSION = 0;
+
+    /**
+     *  操作结果
+    */
+    enum RouterResult
+    {
+        // 成功
+        eSucc,
+        // 模块不存在
+        eModuleNotExist
+    };
+
+    /**
+    * 业务模块信息
+    */
+    struct ModuleInfo
+    {
+        // 业务模块编号
+        1 require int id;
+        // 模块名，各模块的模块名不能重复
+        2 require string moduleName;
+        // 版本号
+        3 require int version;
+        //自动切换类型 0切读写 1切读 2不自动切换 3表示无效模块
+        4 require int switch_status;
+    };
+
+    /**
+    * 服务器信息
+    */
+    struct ServerInfo
+    {
+        // 服务器编号
+        1 require int id;
+        // 服务器名
+        2 require string serverName;
+        // 服务器IP
+        3 require string ip;
+        
+        // BinLogServant对象名
+        4 require string BinLogServant;
+        // CacheServant对象名
+        5 require string CacheServant;
+         // CacheServant对象名
+        6 require string WCacheServant;
+        // RouteClientServant对象名
+        7 require string RouteClientServant;
+        
+        // 服务器所在IDC
+        8 require string idc;
+        // 服务状态："M"(表示主机)/"S"(表示备机)
+        9 require string ServerStatus;
+        // 服务所属模块
+        10 require string moduleName;
+        // 模块名
+        11 optional string groupName;
+        // 服务状态
+        12 optional int status;
+    };
+
+    /**
+    * 服务器组信息
+    */
+    struct GroupInfo
+    {
+        1 require int id;
+        // 所属业务模块名
+        2 require string moduleName;
+        // 服务器组名
+        3 require string groupName;
+        // Master服务名
+        4 require string masterServer;
+
+        //该组的proxy的访问权限，0标识读写，1标识只读,2镜像不可用
+        5 require int accessStatus;
+
+        // 按IDC分类服务器集合,vector顺序按优先级顺序排列
+        6 require map<string, vector<string>> idcList;
+        // 备份对应关系
+        7 require map<string, string> bakList;
+    };
+
+    /**
+    * 路由信息
+    */
+    struct RecordInfo
+    {
+        // 路由编号
+        1 require int id;
+        // 路由所属业务模块名
+        2 require string moduleName;
+        // 开始页
+        3 require int fromPageNo;
+        // 结束页
+        4 require int toPageNo;
+        // 当前的工作服务器组名
+        5 require string groupName;
+    };
+
+    /**
+    * 打包的路由信息，一个业务模块一个包
+    */
+    struct PackTable
+    {
+        // 业务模块信息
+        1 require ModuleInfo info;
+        // 业务模块包含的路由记录
+        2 require vector<RecordInfo> recordList;
+        // 业务模块包含的所有服务器组
+        3 require map<string, GroupInfo> groupList;
+        // 服务器信息集合
+        4 require map<string, ServerInfo> serverList;
+    };
+
+    /**
+    * 迁移任务信息
+    */
+    struct TransferInfo
+    {
+        // 编号
+        1 require int id;
+        // 迁移模块名
+        2 require string moduleName;
+        // 迁移开始页
+        3 require int fromPageNo;
+        // 迁移结束页
+        4 require int toPageNo;
+        // 迁移源服务器组名
+        5 require string groupName;
+        // 迁移的目标服务器组名
+        6 require string transGroupName;
+    };
+
+    /**
+    * 主调机器信息
+    */
+    struct MachineInfo
+    {
+        1 require string idc_city;	//深圳、上海、天津等
+    };
+
+    /**
+    * 转换后的idc信息
+    */
+    struct IDCInfo
+    {
+        1 require string idc;	//sz/tj/sh/cd/hk
+    };
+
+};
+

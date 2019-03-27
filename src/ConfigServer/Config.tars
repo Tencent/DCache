@@ -1,0 +1,47 @@
+/**
+* Tencent is pleased to support the open source community by making DCache available.
+* Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+* Licensed under the BSD 3-Clause License (the "License"); you may not use this file
+* except in compliance with the License. You may obtain a copy of the License at
+*
+* https://opensource.org/licenses/BSD-3-Clause
+*
+* Unless required by applicable law or agreed to in writing, software distributed under
+* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions
+* and limitations under the License.
+*/
+
+module DCache
+{
+
+interface Config
+{
+    /**
+     * 读取配置文件 
+     * @inparam appName: 应用名
+     * @inparam serverName: 服务名 
+     * @outparam config: 读取到的配置 
+     * @return int: 成功返回0，否则返回-1 
+     */
+    int readConfig(string appName, string serverName, out string config);
+    
+    /**
+     * 读取服务的配置文件，这是指在服务名存在的情况下，根据服务的ip来读取服务的配置
+     * @inparam appServerName: 服务名称，由应用名称和服务名称合并构成 
+     * @inparam host: 节点ip 
+     * @outparam config: 读取到的配置  
+     * @return int: 成功返回0，否则返回-1 
+     */
+    int readConfigByHost(string appServerName, string host, out string config);
+    
+    /**
+     * 读取应用的配置文件
+     * @inparam appName: 应用名 
+     * @outparam config: 读取到的配置 
+     * @return int: 成功返回0，否则返回-1 
+     */
+    int readAppConfig(string appName, out string config);
+};
+
+};

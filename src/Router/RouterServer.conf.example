@@ -1,0 +1,78 @@
+<Main>
+    # 应用名称
+    AppName=GuochengHelloWorld
+    # 数据库配置重新装载最小间隔时间
+    DbReloadTime=300000
+    # 管理接口的Obj
+    AdminRegObj=tars.tarsregistry.AdminRegObj
+    <ETCD>
+        # 是否开启ETCD为Router集群(Router集群需要利用ETCD来做选举)
+        enable=N
+        # 所有ETCD机器的IP地址，以分号分割
+        host=100.96.21.157:2379;100.65.5.164:2379
+        # ETCD通信请求的超时时间(秒)
+        RequestTimeout=3
+        # Router主机心跳的维持时间(秒)
+        EtcdHbTTL=60
+    </ETCD>
+    <Transfer>
+        # 清理代理的最近未访问时间
+        ProxyMaxSilentTime=1800
+        # 清理代理的间隔时间
+        ClearProxyInterval=1800
+        # 轮询迁移数据库的时间
+        TransferInterval=3
+        # 轮询线程数
+        TimerThreadSize=20
+        # 每个模块最小迁移线程数(没有这项配置的话，默认是5个线程)
+        MinTransferThreadEachModule=5
+        # 等待页迁移的超时时间(毫秒)
+        TransferTimeOut=3000
+        # 迁移时隔多少页整理一下数据库记录
+        TransferDefragDbInterval=50
+        # 重新执行迁移指令的时间间隔(秒)
+        RetryTransferInterval=1 
+        # 迁移失败时的最大重试次数
+        RetryTransferMaxTimes=3 
+        # 一次迁移页数
+        TransferPagesOnce=5
+        # 每个组分配的最小迁移线程数
+        MinTransferThreadEachGroup=5
+        # 每个组分配的最小迁移线程数
+        MaxTransferThreadEachGroup=8
+    </Transfer>
+    <Switch>
+        # 自动切换超时的检测间隔(秒)
+        SwitchCheckInterval= 10
+        # 自动切换的超时时间(秒)
+        SwitchTimeOut=60
+        # 自动切换执行的线程数(默认1个)
+        SwitchThreadSize=50
+        # 备机不可读的超时时间(秒)
+        SlaveTimeOut=60
+        # 主备切换时，主备机binlog差异的阈值(毫秒)
+        SwitchBinLogDiffLimit=300
+        # 一天当中主备切换的最大次数
+        SwitchMaxTimes=3
+        # 主备切换时等待主机降级的时间(秒)
+        DowngradeTimeout=30
+    </Switch>
+    <DB>
+        <conn>
+            charset=utf8
+            dbname=testInstall
+            dbhost=localhost
+            dbpass=Dcache@123
+            dbport=3306
+            dbuser=root
+        </conn>
+        <relation>
+            charset=utf8
+            dbname=db_dcache_relation
+            dbhost=localhost
+            dbpass=tars2015
+            dbport=3306
+            dbuser=tars
+        </relation>
+    <DB>
+</Main>

@@ -1,0 +1,112 @@
+<Main>
+  #模块名
+  ModuleName=Test
+
+  #coredump size
+  CoreSizeLimit=-1
+  #备份恢复操作日志的按天日志文件名后缀
+  BackupDayLog=dumpAndRecover
+  #向Router上报心跳的间隔(毫秒)
+  RouterHeartbeatInterval=1000
+  <Cache>
+    #指定共享内存使用的key
+    ShmKey=12345
+    #内存的大小
+    ShmSize=10M
+    #平均数据size，用于初始化共享内存空间
+    AvgDataSize=1
+    #设置hash比率(设置chunk数据块/hash项比值)
+    HashRadio=2
+
+    #是否允许淘汰数据
+    EnableErase=Y
+    #每次淘汰数据的时间间隔（秒）
+    EraseInterval=5
+    #开始淘汰数据的比率（已用chunk/所有chunk数据块*100）
+    EraseRadio=95
+    #淘汰线程数量
+    EraseThreadCount=2
+    #每次淘汰数据记录限制
+    MaxEraseCountOneTime=500
+
+    #是否启动过期清除线程
+    StartExpireThread=Y
+    #是否清除后端数据库
+    ExpireDb=Y
+    #每次清除过期数据的时间间隔（秒）
+    ExpireInterval=300
+    #清除频率, 0 表示不限制
+    ExpireSpeed=0
+
+    #每次回写时间间隔（秒）
+    SyncInterval=300
+    #回写频率, 0 表示不限制
+    SyncSpeed=0
+    #回写脏数据的线程数
+    SyncThreadNum=1
+    #回写时间（秒），即回写多久以前的数据
+    SyncTime=300
+    #禁止回写时间段（例：0900-1000;1600-1700）
+    SyncBlockTime=0000-0000
+
+    #是否保存OnlyKey数据 Y/N
+    SaveOnlyKey=Y
+    #主机自动降级超时时间(秒)，即30s无心跳则自动降级
+    DowngradeTimeout=30
+
+    #内存块个数
+    JmemNum=10
+    #是否统计冷数据比例
+    coldDataCalEnable=Y
+    #冷数据统计周期(天)
+    coldDataCalCycle=7
+    #后端数据库的key长度限制
+    MaxKeyLengthInDB=767
+  </Cache>
+  <Log>
+    #回写db的按天日志文件名后缀
+    DbDayLog=db
+  </Log>
+  <DbAccess>
+    #是否存在DB，Y/N
+    DBFlag=Y
+    #DbAccess的obj名称
+    ObjName=DCache.TestDbAccessServer.DbAccessObj
+    #当Cache中没有数据时，是否从DB或文件查询, Y/N
+    ReadDbFlag=Y
+  </DbAccess>
+  <BinLog>
+    #binlog日志文件名后缀
+    LogFile=binlog
+    #是否记录binlog
+    Record=Y
+    #是否记录key binlog
+    KeyRecord=N
+    #每次同步binlog的行数
+    MaxLine=10000
+    #同步binlog是否开启压缩
+    SyncCompress=Y
+    #采用gzip压缩格式
+    IsGzip=Y
+    #主备同步使用key binlog
+    KeySyncMode=N
+
+    #备机同步binlog缓存buffer的szie
+    BuffSize=10
+    #保存synctime文件的间隔(秒)
+    SaveSyncTimeInterval=10
+    #active binlog产生的周期(秒)
+    HeartbeatInterval=600
+  </BinLog>
+  <Router>
+    #RouterServer的obj名称
+    ObjName=DCache.TestRouterServer.RouterObj
+    #路由分页大小
+    PageSize=10000
+    #保存在本地的路由表文件名
+    RouteFile=Route.dat
+    #同步路由的时间间隔（秒）
+    SyncInterval=1
+  </Router>
+</Main>
+
