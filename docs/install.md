@@ -149,7 +149,7 @@ make; make tar
 
 ## <a id = "4"></a> 4. DCache管理平台安装
 
-DCache管理界面是以模块的形式加载到Tars管理平台，最终会和Tars管理平台使用同一个地址，具体的模块安装步骤请参考[DCache管理平台安装](https://github.com/TarsCloud/TarsWeb)
+DCache管理界面是以模块的形式加载到Tars管理平台，最终会和Tars管理平台使用同一个地址，具体的模块安装步骤请参考[DCache管理平台安装](https://github.com/TarsCloud/TarsWeb/tree/dcache-alpha)
 
 ## <a id = "5"></a> 5. 创建一个DCache应用
 
