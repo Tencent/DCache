@@ -23,16 +23,40 @@ void PropertyDbManager::init(TC_Config& conf)
 {
     TLOGDEBUG("PropertyDbManager::init begin ..." << endl);
 
-    _sql            = conf["/Main/DB<Sql>"];
-    _sqlStatus      = conf.get("/Main/DB<SqlStatus>", "");
+    int proFieldNum = TC_Common::strto<int>(conf["/Main/DB<PropertyFieldNum>"]);
+    _sql = "CREATE TABLE `${TABLE}` ( "
+           " `stattime` timestamp NOT NULL default  CURRENT_TIMESTAMP, "
+           " `f_date` date NOT NULL default '1970-01-01', "
+           " `f_tflag` varchar(8) NOT NULL default '', "
+           " `app_name` varchar(20) default NULL, "
+           " `module_name` varchar(50) default NULL, "
+           " `group_name` varchar(100) default NULL, "
+           " `idc_area` varchar(10) default NULL, "
+           " `server_status` varchar(10) default NULL, "
+           " `master_name` varchar(128) NOT NULL default '', "
+           " `master_ip` varchar(16) default NULL, "
+           " `set_name` varchar(15) NOT NULL default '', "
+           " `set_area` varchar(15) NOT NULL default '', "
+           " `set_id` varchar(15) NOT NULL default  '', ";
+    for (int i = 1; i <= proFieldNum; i++)
+    {
+        _sql += "`value";
+        _sql += TC_Common::tostr(i);
+        _sql += "` varchar(255) default NULL,";
+    }
+    _sql += " KEY(`f_date`,`f_tflag`,`master_name`,`master_ip`), "
+            " KEY `IDX_MASTER_NAME` (`master_name`), "
+            " KEY `IDX_MASTER_IP` (`master_ip`), "
+            " KEY `IDX_TIME` (`stattime`), "
+            " KEY `IDX_F_DATE` (`f_date`) "
+            " ) ENGINE=MyISAM DEFAULT CHARSET=gbk";
+
     _tbNamePre      = conf.get("/Main/DB<TbNamePre>", "t_property_realtime_");
     _maxInsertCount = TC_Common::strto<int>(conf.get("/Main/DB<MaxInsertCount>", "1000"));
     _appNames		= TC_Common::sepstr<string>(conf.get("/Main/DB<AppName>", "t_property_realtime"), "|", false);
     _terminate      = false;
 
-    if (_sqlStatus == "")
-    {
-        _sqlStatus = "CREATE TABLE `t_ecstatus` ( "
+    _sqlStatus = "CREATE TABLE `t_ecstatus` ( "
             "  `id` int(11) NOT NULL auto_increment, "
             "  `appname` varchar(64) NOT NULL default '', "
             "  `action` tinyint(4) NOT NULL default '0', "
@@ -42,7 +66,6 @@ void PropertyDbManager::init(TC_Config& conf)
             "   PRIMARY KEY  (`appname`,`action`), "
             "   UNIQUE KEY `id` (`id`) "
             " ) ENGINE=InnoDB DEFAULT CHARSET=gbk";
-    }
 
     string sCutType = conf.get("/Main/DB<CutType>", "day");
     if (sCutType == "day")
