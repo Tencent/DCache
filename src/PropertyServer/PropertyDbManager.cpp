@@ -169,6 +169,190 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
     return 0;
 }
 
+int PropertyDbManager::queryPropData(const DCache::QueryPropCond &req, vector<DCache::QueriedResult> &rsp)
+{
+    int ret = 0;
+    try
+    {
+        string lastDate, lastTime;
+        ret = getLastTimestamp(lastDate, lastTime);
+        if (ret != 0)
+            return -1;
+        
+        bool getSpecificServer = false;
+        bool getAllServer = false;
+        if (!req.serverName.empty())
+        {
+            if (req.serverName == "*")
+                getAllServer = true;
+            else
+                getSpecificServer = true;
+        }
+
+        string sTbName = _tbNamePre;
+
+        stringstream sql_stream;
+        sql_stream << "select `f_tflag`";
+        auto nameMap = g_app.getPropertyNameMap();
+        for (auto &&prop : nameMap)
+        {
+            sql_stream << ",`" << prop.second << "`";
+        }
+        if (getAllServer || getSpecificServer)
+            sql_stream << ",`master_name`";
+
+        sql_stream << " from " << sTbName
+                   << " where module_name ='" << req.moduleName << "'";
+        if (getSpecificServer)
+            sql_stream << " and master_name='" << req.serverName << "'";
+        
+        if (!getSpecificServer && !getAllServer)    //模块整体统计，只计算主cache
+            sql_stream << " and server_status='M'";
+
+        for (const auto &date : req.date)
+        {
+            stringstream exsql;
+            exsql << sql_stream.str();
+            exsql << " and f_date=" << date;
+
+            if (date == lastDate)
+            {
+                if(req.startTime > lastTime)
+                    continue;
+                else
+                    exsql << " and f_tflag >='" << req.startTime << "'";
+                
+                if (req.endTime > lastTime)
+                    exsql << " and f_tflag <='" << lastTime << "'";
+                else
+                    exsql << " and f_tflag <='" << req.endTime << "'";
+            }
+            else if (date < lastDate)
+            {
+                exsql << " and f_tflag >='" << req.startTime << "' and f_tflag <='" << req.endTime << "'";
+            }
+            else
+                continue;
+
+            if (getSpecificServer)
+                exsql << " order by f_tflag";
+            else
+                exsql << " order by master_name, f_tflag";
+
+            TC_Mysql::MysqlData recordSet;
+            recordSet = _mysql.queryRecord(exsql.str());
+
+            //handle result
+            {
+                if (getSpecificServer)
+                {
+                    QueriedResult result;
+                    result.moduleName = req.moduleName;
+                    result.serverName = req.serverName;
+                    result.date = date;
+
+                    size_t recordNum = recordSet.size();
+                    vector<map<string, string>> &recordData = recordSet.data();
+                    for (size_t i = 0; i < recordNum; i++)
+                    {
+                        map<string, string> &record = recordData[i];
+                        QueriedProp p;
+                        p.timeStamp = record["f_tflag"];
+                        for (auto && prop : nameMap)
+                        {
+                            //FIXME, how to handle NULL?
+                            p.propData[prop.first] = TC_Common::strto<double>(record[prop.second]);
+                        }
+                        result.data.emplace_back(std::move(p));
+                    }
+ 
+                    rsp.emplace_back(std::move(result));
+                }
+                else if (getAllServer)
+                {
+                    map<string, QueriedProp> svrSum;
+                    size_t recordNum = recordSet.size();
+                    vector<map<string, string>> &recordData = recordSet.data();
+                    for (size_t i = 0; i < recordNum; i++)
+                    {
+                        map<string, string> &record = recordData[i];
+                        string svrName = record["master_name"];
+                        auto iret = svrSum.insert({svrName, QueriedProp()});
+                        auto itsvr = iret.first;
+                        for (auto && prop : nameMap)
+                        {
+                            //FIXME, how to handle avg/max/min
+                            itsvr->second.propData[prop.first] += TC_Common::strto<double>(record[prop.second]);
+                        }
+                    }
+
+                    for (auto && svr : svrSum)
+                    {
+                        QueriedResult result;
+                        result.moduleName = req.moduleName;
+                        result.serverName = svr.first;
+                        result.date = date;
+                        result.data.emplace_back(std::move(svr.second));
+                        
+                        rsp.emplace_back(std::move(result));
+                    }
+
+                }
+                else
+                {
+                    //module's statistic
+                    QueriedResult result;
+                    result.moduleName = req.moduleName;
+                    result.serverName.clear();
+                    result.date = date;
+
+                    map<string, QueriedProp> timeSum;
+                    size_t recordNum = recordSet.size();
+                    vector<map<string, string>> &recordData = recordSet.data();
+                    for (size_t i = 0; i < recordNum; i++)
+                    {
+                        map<string, string> &record = recordData[i];
+                        string time = record["f_tflag"];
+                        auto iret = timeSum.insert({time, QueriedProp()});
+                        auto ittime = iret.first;
+                        ittime->second.timeStamp = time;
+                        for (auto &&prop : nameMap)
+                        {
+                            //FIXME, how to handle NULL?
+                            //FIXME, how to handle avg/max/min
+                            ittime->second.propData[prop.first] += TC_Common::strto<double>(record[prop.second]);
+                        }
+                    }
+
+                    for (auto && t : timeSum)
+                    {
+                        result.data.emplace_back(std::move(t.second));
+                    }
+                    rsp.emplace_back(std::move(result));
+                }
+
+            }
+        }
+    }
+    catch (TC_Mysql_Exception &ex)
+    {
+        TLOGERROR(__FUNCTION__ << "|sql:" << _mysql.getLastSQL() << "|exception: " << ex.what() << endl);
+        ret = -1;
+    }
+    catch (std::exception &ex)
+    {
+        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        ret = -1;
+    }
+    catch (...)
+    {
+        TLOGERROR(__FUNCTION__ << "|unknow exception:" << endl);
+        ret = -1;
+    }
+
+    return ret;	
+}
+
 int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDate, const string &sFlag, const string &sTbNamePre, int iOldWriteNum, int &iNowWriteNum)
 {
     int iTotalCount = 0, iValidCount = 0;
@@ -354,6 +538,59 @@ int PropertyDbManager::updateEcsStatus(const string &sLastTime, const string &sT
     }
 
     return 0;
+}
+
+int PropertyDbManager::getLastTimestamp(string &date, string &time)
+{
+    int ret = 0;
+    try
+    {
+        stringstream sql_stream;
+        sql_stream << "select * from t_ecstatus";
+
+        TC_Mysql::MysqlData recordSet;
+        recordSet = _mysql.queryRecord(sql_stream.str());
+        size_t recordNum = recordSet.size();
+		vector<map<string, string> > &recordData = recordSet.data();
+        if (recordNum > 0)
+        {
+            map<string, string>& record = recordData[0];
+            vector<string> vtmp = TC_Common::sepstr<string>(TC_Common::trim(record["lasttime"]), " ");
+            if (vtmp.size() != 2)
+            {
+                TLOGERROR(__FUNCTION__ << "|parse lasttime error: lasttime:" << record["lasttime"] << endl);
+                return -1;
+            }
+
+            date = TC_Common::trim(vtmp[0]);
+            time = TC_Common::trim(vtmp[1]);
+        }
+        else
+        {
+            TLOGERROR(__FUNCTION__ << "|no data" << endl);
+            return -1;
+        }
+
+        return 0;
+    }
+    catch (TC_Mysql_Exception &ex)
+    {
+        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        ret = -1;
+    }
+    catch (std::exception &ex)
+    {
+        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        ret = -1;
+    }
+    catch (...)
+    {
+        TLOGERROR(__FUNCTION__ << "|unknow exception" << endl);
+        ret = -1;
+    }
+    
+
+    return ret;
 }
 
 string PropertyDbManager::createDBValue(const PropKey &key, const PropValue &value, const string &sDate, const string &sFlag)

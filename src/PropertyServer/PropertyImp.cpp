@@ -13,6 +13,8 @@
 */
 #include "PropertyImp.h"
 #include "PropertyServer.h"
+#include "PropertyDbManager.h"
+
 
 ///////////////////////////////////////////////////////////
 //
@@ -28,13 +30,23 @@ void PropertyImp::initialize()
 
 int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPropMsgBody> &propMsg, tars::TarsCurrentPtr current)
 {
-    TLOGINFO("PropertyImp::reportPropMsg size:" << propMsg.size() << endl);
+    TLOGDEBUG("PropertyImp::reportPropMsg size:" << propMsg.size() << endl);
 
     for (map<DCache::StatPropMsgHead, DCache::StatPropMsgBody>::const_iterator it = propMsg.begin(); it != propMsg.end(); ++it)
     {
         const DCache::StatPropMsgHead &head = it->first;
         const DCache::StatPropMsgBody &body = it->second;
 
+        {
+            ostringstream os;
+            os.str("");
+            os << "head:";
+            head.displaySimple(os);
+            os << "|body:";
+            body.displaySimple(os);
+            TLOGDEBUG("PropertyImp::reportPropMsg |" << os.str() << endl);
+        }
+        
         if (body.vInfo.size() == 0)
         {
             continue;
@@ -54,16 +66,20 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
         PropHead tHead;
         vector<string> v = TC_Common::sepstr<string>(head.propertyName, ".");
         string sPropertyName;
-        if (v.size() == 3)
+        if (v.size() > 2)
         {
-            sPropertyName = v[2];
-        }
-        else if (v.size() == 4)
-        {
-            sPropertyName = v[2] + "." + v[3];
+            //e.g. DCache.testexpand6KVCacheServer1-2.asyncqueue0
+            //e.g. DCache.testexpand6KVCacheServer1-2.ControlAckObjAdapter.queue
+            for (size_t i = 2; i < v.size(); i++)
+            {
+                if (!sPropertyName.empty())
+                    sPropertyName += ".";
+                sPropertyName += v[i];
+            }
         }
         else
         {
+            //e.g. DataMemUsedRatio
             sPropertyName = head.propertyName;
         }
         
@@ -92,18 +108,30 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
         {
             TLOGERROR("PropertyImp::reportPropMsg add hashmap record return:" << iRet << endl);
         }
-            
-        if (LOG->IsNeedLog(TarsRollLogger::INFO_LOG))
-        {
-            ostringstream os;
-            os.str("");
-            head.displaySimple(os);
-            body.displaySimple(os);
-            TLOGINFO("PropertyImp::reportPropMsg |" << iRet << "|" << os.str() << endl);
-        }
     }
     
     return 0;
+}
+
+int PropertyImp::queryPropData(const DCache::QueryPropCond & req,vector<DCache::QueriedResult> &rsp,tars::TarsCurrentPtr current)
+{
+    int ret = 0;
+    try
+    {
+        return PropertyDbManager::getInstance()->queryPropData(req, rsp);
+    }
+    catch(const std::exception& e)
+    {
+        TLOGERROR(__FUNCTION__ << "|exception:" << e.what() << endl);
+        ret = -1;
+    }
+    catch(...)
+    {
+        TLOGERROR(__FUNCTION__ << "|unknow exception" << endl);
+        ret = -1;
+    }
+
+    return ret;
 }
 
 void PropertyImp::dump2file()
