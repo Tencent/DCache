@@ -90,8 +90,8 @@ void RouterServer::initialize()
         TARS_ADD_ADMIN_CMD_NORMAL("help", RouterServer::help);
 
         //启动线程
-        _thread.init(_conf, _dbHandle, _outerProxy);
-        _thread.start();
+        _timerThread.init(_conf, _dbHandle, _outerProxy);
+        _timerThread.start();
         _switchThread.init(createAdminRegProxyWrapper(), _dbHandle);
         _switchThread.start();
 
@@ -245,13 +245,13 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
         _transfer->reloadConf();
 
         //先停止线程
-        _thread.terminate();
-        _thread.getThreadControl().join();
+        _timerThread.terminate();
+        _timerThread.getThreadControl().join();
 
         //重启线程
         TLOGDEBUG("restart timer thread ..." << endl);
-        _thread.init(_conf, _dbHandle, _outerProxy);
-        _thread.start();
+        _timerThread.init(_conf, _dbHandle, _outerProxy);
+        _timerThread.start();
 
         os << "reload config ok!" << endl;
 
@@ -1232,6 +1232,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
     _dbHandle->updateSwitchInfo(switchRecordID, 3, os.str());
     return false;
 }
+
 bool RouterServer::showHeartBeatInfo(const string &command, const string &params, string &result)
 {
     ostringstream os;
@@ -1356,16 +1357,21 @@ bool RouterServer::help(const string &command, const string &params, string &res
 
 void RouterServer::destroyApp()
 {
-    _thread.terminate();
-    _thread.getThreadControl().join();
+    _etcdThread.terminate();
+
+	_timerThread.terminate();
 
     _switchThread.terminate();
-    _switchThread.getThreadControl().join();
 
-    _etcdThread.terminate();
-    _etcdThread.getThreadControl().join();
+    while (_etcdThread.isAlive() || _timerThread.isAlive() || _switchThread.isAlive())
+    {
+        usleep(1000);
+    }
 
-    _etcdHandle->destroy();
+	if (_etcdHandle)
+    {
+        _etcdHandle->destroy();
+    }
 }
 
 int RouterServer::setUpEtcd()

@@ -919,7 +919,7 @@ bool DbHandle::hasTransferingLoc(const string &sModuleName, const string &sGroup
                             << " pthread_id: " << pthread_self() << " module:" << sModuleName
                             << " group: " << sGroupName << endl;
 
-    TC_ThreadLock::Lock lock(_lock);
+    TC_ThreadLock::Lock lock(_transLock);
     map<string, map<string, TransferInfo>>::iterator it = _mapTransferInfos.find(sModuleName);
     if (it != _mapTransferInfos.end())
     {
@@ -1517,6 +1517,8 @@ int DbHandle::defragDbRecord(const string &sModuleName,
 
         vOldRecord = oldRecords;
         vNewRecord = newPackTable.recordList;
+
+        TC_ThreadLock::Lock lock(_dbLock);
         return updateVersion(sModuleName);
     }
     catch (TC_Mysql_Exception &ex)

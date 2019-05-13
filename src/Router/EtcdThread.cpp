@@ -135,8 +135,8 @@ void EtcdThread::run()
 
 void EtcdThread::terminate()
 {
-    _stop = true;
     tars::TC_ThreadLock::Lock sync(*this);
+    _stop = true;
     notifyAll();
 }
 

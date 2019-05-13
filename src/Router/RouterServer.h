@@ -216,8 +216,8 @@ protected:
     }
 private:
     AdminRegCreatePolicy _adminCreatePolicy;
-    std::shared_ptr<DbHandle> _dbHandle;             // 数据库操作句柄
-    std::shared_ptr<OuterProxyFactory> _outerProxy;  // 代理工厂
+    std::shared_ptr<DbHandle> _dbHandle;               // 数据库操作句柄
+    std::shared_ptr<OuterProxyFactory> _outerProxy;    // 代理工厂
     std::shared_ptr<DCache::Transfer> _transfer;
     std::shared_ptr<EtcdHandle> _etcdHandle;
     bool _enableEtcd;                                  // 是否开启ETCD
@@ -229,13 +229,12 @@ private:
     mutable tars::TC_ThreadLock _doSwitchThreadsLock;  // 对_doSwitchThreads的锁
     map<string, int> _moduleSwitching;                 // 哪些模块在切换中
     mutable tars::TC_ThreadLock _moduleSwitchingLock;  // 对_moduleSwitching的锁
-    SwitchTimesMap _switchTimes;  // 每个组的切换次数：map<moduleName, map<groupName,
-                                  // map<switchType, times> > >
+    SwitchTimesMap _switchTimes;                       // 每个组的切换次数：map<moduleName, map<groupName, // map<switchType, times> > >
     mutable tars::TC_ThreadLock _switchTimesLock;    // 对_switchTimes的锁
     HeartbeatInfo _heartbeatInfo;                    // 主机心跳上报信息，key为groupName
     mutable tars::TC_ThreadLock _heartbeatInfoLock;  // 对_heartbeatInfo的锁
-    TimerThread _thread;                             // 定时任务线程
-    EtcdThread _etcdThread;                          // ETCD处理线程
+    TimerThread  _timerThread;                       // 定时任务线程
+    EtcdThread   _etcdThread;                        // ETCD处理线程
     SwitchThread _switchThread;                      // 主备切换线程
 };
 

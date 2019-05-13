@@ -314,9 +314,9 @@ SwitchThread::~SwitchThread()
 
 void SwitchThread::terminate()
 {
-    _terminate = true;
     g_app.terminateSwitchThreads();
     TC_ThreadLock::Lock sync(*this);
+    _terminate = true;
     notifyAll();
     TLOGDEBUG(FILE_FUN << "DoSwitchThread  terminate() succ" << endl);
 }

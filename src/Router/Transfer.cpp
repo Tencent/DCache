@@ -15,7 +15,6 @@
 #include "DbHandle.h"
 #include "OuterProxyFactory.h"
 #include "RouterServer.h"
-#include "StatProperty.h"
 
 extern RouterServer g_app;
 
@@ -56,7 +55,7 @@ int Transfer::updateTransferingRecord(const TransferInfo *transInfoNew,
         os << "begin ";
         transInfoNew->displaySimple(os);
     }
-    STAT_PROPERTY(os.str());
+
     int ret = eSucc;
     bool cleanSrc = false, cleanDest = false, cleanSrcHasInc = false, cleanDestHasInc = false;
     do
@@ -189,19 +188,11 @@ int Transfer::updateTransferingRecord(const TransferInfo *transInfoNew,
         }
     } while (1);
 
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc)
-    {
-        CALL_FAILED();
-    }
     return ret;
 }
 
 int Transfer::notifyTransDestServer(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -231,8 +222,6 @@ int Transfer::notifyTransDestServer(const TransferInfo &transferInfo)
         ret = ret;
         break;
     }
-
-    SET_CALLEE(addr);
 
     try
     {
@@ -276,17 +265,12 @@ int Transfer::notifyTransDestServer(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
 
     return ret;
 }
 
 int Transfer::notifyTransSrcServer(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -317,8 +301,6 @@ int Transfer::notifyTransSrcServer(const TransferInfo &transferInfo)
         ret = rc;
         break;
     }
-
-    SET_CALLEE(addr);
 
     try
     {
@@ -362,16 +344,12 @@ int Transfer::notifyTransSrcServer(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::notifyTransSrcServerDo(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -396,8 +374,6 @@ int Transfer::notifyTransSrcServerDo(const TransferInfo &transferInfo)
         ret = rc;
         break;
     }
-
-    SET_CALLEE(addr);
 
     try
     {
@@ -440,8 +416,7 @@ int Transfer::notifyTransSrcServerDo(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -452,9 +427,6 @@ int Transfer::modifyRouterAfterTrans(TransferInfo *transInfoComplete)
         return e_Succ;
     }
 
-    ostringstream os;
-    transInfoComplete->displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -518,16 +490,12 @@ int Transfer::modifyRouterAfterTrans(TransferInfo *transInfoComplete)
     } while (++retry < _retryTranMaxTimes);
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::modifyRouterBefTrans(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -561,16 +529,12 @@ int Transfer::modifyRouterBefTrans(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::notifyTransResult(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -608,17 +572,12 @@ int Transfer::notifyTransResult(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::notifyTransServerClean(const string &moduleName, const string &groupName)
 {
-    ostringstream os;
-    os << "ModuleName:" << moduleName << " GroupName:" << groupName;
-    STAT_PROPERTY(os.str());
-
     int ret = eSucc;
     PROC_BEGIN
 
@@ -644,8 +603,6 @@ int Transfer::notifyTransServerClean(const string &moduleName, const string &gro
         ret = rc;
         break;
     }
-
-    SET_CALLEE(addr);
 
     try
     {
@@ -675,8 +632,7 @@ int Transfer::notifyTransServerClean(const string &moduleName, const string &gro
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -684,7 +640,6 @@ int Transfer::notifyAllServer(const string &moduleName,
                               vector<string> &succServers,
                               vector<string> &failServers)
 {
-    STAT_PROPERTY(moduleName);
     int ret = eSucc;
     PROC_BEGIN
 
@@ -734,8 +689,6 @@ int Transfer::notifyAllServer(const string &moduleName,
                 rc = e_getProxy_Fail;
             else
                 rc = e_SetRouterInfo_Fail;
-
-            SET_CALLEE(addr);
         }
         else
         {
@@ -746,8 +699,7 @@ int Transfer::notifyAllServer(const string &moduleName,
     ret = rc;
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -755,8 +707,6 @@ void Transfer::notifyAllServer(string moduleNames,
                                map<string, vector<string>> &succServers,
                                map<string, vector<string>> &failServers)
 {
-    STAT_PROPERTY(moduleNames);
-
     map<string, ModuleInfo> infos;
     // 获取所有需要通知的模块名
     vector<string> names = SEPSTR(moduleNames, " ");
@@ -802,9 +752,6 @@ void Transfer::notifyAllServer(string moduleNames,
 
 int Transfer::defragRouterInfo(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -839,16 +786,12 @@ int Transfer::defragRouterInfo(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::canTransfer(TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -993,8 +936,7 @@ int Transfer::canTransfer(TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -1041,11 +983,16 @@ bool Transfer::isOwnedbySrcGroup(const TransferInfo &transferInfo, const PackTab
         {
             if (i >= packTable.recordList[j].fromPageNo && i <= packTable.recordList[j].toPageNo &&
                 transferInfo.groupName == packTable.recordList[j].groupName)
+            {    
                 b = true;  // 当前页属于源服务器
+            }
         }
 
         // 如果当前页不属于源服务器，立即返回
-        if (!b) return false;
+        if (!b)
+        {
+            return false;
+        }
     }
 
     return true;
@@ -1053,9 +1000,6 @@ bool Transfer::isOwnedbySrcGroup(const TransferInfo &transferInfo, const PackTab
 
 int Transfer::removeTransfer(const TransferInfo &transferInfo, bool &bModuleComplete)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -1088,8 +1032,7 @@ int Transfer::removeTransfer(const TransferInfo &transferInfo, bool &bModuleComp
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -1220,7 +1163,6 @@ int Transfer::setServerRouterInfo(PackTable &packTable, const string &groupName)
 
 int Transfer::reloadRouter()
 {
-    STAT_PROPERTY("");
     int ret = eSucc;
     PROC_BEGIN
 
@@ -1238,16 +1180,12 @@ int Transfer::reloadRouter()
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::SetTransferEnd(const TransferInfo &transferInfo, const string &info)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -1259,17 +1197,14 @@ int Transfer::SetTransferEnd(const TransferInfo &transferInfo, const string &inf
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
 int Transfer::doTransfer(const TransferInfo &transferInfoIn, string &info)
 {
     TransferInfo transferInfo = transferInfoIn;
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
+
     int ret = e_Unknown;
     int tryTimes = 0;
     bool bCanRemoveTransInfo = true;
@@ -1635,8 +1570,7 @@ int Transfer::doTransfer(const TransferInfo &transferInfoIn, string &info)
     delete transInfoOld;
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -1646,7 +1580,10 @@ string Transfer::RetVal2Info(const vector<int> &retValList)
     for (size_t i = 0; i < retValList.size(); i++)
     {
         os << RT2STR(retValList[i]);
-        if (i != retValList.size() - 1) os << endl;
+        if (i != retValList.size() - 1)
+        {
+            os << endl;
+        }
     }
 
     return os.str();
@@ -1654,9 +1591,6 @@ string Transfer::RetVal2Info(const vector<int> &retValList)
 
 int Transfer::deleteTransSrcServer(const TransferInfo &transferInfo)
 {
-    ostringstream os;
-    transferInfo.displaySimple(os);
-    STAT_PROPERTY(os.str());
     int ret = eSucc;
     PROC_BEGIN
 
@@ -1686,8 +1620,6 @@ int Transfer::deleteTransSrcServer(const TransferInfo &transferInfo)
         ret = rc;
         break;
     }
-
-    SET_CALLEE(addr);
 
     try
     {
@@ -1732,8 +1664,7 @@ int Transfer::deleteTransSrcServer(const TransferInfo &transferInfo)
     }
 
     PROC_END
-    CALL_RETURN(RT2STR(ret));
-    if (ret != eSucc) CALL_FAILED();
+
     return ret;
 }
 
@@ -1842,7 +1773,6 @@ TransferDispatcher::TransferDispatcher(DoTransfer func,
 
 void TransferDispatcher::addTransferTask(std::shared_ptr<TransferInfo> task)
 {
-    // TC_ThreadLock::Lock lock(_taskQueueLock);
     auto it = _taskQueue.find(task->groupName);
     if (it == _taskQueue.end())
     {
@@ -1880,6 +1810,7 @@ void TransferDispatcher::dispatcherTask(int maxThreadNum)
     // 如果有空闲线程和待执行任务，且存在任务，其分配的任务数没有达到指定的最大值
     while (_idleThreadNum > 0 && _tasksNumInQueue > 0 && remaningThreadNum > 0)
     {
+        bool endDispatch = true;
         for (auto it = _taskQueue.begin(); it != _taskQueue.end() && _idleThreadNum > 0;)
         {
             auto t = _transferingTasks.find(it->first);
@@ -1907,14 +1838,22 @@ void TransferDispatcher::dispatcherTask(int maxThreadNum)
                 {
                     ++it;
                 }
+                endDispatch = false;
             }
+            else
+            {
+                ++it;
+            }
+        }
+        if (endDispatch)
+        {
+            break;
         }
     }
 }
 
 void TransferDispatcher::doTransferTask()
 {
-    // TC_ThreadLock::Lock lock(_taskQueueLock);
     if (_taskQueue.empty() || _idleThreadNum <= 0) return;
     // 为每个组分配最小数目的线程
     dispatcherTask(_minThreadEachGroup);
@@ -1926,7 +1865,6 @@ void TransferDispatcher::doTransferTask()
 void TransferDispatcher::clearTasks()
 {
     {
-        // TC_ThreadLock::Lock lock(_taskQueueLock);
         _taskQueue.clear();
     }
     _tasksNumInQueue = 0;
@@ -1935,6 +1873,8 @@ void TransferDispatcher::clearTasks()
 void TransferDispatcher::terminate()
 {
     TLOGDEBUG("waitForAllDone..." << endl);
+    //停止线程
+    _tpool.stop();
     bool b = _tpool.waitForAllDone(3000);  // 先等待三秒
     TLOGDEBUG("waitForAllDone..." << b << ":" << _tpool.getJobNum() << endl);
 
@@ -1944,14 +1884,10 @@ void TransferDispatcher::terminate()
         b = _tpool.waitForAllDone(-1);
         TLOGDEBUG("waitForAllDone again..." << b << ":" << _tpool.getJobNum() << endl);
     }
-
-    //停止线程
-    _tpool.stop();
 }
 
 int TransferDispatcher::getQueueTaskNum(const std::string &groupName) const
 {
-    // TC_ThreadLock::Lock lock(_taskQueueLock);
     TransferQueue::const_iterator it = _taskQueue.find(groupName);
     if (it == _taskQueue.cend())
     {
@@ -1976,4 +1912,5 @@ int TransferDispatcher::getTransferingTaskNum(const std::string &groupName) cons
         return it->second;
     }
 }
+
 }  // namespace DCache
