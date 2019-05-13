@@ -611,6 +611,30 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                 }
             }
 
+            //向主机推送路由
+            string objName = packTable.serverList[curMasterServer].RouteClientServant;
+            RouterClientPrx masterRouterClientPrx =
+                Application::getCommunicator()->stringToProxy<RouterClientPrx>(objName);
+            masterRouterClientPrx->tars_timeout(100);
+            try
+            {
+                if (masterRouterClientPrx->setRouterInfoForSwitch(moduleName, packTable) != 0)
+                {
+                    errMsg =
+                        "[swicth_by_group_fail]The slave machine is in rebuild state, and it "
+                        "is not allowed to switch";
+                    FDLOG("switch") << FILE_FUN << errMsg << endl;
+                    switchResult = 3;
+                    break;
+                }
+            }
+            catch (const exception &ex)
+            {
+                errMsg =
+                    "[routerClientPrx->setRouterInfoForSwitch]  exception: " + string(ex.what());
+                FDLOG("switch") << FILE_FUN << errMsg << endl;
+            }
+
             //向备机推送路由
             string prxName = packTable.serverList[curSlaveServer].RouteClientServant;
             RouterClientPrx slaveRouterClientPrx =
