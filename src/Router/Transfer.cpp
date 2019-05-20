@@ -793,6 +793,9 @@ int Transfer::defragRouterInfo(const TransferInfo &transferInfo)
 int Transfer::canTransfer(TransferInfo &transferInfo)
 {
     int ret = eSucc;
+
+    bool hasAddedToMem = false;
+
     PROC_BEGIN
 
     PackTable packTable;
@@ -869,7 +872,7 @@ int Transfer::canTransfer(TransferInfo &transferInfo)
         }
     }
 
-    // 目的务器服务名是否存在
+    // 目的服务器服务名是否存在
     if (itTransGroup->second.masterServer.empty())
     {
         ret = e_Transfer_TransServerName_Not_Found;
@@ -908,6 +911,8 @@ int Transfer::canTransfer(TransferInfo &transferInfo)
         break;
     }
 
+    hasAddedToMem = true;
+
     // 所有页是否可以迁移
     iRet = canTransfer(transferInfo, packTable);
     if (iRet != e_Succ)
@@ -936,6 +941,12 @@ int Transfer::canTransfer(TransferInfo &transferInfo)
     }
 
     PROC_END
+
+    if (ret != e_Succ && hasAddedToMem)
+    {
+        bool b;
+        removeTransfer(transferInfo, b);
+    }
 
     return ret;
 }
@@ -1220,8 +1231,6 @@ int Transfer::doTransfer(const TransferInfo &transferInfoIn, string &info)
     if (ret != e_Succ)
     {
         retValList.push_back(ret);
-        bool bComplete;
-        removeTransfer(transferInfo, bComplete);
         info = RetVal2Info(retValList);
         transferInfo.toPageNo = -1;
         SetTransferEnd(transferInfo, info);  // 不能迁移，修改迁移记录状态

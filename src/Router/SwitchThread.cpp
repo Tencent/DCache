@@ -1233,11 +1233,9 @@ void DoSwitchThread::doSwitchMirror(const SwitchWork &switchWork)
 {
     // 镜像没有备机，不存在镜像备机切换
     assert(switchWork.type == 2);
-    assert(switchWork.slaveServer.empty());
 
     string moduleName = switchWork.moduleName;
     string groupName = switchWork.groupName;
-    string slaveName = switchWork.slaveServer;
     string mirrorName = switchWork.mirrorServer;
     string mirrorIdc = switchWork.mirrorIdc;
     string mirrorMaster = switchWork.mirrorServer;
