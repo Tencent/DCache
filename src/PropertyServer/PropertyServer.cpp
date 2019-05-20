@@ -48,8 +48,8 @@ void PropertyServer::initialize()
                 if (it == _propertyNameMap.end())
                     break;
             }
-
-            ++it;
+            else
+                ++it;
         }
 
         CacheInfoManager::getInstance()->init(_conf);
