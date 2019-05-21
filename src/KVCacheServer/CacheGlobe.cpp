@@ -18,13 +18,13 @@ namespace DCache
 
 int PPReport::init()
 {
-    _srp_ex = Application::getCommunicator()->getStatReport()->createPropertyReport("Exception", PropertyReport::sum());
+    _srp_ex = Application::getCommunicator()->getStatReport()->createPropertyReport("ProgramException", PropertyReport::sum());
     if (_srp_ex == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_ex is NULL." << endl);
         return -1;
     }
-    _srp_binlogerr = Application::getCommunicator()->getStatReport()->createPropertyReport("BinLogErr", PropertyReport::sum());
+    _srp_binlogerr = Application::getCommunicator()->getStatReport()->createPropertyReport("M/S_ReplicationErr", PropertyReport::sum());
     if (_srp_binlogerr == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_binlogerr is NULL." << endl);
@@ -48,49 +48,49 @@ int PPReport::init()
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_cache_err is NULL." << endl);
         return -1;
     }
-    _srp_bakcenter_err = Application::getCommunicator()->getStatReport()->createPropertyReport("BakCenterError", PropertyReport::sum());
+    _srp_bakcenter_err = Application::getCommunicator()->getStatReport()->createPropertyReport("BackupError", PropertyReport::sum());
     if (_srp_bakcenter_err == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_bakcenter_err is NULL." << endl);
         return -1;
     }
 
-    _srp_erasecount = Application::getCommunicator()->getStatReport()->createPropertyReport("eraseCount", PropertyReport::sum());
+    _srp_erasecount = Application::getCommunicator()->getStatReport()->createPropertyReport("evictedRecordCount", PropertyReport::sum());
     if (_srp_erasecount == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_erasecount is NULL." << endl);
         return -1;
     }
 
-    _srp_erasecount_unexpire = Application::getCommunicator()->getStatReport()->createPropertyReport("eraseCountUnexpire", PropertyReport::sum());
+    _srp_erasecount_unexpire = Application::getCommunicator()->getStatReport()->createPropertyReport("evictedCountOfUnexpiredRecord", PropertyReport::sum());
     if (_srp_erasecount_unexpire == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_erasecount_unexpire is NULL." << endl);
         return -1;
     }
 
-    _srp_getCount = Application::getCommunicator()->getStatReport()->createPropertyReport("getCount", PropertyReport::sum());
+    _srp_getCount = Application::getCommunicator()->getStatReport()->createPropertyReport("ReadRecordCount", PropertyReport::sum());
     if (_srp_getCount == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_getCount is NULL." << endl);
         return -1;
     }
 
-    _srp_setCount = Application::getCommunicator()->getStatReport()->createPropertyReport("setCount", PropertyReport::sum());
+    _srp_setCount = Application::getCommunicator()->getStatReport()->createPropertyReport("WriteRecordCount", PropertyReport::sum());
     if (_srp_setCount == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_setCount is NULL." << endl);
         return -1;
     }
 
-    _srp_coldDataRatio = Application::getCommunicator()->getStatReport()->createPropertyReport("ColdDataRatio", PropertyReport::max());
+    _srp_coldDataRatio = Application::getCommunicator()->getStatReport()->createPropertyReport("ProportionOfColdData", PropertyReport::max());
     if (_srp_coldDataRatio == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_coldDataRatio is NULL." << endl);
         return -1;
     }
 
-    _srp_expirecount = Application::getCommunicator()->getStatReport()->createPropertyReport("expireCount", PropertyReport::sum());
+    _srp_expirecount = Application::getCommunicator()->getStatReport()->createPropertyReport("expiredRecordCount", PropertyReport::sum());
     if (_srp_expirecount == 0)
     {
         TLOGERROR("PPReport::" << __FUNCTION__ << "|_srp_expirecount is NULL." << endl);

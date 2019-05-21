@@ -79,7 +79,7 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
         }
         else
         {
-            //e.g. DataMemUsedRatio
+            //e.g. DataMemUsage
             sPropertyName = head.propertyName;
         }
         

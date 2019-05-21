@@ -413,29 +413,35 @@
         reservedPro20 = value20
 
         # value21 for dcache property
-        BakCenterError = value21
-        BinLogErr = value22
-        BinLogSyn = value23
-        CacheError = value24
-        Chunks/OnceElement = value25
-        DataMemUsedRatio = value26
-        DbError = value27
-        DbException = value28
-        DirtyNum = value29
-        DirtyRatio = value30
-        ElementCount = value31
-        Exception = value32
-        HitCount = value33
-        MemSize = value34
-        getBatchCount = value35
-        setBatchCount = value36
-        MKMemUsedRatio = value37
-        eraseCount = value38
-        eraseCountUnexpire = value39
-        ColdDataRatio = value40
-        expireCount = value41
-        OnlyKeyCount = value42
-        BigChunk = value43
+        CacheMemSize_MB = value21
+        DataMemUsage = value22
+        CacheHitRatio = value23
+
+        TotalCountOfRecords = value24
+        ProportionOfDirtyRecords = value25
+        CountOfDirtyRecords = value26
+        CountOfOnlyKey = value27
+
+        M/S_ReplicationErr = value28
+        M/S_ReplicationLatency = value29
+        CacheError = value30
+        ProgramException = value31
+
+        ReadRecordCount = value32
+        WriteRecordCount = value33
+        evictedRecordCount = value34
+        evictedCountOfUnexpiredRecord = value35
+        expiredRecordCount = value36
+
+        ChunkUsedPerRecord = value37
+        MaxMemUsageOfJmem = value38
+        ProportionOfColdData = value39
+
+        DbError = value40
+        DbException = value41
+        BackupError = value42
+
+        MKV_MainkeyMemUsage = value43
     </NameMap>
 </Main>
 
