@@ -368,9 +368,10 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
         createTable(sTbName);
 
         osSqlPre << "insert ignore into " + sTbName + " (f_date,f_tflag,app_name,module_name,group_name,idc_area,server_status,master_name,master_ip,set_name,set_area,set_id";
-        for(size_t i = 1; i <= g_app.getPropertyNameMap().size(); ++i)
+        const map<string, string> & nameMap = g_app.getPropertyNameMap();
+        for(auto && item : nameMap)
         {
-            osSqlPre << ",value" + TC_Common::tostr(i);
+            osSqlPre << "," << item.second;
         }
         osSqlPre << ") values ";
 
@@ -647,11 +648,10 @@ string PropertyDbManager::createDBValue(const PropKey &key, const PropValue &val
         TLOGERROR("PropertyDbManager::createDBValue no module info for server:" << key.moduleName << endl);
     }
 
-    size_t iPropertyNum = g_app.getPropertyNameMap().size(); 
-    for (size_t i = 1; i <= iPropertyNum; ++i)
+    const map<string, string> &nameMap = g_app.getPropertyNameMap();
+    for (auto && item : nameMap)
     {
-        string sPropertyName = "property" + TC_Common::tostr<size_t>(i);
-        map<std::string, DCache::StatPropInfo>::const_iterator it = value.statInfo.find(sPropertyName);
+        map<std::string, DCache::StatPropInfo>::const_iterator it = value.statInfo.find(item.second);
         if (it == value.statInfo.end())
         {
             os << ",NULL";
