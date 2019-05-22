@@ -45,7 +45,7 @@ void TimerThread::init(const string &sConf)
     _srp_onlykeyCount = Application::getCommunicator()->getStatReport()->createPropertyReport("CountOfOnlyKey", PropertyReport::avg());
     _srp_maxJmemUsage = Application::getCommunicator()->getStatReport()->createPropertyReport("MaxMemUsageOfJmem", PropertyReport::avg());
     if (_srp_dirtyCnt == 0 || _srp_hitcount == 0 || _srp_memSize == 0 || _srp_memInUse == 0 || _srp_dirtyRatio == 0 ||
-            _srp_chunksOnceEle == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_maxJmemUsage == 0)
+        _srp_chunksOnceEle == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_maxJmemUsage == 0)
     {
         TLOGERROR("TimerThread::init createPropertyReport error" << endl);
         assert(false);
@@ -155,12 +155,12 @@ void* TimerThread::Run(void* arg)
             if (g_sHashMap.size() == 0)
             {
                 pthis->_srp_dirtyRatio->report(0);
-                pthis->_srp_chunksOnceEle->report(100);
+                pthis->_srp_chunksOnceEle->report(0);
             }
             else
             {
                 pthis->_srp_dirtyRatio->report((int)((float)g_sHashMap.dirtyCount() / g_sHashMap.size() * 100));
-                pthis->_srp_chunksOnceEle->report((int)((float)g_sHashMap.usedChunkCount() / g_sHashMap.size() * 100));
+                pthis->_srp_chunksOnceEle->report((int)((float)g_sHashMap.usedChunkCount() / g_sHashMap.size()));
             }
             pthis->_srp_dirtyCnt->report(g_sHashMap.dirtyCount());
             pthis->_srp_elementCount->report(g_sHashMap.size() - g_sHashMap.onlyKeyCount());
