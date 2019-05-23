@@ -24,8 +24,10 @@ void DCacheOptServer::initialize()
     addServant<DCacheOptImp>(ServerConfig::Application + "." + ServerConfig::ServerName + ".DCacheOptObj");
     addConfig("DCacheOptServer.conf");
 
+    string sConf = ServerConfig::BasePath + "DCacheOptServer.conf";
+
     TC_Config conf;
-    conf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
+    conf.parseFile(sConf);
 
     map<string, string> tarsDBInfo = conf.getDomainMap("/Main/DB/tars");
     TC_DBConf tarsDbConf;
@@ -48,6 +50,20 @@ void DCacheOptServer::initialize()
     _uninstallRequestQueueManager.setTarsDbConf(tarsDbConf);
     _uninstallRequestQueueManager.setRelationDbMysql(relationDbConf);
     _uninstallRequestQueueManager.setCacheBackupPath(conf.get("/Main/Uninstall<BakPath>", "/usr/local/app"));
+
+
+    // 初始化 transfer 线程
+    _transferThread.init(sConf);
+    _transferThread.createThread();
+
+    // 初始化 expand 线程
+    _expandThread.init(sConf);
+    _expandThread.createThread();
+
+    // 初始化 undeploy 线程
+    _undeployThread.init(sConf);
+    _undeployThread.start();
+
 }
 
 ReleaseRequestQueueManager* DCacheOptServer::releaseRequestQueueManager()
@@ -68,6 +84,16 @@ UninstallRequestQueueManager* DCacheOptServer::uninstallRequestQueueManager()
 void DCacheOptServer::destroyApp()
 {
     TLOGDEBUG("DCacheOptServer::destroyApp ok" << endl);
+
+    _releaseRequestQueueManager.terminate();
+
+    _uninstallRequestQueueManager.terminate();
+
+    _transferThread.terminate();
+
+    _expandThread.terminate();
+
+    _undeployThread.terminate();
 }
 
 /////////////////////////////////////////////////////////////////

@@ -20,8 +20,6 @@
 #include "util/tc_common.h"
 #include "util/tc_md5.h"
 
-#include "Proxy.h"
-#include "Router.h"
 #include "DCacheOptImp.h"
 #include "DCacheOptServer.h"
 #include "Assistance.h"
@@ -31,30 +29,9 @@
 using namespace std;
 
 #define MAX_ROUTER_PAGE_NUM 429496
+#define TOTAL_ROUTER_PAGE_NUM 429497
 
 extern DCacheOptServer g_app;
-
-inline static int formatCurrentTime(string & formatTime)
-{
-    // 将当前时间格式化为 YYYY-MM-DD HH:MM:SS
-    char buffer[64];
-    ::bzero(buffer , sizeof(buffer));
-    time_t t = ::time(NULL);
-    struct tm result;
-    void * ret = ::localtime_r(&t, &result);
-    if (NULL == ret)
-    {
-        TLOGERROR(FUN_LOG << "Get localtime_r error" << endl);
-        return -1;
-    }
-    else
-    {
-        int real_size = ::snprintf(buffer, sizeof(buffer), "%04d-%02d-%02d %02d:%02d:%02d", result.tm_year + 1900, result.tm_mon + 1, result.tm_mday, result.tm_hour, result.tm_min, result.tm_sec);
-        formatTime.assign(buffer, real_size);
-    }
-
-    return 0;
-}
 
 void DCacheOptImp::initialize()
 {
@@ -78,17 +55,16 @@ void DCacheOptImp::initialize()
     routerConfDb.loadFromMap(routerConnInfo);
     _mysqlRouterConfDb.init(routerConfDb);*/
 
-    map<string, string> transferExpandDb = _tcConf.getDomainMap("/Main/DB/transferAndExpand");
+    /*map<string, string> transferExpandDb = _tcConf.getDomainMap("/Main/DB/TransferExpand");
     TC_DBConf transferExpandDbConf;
     transferExpandDbConf.loadFromMap(transferExpandDb);
-    _mysqlTransferExpandDb.init(transferExpandDbConf);
+    _mysqlTransferExpandDb.init(transferExpandDbConf);*/
 
     _communicator = Application::getCommunicator();
 
     _adminproxy = _communicator->stringToProxy<AdminRegPrx>(_tcConf.get("/Main/<AdminRegObj>", "tars.tarsAdminRegistry.AdminRegObj"));
 
-    _routerDbUser = _tcConf.get("/Main/CreateRouterDb<dbuser>", "dcache");
-    _routerDbPwd  = _tcConf.get("/Main/CreateRouterDb<dbpass>", "dcache");
+    _propertyPrx = _communicator->stringToProxy<PropertyPrx>(_tcConf.get("/Main/<PropertyObj>", "DCache.PropertyServer.PropertyObj"));
 
     TLOGDEBUG(FUN_LOG << "initialize succ" << endl);
 }
@@ -165,15 +141,7 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
         //把三者关系生成放到最后面 保证配额查询接口的准确性
         try
         {
-            RouterDbInfo tmpRouterDbInfo;
-            tmpRouterDbInfo.sDbName     = stRouter.dbName;
-            tmpRouterDbInfo.sDbIp       = stRouter.dbIp;
-            tmpRouterDbInfo.sPort       = stRouter.dbPort;
-            tmpRouterDbInfo.sUserName   = stRouter.dbUser;
-            tmpRouterDbInfo.sPwd        = stRouter.dbPwd;
-            tmpRouterDbInfo.sCharSet    = "utf8";
-
-            insertProxyRouter(stProxy.serverName.substr(7), stRouter.serverName + ".RouterObj", tmpRouterDbInfo.sDbName, tmpRouterDbInfo.sDbIp, "", installReq.replace, err);
+            insertProxyRouter(stProxy.serverName.substr(7), stRouter.serverName + ".RouterObj", stRouter.dbName, stRouter.dbIp, "", installReq.replace, err);
         }
         catch (exception &ex)
         {
@@ -215,20 +183,18 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         err = "success";
 
         //安装前先检查路由数据库与内存是否一致
-        RouterDbInfo routerDbInfo;
-        string info;
+        TC_DBConf routerDbInfo;
         vector<string> vsProxyName;
         string strRouterName;
 
-        int iRet = getRouterDBFromAppTable(kvCacheReq.appName, routerDbInfo, vsProxyName, strRouterName, info);
+        int iRet = getRouterDBFromAppTable(kvCacheReq.appName, routerDbInfo, vsProxyName, strRouterName, err);
         if (-1 == iRet)
         {
-            err = info;
             return -1;
         }
 
         rcRes.iFlag = iRet;
-        rcRes.sInfo = info;
+        rcRes.sInfo = err;
 
         //生成cache router关系,防止多次调用时无关系可查
         if (vtCacheHost.size() == 0 || vtCacheHost[0].serverName.empty())
@@ -244,7 +210,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
             return -1;
         }
 
-        if (insertCache2RouterDb(kvCacheReq.moduleName, "", routerDbInfo.sDbIp, routerDbInfo.sDbName, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, kvCacheReq.replace, err) != 0)
+        if (insertCache2RouterDb(kvCacheReq.moduleName, "", routerDbInfo, vtCacheHost, kvCacheReq.replace, err) != 0)
         {
             if (err.empty())
             {
@@ -255,7 +221,8 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         }
 
         // 通知router加载新模块的信息
-        reloadRouterConfByModuleFromDB("DCache", kvCacheReq.moduleName, strRouterName, err, current);
+        //reloadRouterConfByModuleFromDB("DCache", kvCacheReq.moduleName, strRouterName, err, current);
+        (void)reloadRouterByModule("DCache", kvCacheReq.moduleName, strRouterName, err);
 
         if (!checkRouterLoadModule("DCache", kvCacheReq.moduleName, strRouterName, err))
         {
@@ -265,7 +232,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         }
 
         // 保存cache信息到tars db中
-        iRet = insertCache2TarsDb(routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, DCache::KVCACHE, sTarsVersion, kvCacheReq.replace, err);
+        iRet = insertCache2TarsDb(routerDbInfo, vtCacheHost, DCache::KVCACHE, sTarsVersion, kvCacheReq.replace, err);
         if (iRet != 0)
         {
             err = "failed to insert catch info to tars db, errmsg:" + err;
@@ -276,8 +243,6 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         //把三者关系生成放到最后面 保证配额查询接口的准确性
         try
         {
-            RouterDbInfo tmpRouterDbInfo;
-            tmpRouterDbInfo = routerDbInfo;
             for (size_t i = 0; i < vtCacheHost.size(); ++i)
             {
                 for (size_t j = 0; j < vsProxyName.size(); j++)
@@ -287,7 +252,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
                 }
 
                 // 保存cache serve和router server的对应关系
-                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize)*1024), strRouterName + ".RouterObj", tmpRouterDbInfo, kvCacheReq.moduleName, kvCacheReq.replace, err);
+                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize)*1024), strRouterName + ".RouterObj", routerDbInfo, kvCacheReq.moduleName, kvCacheReq.replace, err);
             }
         }
         catch(exception &ex)
@@ -328,19 +293,17 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         err = "success";
 
         //安装前先检查路由数据库与内存是否一致
-        RouterDbInfo routerDbInfo;
-        string info;
+        TC_DBConf routerDbInfo;
         vector<string> vtProxyName;
         string strRouterName;
-        int iRet = getRouterDBFromAppTable(mkvCacheReq.appName, routerDbInfo, vtProxyName, strRouterName, info);
+        int iRet = getRouterDBFromAppTable(mkvCacheReq.appName, routerDbInfo, vtProxyName, strRouterName, err);
         if (-1 == iRet)
         {
-            err = info;
             return -1;
         }
 
         rcRes.iFlag = iRet;
-        rcRes.sInfo = info;
+        rcRes.sInfo = err;
 
         //生成cache router关系,防止多次调用时无关系可查
         if (vtCacheHost.size() == 0 || vtCacheHost[0].serverName.empty())
@@ -357,7 +320,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
             return -1;
         }
 
-        if (insertCache2RouterDb(mkvCacheReq.moduleName, "", routerDbInfo.sDbIp, routerDbInfo.sDbName, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, mkvCacheReq.replace, err) != 0)
+        if (insertCache2RouterDb(mkvCacheReq.moduleName, "", routerDbInfo, vtCacheHost, mkvCacheReq.replace, err) != 0)
         {
             if (err.empty())
             {
@@ -368,7 +331,8 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         }
 
         // 通知router加载新模块的信息
-        reloadRouterConfByModuleFromDB("DCache", mkvCacheReq.moduleName, strRouterName, err, current);
+        //reloadRouterConfByModuleFromDB("DCache", mkvCacheReq.moduleName, strRouterName, err, current);
+        (void)reloadRouterByModule("DCache", mkvCacheReq.moduleName, strRouterName, err);
 
         if (!checkRouterLoadModule("DCache", mkvCacheReq.moduleName, strRouterName, err))
         {
@@ -378,7 +342,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         }
 
         // 保存cache信息到tarsDB中
-        iRet = insertCache2TarsDb(routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, MKVCACHE, sTarsVersion, mkvCacheReq.replace, err);
+        iRet = insertCache2TarsDb(routerDbInfo, vtCacheHost, MKVCACHE, sTarsVersion, mkvCacheReq.replace, err);
         if (iRet != 0)
         {
             err = "failed to insert catch info to tars db, errmsg:" + err;
@@ -389,8 +353,6 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         //把三者关系生成放到最后面 保证配额查询接口的准确性
         try
         {
-            RouterDbInfo tmpRouterDbInfo;
-            tmpRouterDbInfo = routerDbInfo;
             for (size_t i = 0; i < vtCacheHost.size(); ++i)
             {
                 for (unsigned int j = 0; j < vtProxyName.size(); j++)
@@ -400,7 +362,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
                 }
 
                 // 保存cache serve和router server的对应关系
-                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize) * 1024), strRouterName + ".RouterObj", tmpRouterDbInfo, mkvCacheReq.moduleName, mkvCacheReq.replace, err);
+                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize) * 1024), strRouterName + ".RouterObj", routerDbInfo, mkvCacheReq.moduleName, mkvCacheReq.replace, err);
             }
         }
         catch(exception &ex)
@@ -427,26 +389,34 @@ tars::Int32 DCacheOptImp::releaseServer(const vector<DCache::ReleaseInfo> & rele
 {
     try
     {
+        if (releaseInfo.empty())
+        {
+            releaseRsp.errMsg = "released server info is null, please cheak";
+            TLOGERROR(FUN_LOG << releaseRsp.errMsg << endl);
+            return -1;
+        }
+
         ReleaseRequest* request = new ReleaseRequest();
         request->requestId      = g_app.getReleaseID();
-        request->info           = releaseInfo;
+        request->releaseInfo    = releaseInfo;
         releaseRsp.releaseId    = request->requestId;
         g_app.releaseRequestQueueManager()->push_back(request);
 
         releaseRsp.errMsg = "sucess to release server";
 
-        TLOGDEBUG(FUN_LOG << "sucess to releaseServer" << "|release id:" << request->requestId << endl);
+        TLOGDEBUG(FUN_LOG << "sucess to release server|server info size:" << releaseInfo.size() << "|release id:" << request->requestId << endl);
 
         return 0;
     }
     catch (exception &e)
     {
-        releaseRsp.errMsg = string("release server catch exception:") + e.what();
+        releaseRsp.errMsg = string("release dcache server catch exception:") + e.what();
     }
     catch (...)
     {
-        releaseRsp.errMsg = "release server unkown exception";
+        releaseRsp.errMsg = "release dcahce server unkown exception";
     }
+
     TLOGERROR(FUN_LOG << releaseRsp.errMsg << endl);
 
     return -1;
@@ -459,43 +429,46 @@ tars::Int32 DCacheOptImp::getReleaseProgress(const ReleaseProgressReq & progress
         vector<DCache::ReleaseInfo> &vtReleaseInfo = progressRsp.releaseInfo;
 
         ReleaseStatus releaseStatus = g_app.releaseRequestQueueManager()->getProgressRecord(progressReq.releaseId, vtReleaseInfo);
-        TLOGDEBUG(FUN_LOG << "release id:" << progressReq.releaseId << "|release status:" << releaseStatus.status << "|release percent:" << releaseStatus.percent << endl);
+        TLOGDEBUG(FUN_LOG << "release id:" << progressReq.releaseId << "|release status:" << releaseStatus.status << "|release percent:" << releaseStatus.percent << "%" << endl);
 
-        if (releaseStatus.status != REERROR)
+        if (releaseStatus.status != RELEASE_FAILED)
         {
-            progressRsp.releaseId = progressReq.releaseId;
-            progressRsp.percent = releaseStatus.percent;
-            if (releaseStatus.status == REFINISH && "100" == progressRsp.percent)
+            progressRsp.releaseId   = progressReq.releaseId;
+            progressRsp.percent     = releaseStatus.percent;
+            if (releaseStatus.status == RELEASE_FINISH && 100 == progressRsp.percent)
             {
-                TLOGDEBUG(FUN_LOG << "release finish, delete release progress record id:" << progressReq.releaseId << endl);
                 g_app.releaseRequestQueueManager()->deleteProgressRecord(progressReq.releaseId);
+
+                TLOGDEBUG(FUN_LOG << "release finish|delete release progress record id:" << progressReq.releaseId << endl);
             }
 
             return 0;
         }
         else
         {
-            progressRsp.releaseId = progressReq.releaseId;
-            progressRsp.errMsg = releaseStatus.error;
-            TLOGERROR(FUN_LOG << "release error:" << progressRsp.errMsg << "|release id:" << progressReq.releaseId << endl);
+            progressRsp.releaseId   = progressReq.releaseId;
+            progressRsp.errMsg      = releaseStatus.errmsg;
+
             g_app.releaseRequestQueueManager()->deleteProgressRecord(progressReq.releaseId);
+
+            TLOGERROR(FUN_LOG << "release failed|errmsg:" << progressRsp.errMsg << "|release id:" << progressReq.releaseId << endl);
         }
     }
-    catch(exception &ex)
+    catch (exception &ex)
     {
-        progressRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+        progressRsp.errMsg = string("get the percent of releasing dcache server catch exception:") + ex.what();
     }
     catch (...)
     {
-        progressRsp.errMsg = TC_Common::tostr(__FUNCTION__) + " catch unknown exception";
-        TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+        progressRsp.errMsg = "get the percent of releasing dcache server catch unknown exception";
     }
+
+    TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
 
     return -1;
 }
 
-tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallInfo & uninstallInfo, UninstallRsp & uninstallRsp, tars::TarsCurrentPtr current)
+tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallReq & uninstallInfo, UninstallRsp & uninstallRsp, tars::TarsCurrentPtr current)
 {
     try
     {
@@ -504,12 +477,6 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallInfo & uninstallInfo, 
 
         if (DCache::MODULE == uninstallInfo.unType)
         {
-            TC_Mysql mysqlRouterDb(uninstallInfo.routerDb.ip, uninstallInfo.routerDb.user, uninstallInfo.routerDb.pwd, uninstallInfo.routerDb.dbName, uninstallInfo.routerDb.charset, TC_Common::strto<int>(uninstallInfo.routerDb.port));
-            //按模块
-            string sWhere = "where module_name='" + uninstallInfo.moduleName + "'";
-            mysqlRouterDb.deleteRecord("t_router_module", sWhere);
-            mysqlRouterDb.deleteRecord("t_router_record", sWhere);
-
             request.requestId =  uninstallInfo.moduleName;
             TLOGDEBUG(FUN_LOG << "uninstall by module|module name:" << uninstallInfo.moduleName << endl);
         }
@@ -523,13 +490,13 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallInfo & uninstallInfo, 
         {
             //按服务
             request.requestId = uninstallInfo.serverName;
-            TLOGDEBUG(FUN_LOG << "uninstall in cache|cache server name:" << uninstallInfo.serverName << endl);
+            TLOGDEBUG(FUN_LOG << "uninstall by cache server|cache server name:" << uninstallInfo.serverName << endl);
         }
         else if (DCache::QUOTA_SERVER == uninstallInfo.unType)
         {
             //按服务
             request.requestId = uninstallInfo.serverName;
-            TLOGDEBUG(FUN_LOG << "uninstall by cache server|cache server name:" << uninstallInfo.serverName << endl);
+            TLOGDEBUG(FUN_LOG << "uninstall by quota cache server|cache server name:" << uninstallInfo.serverName << endl);
         }
         else
         {
@@ -546,11 +513,11 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallInfo & uninstallInfo, 
     }
     catch (exception &e)
     {
-        uninstallRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + e.what();
+        uninstallRsp.errMsg = string("uninstall dcache server catch exception:") + e.what();
     }
     catch (...)
     {
-        uninstallRsp.errMsg = TC_Common::tostr(__FUNCTION__) + " catch unkown exception";
+        uninstallRsp.errMsg = "uninstall dcache server catch unkown exception";
     }
 
     TLOGERROR(FUN_LOG << uninstallRsp.errMsg << endl);
@@ -558,70 +525,7 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallInfo & uninstallInfo, 
     return -1;
 }
 
-/*tars::Int32 DCacheOptImp::uninstall4DCache(const DCacheUninstallInfo & uninstallInfo, std::string &sError, tars::TarsCurrentPtr current)
-{
-    try
-    {
-        UninstallRequest request;
-        request.info = uninstallInfo;
-
-        if (2 == uninstallInfo.unType)
-        {
-            TC_Mysql routeDb(uninstallInfo.sRouteDbIP, uninstallInfo.sRouteDbUserName, uninstallInfo.sRouterDbPwd, uninstallInfo.sRouteDbName, uninstallInfo.sRouteDbCharset, TC_Common::strto<int>(uninstallInfo.sRouterDbPort));
-            //按模块
-            string sWhere = "where module_name='" + uninstallInfo.sModuleName + "'";
-            routeDb.deleteRecord("t_router_module", sWhere);
-            routeDb.deleteRecord("t_router_record", sWhere);
-
-            request.requestId =  uninstallInfo.sModuleName;
-            TLOGDEBUG(FUN_LOG << "uninstall in module|module name:" << uninstallInfo.sModuleName << endl);
-        }
-        else if (1 ==  uninstallInfo.unType)
-        {
-            //按组
-            request.requestId = uninstallInfo.sCacheGroupName;
-            TLOGDEBUG(FUN_LOG << "uninstall in group|group name:" << uninstallInfo.sCacheGroupName << endl);
-        }
-        else if (0 == uninstallInfo.unType)
-        {
-            //按服务
-            request.requestId = uninstallInfo.sCacheServerName;
-            TLOGDEBUG(FUN_LOG << "uninstall in cache|cache server name:" << uninstallInfo.sCacheServerName << endl);
-        }
-        else if (3 == uninstallInfo.unType)
-        {
-            //按服务
-            request.requestId = uninstallInfo.sCacheServerName;
-            TLOGDEBUG(FUN_LOG << "uninstall in cache|cache server name:" << uninstallInfo.sCacheServerName << endl);
-        }
-        else
-        {
-            throw DCacheOptException("uninstall type invalid: "+ TC_Common::tostr(uninstallInfo.unType) +", should be 0(server), 1(group), 2(module)");
-            TLOGERROR(FUN_LOG << "uninstall type invalid:" << uninstallInfo.unType << ", should be 0(server), 1(group), 2(module)" << endl);
-        }
-
-        g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
-        g_app.uninstallRequestQueueManager()->push_back(request);
-
-        TLOGDEBUG(FUN_LOG << "sucess to uninstall cache|request id:" << request.requestId << "|uninstall type:" << uninstallInfo.unType << endl);
-
-        return 0;
-    }
-    catch(exception &e)
-    {
-        sError = TC_Common::tostr(__FUNCTION__) + string("catch exception:") + e.what();
-    }
-    catch (...)
-    {
-        sError = TC_Common::tostr(__FUNCTION__) + "catch unkown exception";
-    }
-
-    TLOGERROR(FUN_LOG << sError << endl);
-
-    return -1;
-}*/
-
-tars::Int32 DCacheOptImp::getUninstallPercent(const DCache::UninstallInfo & uninstallInfo, UninstallProgressRsp & progressRsp, tars::TarsCurrentPtr current)
+tars::Int32 DCacheOptImp::getUninstallPercent(const UninstallReq & uninstallInfo, UninstallProgressRsp & progressRsp, tars::TarsCurrentPtr current)
 {
     string sRequestId("");
     progressRsp.errMsg = "";
@@ -642,12 +546,12 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const DCache::UninstallInfo & unin
         }
 
         UninstallStatus currentStatus = g_app.uninstallRequestQueueManager()->getUninstallRecord(sRequestId);
-        TLOGDEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent" << currentStatus.sPercent << "|request id:" << sRequestId << endl);
+        TLOGDEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent" << currentStatus.percent << "|request id:" << sRequestId << endl);
 
-        if (currentStatus.status != UNERROR)
+        if (currentStatus.status != UNINSTALL_FAILED)
         {
-            progressRsp.percent = currentStatus.sPercent;
-            if (currentStatus.status == FINISH && "100%" == progressRsp.percent)
+            progressRsp.percent = currentStatus.percent;
+            if (currentStatus.status == UNINSTALL_FINISH && 100 == progressRsp.percent)
             {
                 g_app.uninstallRequestQueueManager()->deleteUninstallRecord(sRequestId);
             }
@@ -656,305 +560,1381 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const DCache::UninstallInfo & unin
         }
         else
         {
-            progressRsp.errMsg = currentStatus.sError;
-            TLOGDEBUG(FUN_LOG << "uninstall error:" << progressRsp.errMsg << "|request id:" << sRequestId << endl);
+            progressRsp.percent = 0;
+            progressRsp.errMsg  = currentStatus.errmsg;
             g_app.uninstallRequestQueueManager()->deleteUninstallRecord(sRequestId);
+
+            TLOGDEBUG(FUN_LOG << "uninstall failed|errmsg:" << progressRsp.errMsg << "|request id:" << sRequestId << endl);
         }
     }
     catch(exception &ex)
     {
-        progressRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+        progressRsp.errMsg = string("get the percent of uninstalling dcache server catch exception:") + ex.what();
     }
     catch (...)
     {
-        progressRsp.errMsg = TC_Common::tostr(__FUNCTION__) + " catch unknown exception";
-        TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+        progressRsp.errMsg = "get the percent of uninstalling dcache server catch unknown exception";
+    }
+
+    TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << endl);
+
+    string &errmsg = rsp.errMsg;
+    try
+    {
+        int iRet = insertTransferStatusRecord(req.appName, req.moduleName, req.srcGroupName, req.cacheHost[0].groupName, false, errmsg);
+        if (iRet != 0)
+        {
+            return iRet;
+        }
+
+        iRet = expandDCacheServer(req.appName, req.moduleName, req.cacheHost, req.version, req.cacheType, true, errmsg);
+        if (iRet == 0)
+        {
+            //根据appName查询 router obj
+            string routerObj("");
+            iRet = getRouterObj(req.appName, routerObj, errmsg);
+            if (iRet != 0)
+            {
+                errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+                return -1;
+            }
+
+            vector<string> tmp = TC_Common::sepstr<string>(routerObj, ".");
+            iRet = reloadRouterByModule("DCache", req.moduleName, tmp[0] + "." + tmp[1], errmsg);
+            if (iRet == 0)
+            {
+                map<string, pair<TC_Mysql::FT, string> > m_update;
+                m_update["status"]  = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 配置阶段完成
+
+                string condition = "where module_name='"    + req.moduleName
+                                 + "' and src_group='"      + req.srcGroupName
+                                 + "' and app_name='"       + req.appName
+                                 + "' and dst_group='"      + req.cacheHost[0].groupName + "'";
+
+                _mysqlRelationDB.updateRecord("t_transfer_status", m_update, condition);
+
+                TLOGDEBUG(FUN_LOG << "configure transfer record succ and expand cache server succ, module name:" << req.moduleName
+                                  << "|src group name:" << req.srcGroupName << "|dst group name:" << req.cacheHost[0].groupName << endl);
+
+                return 0;
+            }
+            else
+            {
+                errmsg = "reload router conf from DB failed, router server name:" + tmp[1] + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+            }
+        }
+        else
+        {
+           errmsg = "configure transfer record failed and transfer cache server failed, module Name:" + req.moduleName + "|src group name:" + req.srcGroupName + "|dst group name:" + req.cacheHost[0].groupName + "|errmsg:" + errmsg;
+           TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("configure transfer record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
 }
 
-tars::Int32 DCacheOptImp::transferDCache(const TransferReq & transferReq, TransferRsp & transferRsp, tars::TarsCurrentPtr current)
+tars::Int32 DCacheOptImp::transferDCacheGroup(const TransferGroupReq & req, TransferGroupRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "appName:"<< transferReq.appName << "|module:"<< transferReq.moduleName<< "|srcGroup:"<< transferReq.srcGroupName << endl);
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << "|dst group name:" << req.dstGroupName << endl);
 
-    string &err = transferRsp.errMsg;
+    string & errmsg = rsp.errMsg;
     try
     {
-        //往已存在服务迁移
-        if (transferReq.hasDestServer)
+        int iRet = insertTransferStatusRecord(req.appName, req.moduleName, req.srcGroupName, req.dstGroupName, true, errmsg);
+        if (iRet != 0)
         {
-            string sSql = "select * from t_transferv2_status where module='" + transferReq.moduleName + "' and src_group='" + transferReq.srcGroupName + "' and appName='" + transferReq.appName + "' and dest_group='" + transferReq.cacheHost[0].groupName + "'";
-            TC_Mysql::MysqlData data = _mysqlTransferExpandDb.queryRecord(sSql);
-            if (data.size() == 0)
-            {
-                map<string, pair<TC_Mysql::FT, string> > m;
-
-                m["module"]     = make_pair(TC_Mysql::DB_STR, transferReq.moduleName);
-                m["appName"]    = make_pair(TC_Mysql::DB_STR, transferReq.appName);
-                m["src_group"]  = make_pair(TC_Mysql::DB_STR, transferReq.srcGroupName);
-                m["dest_group"] = make_pair(TC_Mysql::DB_STR, transferReq.cacheHost[0].groupName);
-                m["status"]     = make_pair(TC_Mysql::DB_INT, "1");  // 1-transfering
-
-                string startTime;
-                int iRet = formatCurrentTime(startTime);
-                if (iRet == 0)
-                {
-                    m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, startTime);
-                }
-
-                _mysqlTransferExpandDb.insertRecord("t_transferv2_status", m);
-            }
-            else if (data[0]["status"] == "4")
-            {
-                // status:4-done 完成, 以前有成功记录，就覆盖
-                map<string, pair<TC_Mysql::FT, string> > m;
-                m["status"] = make_pair(TC_Mysql::DB_INT, "1");
-
-                string startTime;
-                int iRet = formatCurrentTime(startTime);
-                if (iRet == 0)
-                {
-                    m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, startTime);
-                }
-
-                string cond = "where module='" + transferReq.moduleName + "' and src_group='" + transferReq.srcGroupName + "' and appName='" + transferReq.appName + "' and dest_group='" + transferReq.cacheHost[0].groupName + "'";
-                _mysqlTransferExpandDb.updateRecord("t_transferv2_status", m, cond);
-            }
-
-            TLOGDEBUG(FUN_LOG << "configure transfer succ for existing dest server, app name:" << transferReq.appName << "|module name:" << transferReq.moduleName << "|src group name:" << transferReq.srcGroupName << endl);
-            return 0;
+            return iRet;
         }
-        else
+
+        iRet = insertTransfer2RouterDb(req.appName, req.moduleName, req.srcGroupName, req.dstGroupName, req.transferData, rsp.errMsg);
+
+        return iRet;
+    }
+    catch (exception &ex)
+    {
+        errmsg = string("transfer to existed gourp catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+/*
+* 扩容
+*/
+tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & expandRsp, tars::TarsCurrentPtr current)
+{
+    try
+    {
+        TLOGDEBUG(FUN_LOG << "appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << etos(expandReq.cacheType) << endl);
+
+        int iRet = insertExpandReduceStatusRecord(expandReq.appName, expandReq.moduleName, DCache::EXPAND_TYPE, vector<string>(), expandRsp.errMsg);
+        if (iRet == 0)
         {
-            //往新部署服务迁移
-            string sSql = "select * from t_transferv2_status where module='" + transferReq.moduleName + "' and src_group='" + transferReq.srcGroupName + "' and appName='" + transferReq.appName + "' and dest_group='" + transferReq.cacheHost[0].groupName + "'";
-            TC_Mysql::MysqlData data = _mysqlTransferExpandDb.queryRecord(sSql);
-            if ((data.size() > 0) && (data[0]["status"] != "4"))
+            iRet = expandDCacheServer(expandReq.appName, expandReq.moduleName, expandReq.cacheHost, expandReq.version, expandReq.cacheType, expandReq.replace, expandRsp.errMsg);
+            if (iRet == 0)
             {
-                //此阶段的配置已成功
-                if (data[0]["status"] != "0") // status: 0 配置失败
+                //根据appName查询 router obj
+                string routerObj("");
+                iRet = getRouterObj(expandReq.appName, routerObj, expandRsp.errMsg);
+                if (iRet != 0)
                 {
-                    TLOGDEBUG(FUN_LOG << "configure transfer succ, app name:" << transferReq.appName << "|module name:" << transferReq.moduleName << "|srcGroupName: " << transferReq.srcGroupName << endl);
+                    expandRsp.errMsg = "get router obj info failed|appName:" + expandReq.appName + "|errmsg:" + expandRsp.errMsg;
+                    TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+                    return -1;
+                }
+
+                vector<string> tmp = TC_Common::sepstr<string>(routerObj, ".");
+                string routerName = tmp[0] + "." + tmp[1];
+
+                iRet = reloadRouterByModule("DCache", expandReq.moduleName, routerName, expandRsp.errMsg);
+                if (iRet == 0)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m_update;
+                    m_update["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER));
+
+                    string condition = "where module_name='" + expandReq.moduleName + "' and app_name='" + expandReq.appName + "'";
+
+                    _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
+
                     return 0;
                 }
-                else if (data[0]["status"] == "0")
+                else
                 {
-                    //上次在此阶段失败 需要清除下 再发起迁移
-                    err = "configure transfer failed need clean, app name:" + transferReq.appName + "|module name:" + transferReq.moduleName + "|srcGroupName:" + transferReq.srcGroupName;
-                    TLOGERROR(FUN_LOG << err << endl);
+                    expandRsp.errMsg = "reload router conf from DB failed, router server name:" + tmp[1];
+                    TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
                 }
             }
             else
             {
-                //新生成的迁移记录，记录迁移信息并准备开始迁移
-                if (data.size() == 0)
-                {
-                    map<string, pair<TC_Mysql::FT, string> > m;
-                    m["module"]     = make_pair(TC_Mysql::DB_STR, transferReq.moduleName);
-                    m["appName"]    = make_pair(TC_Mysql::DB_STR, transferReq.appName);
-                    m["src_group"]  = make_pair(TC_Mysql::DB_STR, transferReq.srcGroupName);
-                    m["dest_group"] = make_pair(TC_Mysql::DB_STR, transferReq.cacheHost[0].groupName);
-                    m["status"]     = make_pair(TC_Mysql::DB_INT, "0"); // 0-config stage
-
-                    string startTime;
-                    int iRet = formatCurrentTime(startTime);
-                    if (iRet == 0)
-                    {
-                        m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, startTime);
-                    }
-
-                    _mysqlTransferExpandDb.insertRecord("t_transferv2_status", m);
-                }
-                else
-                {
-                    //以前有成功记录，就覆盖
-                    map<string, pair<TC_Mysql::FT, string> > m;
-                    m["status"] = make_pair(TC_Mysql::DB_INT, "0");
-
-                    string startTime;
-                    int iRet = formatCurrentTime(startTime);
-                    if (iRet == 0)
-                    {
-                        m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, startTime);
-                    }
-
-                    string cond = "where module='" + transferReq.moduleName + "' and src_group='" + transferReq.srcGroupName + "' and appName='" + transferReq.appName + "' and dest_group='" + transferReq.cacheHost[0].groupName + "'";
-                    _mysqlTransferExpandDb.updateRecord("t_transferv2_status", m, cond);
-                }
-
-               int iRet = expandDCacheServer(transferReq.appName, transferReq.moduleName, transferReq.cacheHost, transferReq.version, transferReq.cacheType, true, err);
-               if (iRet == 0)
-               {
-                    string sSql = "select * from t_cache_router where app_name='" + transferReq.appName + "'";
-                    TC_Mysql::MysqlData cacheRouterData = _mysqlRelationDB.queryRecord(sSql);
-                    if (cacheRouterData.size() > 0)
-                    {
-                        vector<string> tmp = TC_Common::sepstr<string>(cacheRouterData[0]["router_name"], ".");
-                        if (reloadRouterConfByModuleFromDB("DCache", transferReq.moduleName, tmp[0] + "." + tmp[1], err, current))
-                        {
-                            map<string, pair<TC_Mysql::FT, string> > m_update;
-                            m_update["status"]  = make_pair(TC_Mysql::DB_INT, "1");
-                            string condition = "where module='" + transferReq.moduleName + "' and src_group='" + transferReq.srcGroupName + "' and appName='" + transferReq.appName + "' and dest_group='" + transferReq.cacheHost[0].groupName + "'";
-                            _mysqlTransferExpandDb.updateRecord("t_transferv2_status", m_update, condition);
-
-                            TLOGDEBUG(FUN_LOG << "configure transfer record succ and expand cache server succ, module Name:" << transferReq.moduleName << "|srcGroupName: " << transferReq.srcGroupName << endl);
-
-                            return 0;
-                        }
-                        else
-                        {
-                            err = "reload router conf from DB failed, router server name:" + tmp[1];
-                            TLOGERROR(FUN_LOG << err << endl);
-                        }
-                    }
-                    else
-                    {
-                        err = "no router obj selected for appName:" + transferReq.appName;
-                        TLOGERROR(FUN_LOG << err << endl);
-                    }
-               }
-               else
-               {
-                   err = "configure transfer record failed and expand cache server failed, module Name:" + transferReq.moduleName + "|srcGroupName:" + transferReq.srcGroupName + "|errmsg:" + err;
-                   TLOGERROR(FUN_LOG << err << endl);
-               }
+               expandRsp.errMsg = "configure expand record failed and expand cache server failed, app name:" + expandReq.appName + "|module name:" + expandReq.moduleName + "|errmsg:" + expandRsp.errMsg;
+               TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
             }
         }
+        else
+        {
+            expandRsp.errMsg = "insert expand or reduce to db failed|errmsg:" + expandRsp.errMsg;
+            TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+        }
     }
-    catch(const std::exception &ex)
+    catch (const std::exception &ex)
     {
-        err = TC_Common::tostr(__FUNCTION__) + "|configure transfer record catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << err << endl);
+        expandRsp.errMsg = string("expand dcache server catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
     }
 
     return -1;
 }
 
-/*tars::Int32 DCacheOptImp::expandDCache(const ExpandDCacheReq & expandDCacheReq, ExpandDCacheRsp & expandDCacheRsq, tars::TarsCurrentPtr current)
+/*
+* 缩容
+*/
+tars::Int32 DCacheOptImp::reduceDCache(const ReduceReq & reduceReq, ReduceRsp & reduceRsp, tars::TarsCurrentPtr current)
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "appName:" << expandDCacheReq.appName << "|moduleName:" << expandDCacheReq.moduleName << "|cacheType:" << expandDCacheReq.cacheType << endl);
+        TLOGDEBUG(FUN_LOG << "appName:" << reduceReq.appName << "|moduleName:" << reduceReq.moduleName << endl);
 
-        const vector<DCache::CacheHostParam> & vtCacheHost = expandDCacheReq.cacheHost;
-        const string & sTarsVersion = expandDCacheReq.version;
-
-        string &err = expandDCacheRsq.errMsg;
-
-        if (expandDCacheReq.cacheType != DCache::KVCACHE && expandDCacheReq.cacheType != MKVCACHE)
-        {
-            err = "expand type error: KVCACHE-1 or MKVCACHE-2";
-            return -1;
-        }
-
-        err = "success";
-
-        string info;
-        if (vtCacheHost.size() == 0)
-        {
-            err = "no cache server specified,please make sure params is right";
-            return -1;
-        }
-
-        //RouterDbInfo routerDbInfo;
-        //string sRouterObjName;
-        //int iRet = getRouterDBInfoAndObj(expandDCacheReq.appName, routerDbInfo, sRouterObjName, err);
-        //if (iRet == -1)
-        //{
-        //    return -1;
-        //}
-
-        RouterDbInfo routerDbInfo;
-        string info;
-        vector<string> vtProxyName;
-        string routerServerName;
-        int iRet = getRouterDBFromAppTable(expandDCacheReq.appName, routerDbInfo, vtProxyName, routerServerName, info);
-        if (-1 == iRet)
-        {
-            err = info;
-            return -1;
-        }
-
-        if (expandCacheConf(expandDCacheReq.appName, expandDCacheReq.moduleName, vtCacheHost, err) != 0)
-        {
-            err = string("failed to expand cache server conf") + err;
-            return -1;
-        }
-
-        if (expandCache2RouterDb(expandDCacheReq.moduleName, routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, err) != 0)
-        {
-            return -1;
-        }
-
-        string sCacheType("");
-        expandDCacheReq.expandType == DCache::KVCACHE ? sCacheType = "KV" : sCacheType = "MKV";
-        iRet = insertCache2TarsDb(routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, "S", sTarsVersion, err);
-        if (iRet != 0)
-        {
-            err = "failed to insert catch info to tars db, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
-            return -1;
-        }
-
-        generateRelationDCacheRouter(appName, vtCacheHost,err,true);
-
-        //把三者关系生成放到最后面 保证配额查询接口的准确性
-        try
-        {
-            RouterDbInfo tmpRouterDbInfo;
-            tmpRouterDbInfo = routerDbInfo;
-            for (size_t i = 0; i < vtCacheHost.size(); ++i)
-            {
-                for (size_t j = 0; j < vtProxyName.size(); j++)
-                {
-                    // 保存 proxy server和cache server的对应关系
-                    insertProxyCache(vtProxyName[j].substr(7), vtCacheHost[i].serverName);
-                }
-
-                // 保存cache serve和router server的对应关系
-                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize)*1024), routerServerName + ".RouterObj", tmpRouterDbInfo, expandDCacheReq.moduleName, err);
-            }
-        }
-        catch(exception &ex)
-        {
-            //这里捕捉异常以不影响安装结果
-            err = string("option relation db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << err << endl);
-            return 0;
-        }
-    }
-    catch(const std::exception &ex)
-    {
-        expandDCacheRsq.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << expandDCacheRsq.errMsg << endl);
-        return -1;
-    }
-
-    return 0;
-}*/
-
-tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & expandRsq, tars::TarsCurrentPtr current)
-{
-    try
-    {
-        TLOGDEBUG(FUN_LOG << "appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << expandReq.cacheType << endl);
-
-        int iRet = expandDCacheServer(expandReq.appName, expandReq.moduleName, expandReq.cacheHost, expandReq.version, expandReq.cacheType, expandReq.replace, expandRsq.errMsg);
+        int iRet = insertExpandReduceStatusRecord(reduceReq.appName, reduceReq.moduleName, DCache::REDUCE_TYPE, reduceReq.srcGroupName, reduceRsp.errMsg);
 
         return iRet;
 
     }
     catch(const std::exception &ex)
     {
-        expandRsq.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << expandRsq.errMsg << endl);
+        reduceRsp.errMsg = string("reduce dcache server catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << reduceRsp.errMsg << endl);
     }
 
     return -1;
 }
 
+
+/*
+* 配置router迁移任务
+*/
+tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTransferRsp & rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+
+    try
+    {
+        int iRet = 0;
+
+        if (req.type == DCache::TRANSFER_TYPE)
+        {
+            // transfer
+            if (req.srcGroupName.size() < 1 || req.dstGroupName.size() < 1)
+            {
+                rsp.errMsg = string("transfer info wrong, src group or dst group is empty|src group size:")
+                           + TC_Common::tostr(req.srcGroupName.size()) + "|dst group size:" + TC_Common::tostr(req.dstGroupName.size());
+                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                return -1;
+            }
+
+            iRet = insertTransfer2RouterDb(req.appName, req.moduleName, req.srcGroupName[0], req.dstGroupName[0], req.transferData, rsp.errMsg);
+        }
+        else if (req.type == DCache::EXPAND_TYPE)
+        {
+            // expand
+            if (req.dstGroupName.size() < 1)
+            {
+                rsp.errMsg = string("expand info wrong, dst group is empty|dst group size:") + TC_Common::tostr(req.dstGroupName.size());
+                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                return -1;
+            }
+
+            iRet = insertExpandTransfer2RouterDb(req.appName, req.moduleName, req.dstGroupName, rsp.errMsg);
+        }
+        else if (req.type == DCache::REDUCE_TYPE)
+        {
+            // reduce
+            if (req.srcGroupName.size() < 1)
+            {
+                rsp.errMsg = string("reduce info wrong, src group is empty|src group size:") + TC_Common::tostr(req.srcGroupName.size());
+                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                return -1;
+            }
+
+            iRet = insertReduceTransfer2RouterDb(req.appName, req.moduleName, req.srcGroupName, rsp.errMsg);
+        }
+
+        return iRet;
+    }
+    catch(const std::exception &ex)
+    {
+        rsp.errMsg = string("config transfer to router db table t_router_transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStructRsp & rsp,tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
+    try
+    {
+        string & errmsg = rsp.errMsg;
+        string sql("");
+
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(req.appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + req.appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        TC_Mysql tcMysql;
+        tcMysql.init(routerDbInfo);
+        tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+        //找出服务组中服务节点数最多的组
+        sql = "select group_name,count(*) as num from t_router_group where module_name='" + req.moduleName + "' group by group_name order by num desc";
+        TC_Mysql::MysqlData groupInfo = tcMysql.queryRecord(sql);
+
+        if (groupInfo.size() <= 0)
+        {
+            errmsg = "can not find module group info|app name:" + req.appName + "|module name:" + req.moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        //查找务组中服务节点最多的组的服务结构信息
+        sql = "select * from t_router_group where module_name='" + req.moduleName + "' and group_name='" + groupInfo[0]["group_name"] + "'";
+        TC_Mysql::MysqlData groupStruct = tcMysql.queryRecord(sql);
+
+        if (groupStruct.size() < 0)
+        {
+            errmsg = "can not find module struct|appn ame:" + req.appName + "|module name:" + req.moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        //插入模块结构信息
+        vector<ModuleServer> & serverInfo = rsp.serverInfo;
+        serverInfo.clear();
+
+        for (size_t i = 0; i < groupStruct.size(); i++)
+        {
+            ModuleServer tmp;
+            tmp.serverName  = groupStruct[i]["server_name"];
+            tmp.type        = groupStruct[i]["server_status"];
+
+            //找出服务的idc信息
+            sql = " select * from t_router_server where server_name='" + tmp.serverName + "'";
+            TC_Mysql::MysqlData serverInfoData = tcMysql.queryRecord(sql);
+            if (serverInfoData.size() <= 0)
+            {
+                errmsg = "can not find server info|app name:" + req.appName + "|module name:" + req.moduleName + "|server name:" + tmp.serverName;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+                return -1;
+            }
+
+            tmp.idc = serverInfoData[0]["idc_area"];
+
+            serverInfo.push_back(tmp);
+        }
+
+        // 找出主机的idc地区
+        string masterIdc("");
+        vector<ModuleServer>::iterator it = serverInfo.begin();
+        for (; it != serverInfo.end(); it++)
+        {
+            if (it->type == "M")
+            {
+                masterIdc = it->idc;
+                break;
+            }
+        }
+
+        if (masterIdc.size() == 0)
+        {
+            errmsg = "can not find master idc|app name:" + req.appName + "|module name:" + req.moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        // 返回主机所在地区
+        rsp.idc = masterIdc;
+
+
+        if (serverInfo[0].serverName.find("MKVCache") != string::npos)
+        {
+            rsp.cacheType = DCache::MKVCACHE; // mkv cache
+        }
+        else
+        {
+            rsp.cacheType = DCache::KVCACHE; // kv cache
+        }
+
+        //查询主机信息
+        sql = "select * from t_router_group where module_name='" + req.moduleName + "' and server_status='M'";
+        TC_Mysql::MysqlData masterInfo = tcMysql.queryRecord(sql);
+        if (masterInfo.size() == 0)
+        {
+            errmsg = "can not find master server info|app name:" + req.appName + "|module name:" + req.moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        float totalMemSize = 0;
+
+        // 查询主机的内存大小
+        string sQuerySql = "select id from t_config_item where item='ShmSize' and path='Main/Cache'";
+        TC_Mysql::MysqlData shmSizeId;
+        shmSizeId = _mysqlRelationDB.queryRecord(sQuerySql);
+
+        for (size_t i = 0; i < masterInfo.size(); i++)
+        {
+            float memSize = 0;
+            sQuerySql = "select config_value from t_config_table where server_name='" + masterInfo[i]["server_name"] + "' and item_id=" + shmSizeId[0]["id"];
+
+            TC_Mysql::MysqlData shmSizeData;
+            shmSizeData = _mysqlRelationDB.queryRecord(sQuerySql);
+
+            if (shmSizeData.size() == 1)
+            {
+                string tmp = shmSizeData[0]["config_value"];
+                size_t j = 0;
+                //找出配置中的内存大小数字
+                while (j < tmp.size())
+                {
+                    if (isdigit(tmp[j]) || (tmp[j] == '.'))
+                    {
+                        j++;
+                        continue;
+                    }
+                    else if ((tmp[j] == 'M') || (tmp[j] == 'm'))
+                    {
+                        tmp = tmp.substr(0, j);
+                        memSize = TC_Common::strto<float>(tmp);
+                        break;
+                    }
+                    else if ((tmp[j] == 'G') || (tmp[j] == 'g'))
+                    {
+                        tmp = tmp.substr(0, j);
+                        memSize = TC_Common::strto<float>(tmp) * 1024;
+                        break;
+                    }
+                    else
+                    {
+                        errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName;
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        break;
+                    }
+
+                    ++j;
+                }
+
+                if (memSize == 0)
+                {
+                    errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    continue;
+                }
+            }
+            else
+            {
+                //如果没有，就找公有的配置
+                sQuerySql = "select reference_id from t_config_reference where server_name='" + masterInfo[i]["server_name"] + "' limit 1";
+                TC_Mysql::MysqlData reference_idData;
+                reference_idData = _mysqlRelationDB.queryRecord(sQuerySql);
+                if (reference_idData.size() == 0)
+                {
+                    errmsg = "can not find reference_id|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"] + "|sql:" + sQuerySql;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                sQuerySql = "select config_value from t_config_table where config_id=" + reference_idData[0]["reference_id"] + " and item_id=" + shmSizeId[0]["id"];
+                TC_Mysql::MysqlData shmSizeData;
+                shmSizeData = _mysqlRelationDB.queryRecord(sQuerySql);
+
+                if (shmSizeData.size() == 1)
+                {
+                    string tmp=shmSizeData[0]["config_value"];
+                    size_t i = 0;
+
+                    while (i < tmp.size())
+                    {
+                        if (isdigit(tmp[i]) || (tmp[i] == '.'))
+                        {
+                            i++;
+                            continue;
+                        }
+                        else if ((tmp[i] == 'M') || (tmp[i] == 'm'))
+                        {
+                            tmp = tmp.substr(0,i);
+                            memSize = TC_Common::strto<float>(tmp);
+                            break;
+                        }
+                        else if ((tmp[i] == 'G') || (tmp[i] == 'g'))
+                        {
+                            tmp = tmp.substr(0,i);
+                            memSize = TC_Common::strto<float>(tmp) * 1024;
+                            break;
+                        }
+                        else
+                        {
+                            errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName;
+                            TLOGERROR(FUN_LOG << errmsg << endl);
+                            break;
+                        }
+
+                        ++i;
+                    }
+
+                    if (memSize == 0)
+                    {
+                        errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        continue;
+                    }
+                }
+                else
+                {
+                    errmsg = "not find shm size config item|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    continue;
+                }
+            }
+
+            totalMemSize += memSize;
+        }
+
+        rsp.avgMemSize      = TC_Common::tostr(totalMemSize / masterInfo.size());   // 主机平均内存大小
+        rsp.totalMemSize    = TC_Common::tostr(totalMemSize);                       // 主机总内存
+        rsp.nodeNum         = masterInfo.size();                                    // 主机节点数
+
+    }
+    catch (exception &ex)
+    {
+        rsp.errMsg = string("get module struct catch exception:") + ex.what() + "|app name:" + req.appName + "|module name:" + req.moduleName;
+        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+    }
+    catch (...)
+    {
+        rsp.errMsg = string("get module struct catch unknown exception|app name:") + req.appName + "|module name:" + req.moduleName;
+        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+    }
+
+	return 0;
+}
+
+/*
+* 获取路由变更信息(包括迁移，扩容，缩容)
+* cond 中的字段要和 TransferRecord 字段保持一致
+  web 传的 type: 0:迁移，1:扩容，2:缩容
+  t_transfer_status 默认type为 0
+  t_expand_status 中的type: 1: 扩容, 2: 缩容 (新建任务时要对应)
+
+  t_transfer_status status：0: 新建任务，1：配置阶段，2：发布阶段，3：迁移中，4：完成，5：停止
+  t_expand_status   status：0: 新建任务，1：配置阶段，2：发布阶段，3：迁移中，4：完成，5：停止
+  保持一致
+*/
+tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChangeRsp & rsp,tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
+
+    string &errmsg = rsp.errMsg;
+    try
+    {
+        const map<std::string, std::string> & cond = req.cond;
+
+        //返回的结果集
+        vector<DCache::TransferRecord> vTmpInfo;
+
+        //分别是迁移和扩容的结果集
+        vector<pair<size_t, DCache::TransferRecord> > vTInfo;
+        vector<pair<size_t, DCache::TransferRecord> > vEInfo;
+
+        map<std::string, std::string>::const_iterator it = cond.find("type");
+
+        int type;
+        if (it != cond.end())
+        {
+            type = TC_Common::strto<int>(it->second);
+        }
+        else
+        {
+            type = -1;
+        }
+
+        string condition("");
+        string sSql("");
+
+        // 没有 设置type，或者查询 迁移任务，，查询 t_transfer_status 表
+        if ((type == DCache::UNSPECIFIED_TYPE) || (type == DCache::TRANSFER_TYPE))
+        {
+            //生成条件语句
+            if (cond.size() != 0)
+            {
+                bool isFirstCond = true;
+                for (map<std::string, std::string>::const_iterator it = cond.begin(); it != cond.end(); ++it)
+                {
+                    if (it->first == "type")
+                    {
+                        // t_transfer_status 没有type字段，跳过
+                        continue;
+                    }
+
+                    if (isFirstCond)
+                    {
+                        condition = " where ";
+                        isFirstCond = false;
+                    }
+                    else
+                    {
+                        condition += " and ";
+                    }
+
+                    if (it->first == "appName")
+                    {
+                        condition += "app_name like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "moduleName")
+                    {
+                        condition += "module_name like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "srcGroupName")
+                    {
+                        condition += "src_group like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "dstGroupName")
+                    {
+                        condition += "dst_group like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "status")
+                    {
+                        condition += it->first + "=" + it->second;
+                    }
+                    else
+                    {
+                        errmsg = string("invalid field in select condition|field:") + it->first;
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        return -1;
+                    }
+                }
+            }
+
+            //获取迁移信息
+            sSql = "select *,UNIX_TIMESTAMP(auto_updatetime) as unixTime from t_transfer_status " + condition + " order by auto_updatetime desc";
+            TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+
+            for (size_t i = 0; i < data.size(); ++i)
+            {
+                DCache::TransferRecord tmpInfo;
+                tmpInfo.appName         = data[i]["app_name"];
+                tmpInfo.moduleName      = data[i]["module_name"];
+                tmpInfo.srcGroupName    = data[i]["src_group"];
+                tmpInfo.dstGroupName    = data[i]["dst_group"];
+                tmpInfo.status          = (TransferStatus)TC_Common::strto<int>(data[i]["status"]);
+                tmpInfo.beginTime       = data[i]["transfer_start_time"];
+                tmpInfo.endTime         = data[i]["auto_updatetime"] ;
+                tmpInfo.type            = DCache::TRANSFER_TYPE; // 0 迁移
+
+                if (tmpInfo.status == TRANSFER_FINISH) // 迁移完成
+                {
+                    tmpInfo.progress = 100;
+                }
+                else
+                {
+                    tmpInfo.progress = 0;
+                }
+
+                //正在迁移,查询迁移进度
+                if (tmpInfo.status == TRANSFERRING)
+                {
+                    //根据appName查询路由数据库信息
+                    TC_DBConf routerDbInfo;
+                    int iRet = getRouterDBInfo(tmpInfo.appName, routerDbInfo, errmsg);
+                    if (iRet == -1)
+                    {
+                        errmsg = string("get router db info failed|appName:") + tmpInfo.appName + "|errmsg:" + errmsg;
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        // 如果该应用下的所有模块全部下线，这里找不到router信息，则跳过
+                        //return -1;
+                        continue;
+                    }
+
+                    TC_Mysql tcMysql;
+                    tcMysql.init(routerDbInfo);
+                    tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+                    vector<string> vPageInfo = TC_Common::sepstr<string>(data[i]["router_transfer_id"], "|");
+
+                    sSql = "select * from t_router_transfer where module_name='" + tmpInfo.moduleName
+                         + "' and group_name='" + tmpInfo.srcGroupName
+                         + "' and trans_group_name='" + tmpInfo.dstGroupName
+                         + "' and id in (";
+
+                    for (size_t i = 0; i < vPageInfo.size(); ++i)
+                    {
+                        if (i != 0)
+                        {
+                            sSql += ",";
+                        }
+
+                        sSql += vPageInfo[i];
+                    }
+                    sSql += ")";
+
+                    TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
+                    if (transferData.size() > 0)
+                    {
+                        int totalPageNum = 0, succPageNum = 0;
+                        for (size_t i = 0; i < transferData.size(); ++i)
+                        {
+                            totalPageNum += TC_Common::strto<int>(transferData[i]["to_page_no"]) - TC_Common::strto<int>(transferData[i]["from_page_no"]) + 1;
+                            if (transferData[i]["transfered_page_no"].size() != 0)
+                            {
+                                succPageNum += TC_Common::strto<int>(transferData[i]["transfered_page_no"]) - TC_Common::strto<int>(transferData[i]["from_page_no"]) + 1;
+                            }
+                        }
+
+                        TLOGDEBUG(FUN_LOG << "succ num:" << succPageNum << "|totalPageNum:" << totalPageNum << "|moduleName:" << tmpInfo.moduleName << endl);
+                        tmpInfo.progress = int(float(succPageNum) / float(totalPageNum) * 100);
+                    }
+                    else
+                    {
+                        TLOGERROR(FUN_LOG << "not find transfer record in t_router_transfer|module mame:" << tmpInfo.moduleName << "|src group name:" << tmpInfo.srcGroupName << "|dst group name:" << tmpInfo.dstGroupName << endl);
+                    }
+                }
+
+                vTInfo.push_back(make_pair(TC_Common::strto<size_t>(data[i]["unixTime"]), tmpInfo));
+            }
+        }
+
+        // 设置type，或者查询 扩容或缩容任务，查询 t_expand_status 表
+        if ((type == UNSPECIFIED_TYPE) || (type == EXPAND_TYPE) || (type == REDUCE_TYPE))
+        {
+            //保存源组、目的组和状态条件
+            string sCondSrcGroup, sCondDstGroup;
+            int iStatus = -1;
+
+            //获取扩容信息
+            //生成条件语句
+            condition = "";
+
+            if (cond.size() != 0)
+            {
+                bool isFirstCond = true;
+                for (map<std::string, std::string>::const_iterator it = cond.begin(); it != cond.end(); it++)
+                {
+                    //剔除源组和目的组条件
+                    if (it->first == "src_group")
+                    {
+                        sCondSrcGroup = it->second;
+                        continue;
+                    }
+
+                    if (it->first == "dst_group")
+                    {
+                        sCondDstGroup = it->second;
+                        continue;
+                    }
+
+                    if (isFirstCond)
+                    {
+                        condition = " where ";
+                        isFirstCond = false;
+                    }
+                    else
+                    {
+                        condition += " and ";
+                    }
+
+                    if (it->first == "appName")
+                    {
+                        condition += "app_name like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "moduleName")
+                    {
+                        condition += "module_name like '%" + it->second + "%'";
+                    }
+                    else if (it->first == "type")
+                    {
+                        condition += it->first + "=" + it->second;
+                    }
+                    else if (it->first == "status")
+                    {
+                        iStatus = TC_Common::strto<int>(it->second);
+                        condition += it->first + "=" + it->second;
+                    }
+                    else
+                    {
+                        errmsg = string("invalid field in select condition|field:") + it->first;
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        return -1;
+                    }
+                }
+            }
+
+            sSql = "select *,UNIX_TIMESTAMP(auto_updatetime) as unixTime from t_expand_status " + condition + " order by auto_updatetime desc";;
+
+            TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+            for (size_t i = 0; i < data.size(); ++i)
+            {
+                DCache::TransferRecord tmpInfo;
+                tmpInfo.appName     = data[i]["app_name"];
+                tmpInfo.moduleName  = data[i]["module_name"];
+                tmpInfo.beginTime   = data[i]["auto_updatetime"];
+                tmpInfo.status      = (TransferStatus)TC_Common::strto<int>(data[i]["status"]);
+                tmpInfo.type        = (TransferType)TC_Common::strto<int>(data[i]["type"]);
+                tmpInfo.beginTime   = data[i]["expand_start_time"];
+                tmpInfo.endTime     = data[i]["auto_updatetime"];
+
+                // tmpInfo.type 1:扩容，2：缩容，3：路由整理
+
+                if(tmpInfo.status == TRANSFER_FINISH)
+                {
+                    // status 4：完成
+                    tmpInfo.progress = 100;
+                }
+                else
+                {
+                    tmpInfo.progress = 0;
+                }
+
+                if (tmpInfo.status == TRANSFERRING)
+                {
+                    // status 3: 迁移中，需要计算迁移进度
+                    TC_DBConf routerDbInfo;
+                    if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
+                    {
+                       errmsg = string("get router db info failed|appName:") + tmpInfo.appName + "|errmsg:" + errmsg;
+                       TLOGERROR(FUN_LOG << errmsg << endl);
+                       continue;
+                    }
+
+                    //用于保存迁移组的完成情况: map<srcgroupname, map<dstgroupname, pair<totalNum, succNum> > >
+                    map<string, map<string, pair<int, int> > > mGroup;
+
+                    vector<string> tmp = TC_Common::sepstr<string>(data[i]["router_transfer_id"], "|");
+                    if (tmp.size() == 0)
+                    {
+                       errmsg = string("not find transfer record info in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName;
+                       TLOGERROR(FUN_LOG << errmsg << endl);
+                       continue;
+                    }
+
+                    TC_Mysql tcMysql;
+                    tcMysql.init(routerDbInfo);
+                    tcMysql.connect();
+
+                    for (size_t j = 0; j < tmp.size(); ++j)
+                    {
+                        sSql = "select * from t_router_transfer where id=" + tmp[j];
+
+                        TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
+                        if (transferData.size() == 0)
+                        {
+                           errmsg = string("not find transfer record in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|id:" + tmp[j];
+                           TLOGERROR(FUN_LOG << errmsg << endl);
+                           continue;
+                        }
+
+                        //找符合过滤条件的组
+                        if (!sCondSrcGroup.empty())
+                        {
+                            // 源组和提供的查询条件不一致则跳过
+                            if (transferData[0]["group_name"].find(sCondSrcGroup) == string::npos)
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (!sCondDstGroup.empty())
+                        {
+                            // 目的组和提供的查询条件不一致则跳过
+                            if (transferData[0]["trans_group_name"].find(sCondDstGroup) == string::npos)
+                            {
+                                continue;
+                            }
+                        }
+
+                        mGroup[transferData[0]["group_name"]][transferData[0]["trans_group_name"]].first += TC_Common::strto<int>(transferData[0]["to_page_no"]) - TC_Common::strto<int>(transferData[0]["from_page_no"]) + 1;
+                        if (transferData[0]["transfered_page_no"].size() != 0)
+                        {
+                            mGroup[transferData[0]["group_name"]][transferData[0]["trans_group_name"]].second += TC_Common::strto<int>(transferData[0]["transfered_page_no"]) - TC_Common::strto<int>(transferData[0]["from_page_no"]) + 1;
+                        }
+
+                    }
+
+                    for (map<string, map<string, pair<int, int> > >::iterator it1 = mGroup.begin(); it1 != mGroup.end(); it1++)
+                    {
+                        for (map<string, pair<int, int> >::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
+                        {
+                            DCache::TransferRecord insertInfo = tmpInfo;
+                            insertInfo.srcGroupName = it1->first;
+                            insertInfo.dstGroupName = it2->first;
+
+                            insertInfo.progress = int(float(it2->second.second)/float(it2->second.first) * 100);
+
+                            //有过滤条件
+                            if ((iStatus == TRANSFERRING) && (insertInfo.progress == 100))
+                            {
+                               continue;
+                            }
+
+                            if (insertInfo.progress == 100)
+                            {
+                                insertInfo.status = TRANSFER_FINISH; // 该组迁移完成
+                            }
+
+                            vEInfo.push_back(make_pair(TC_Common::strto<size_t>(data[i]["unixTime"]), insertInfo));
+                        }
+                    }
+                }
+                else
+                {
+                    vEInfo.push_back(make_pair(TC_Common::strto<size_t>(data[i]["unixTime"]), tmpInfo));
+                }
+            }
+        }
+
+        //合并任务
+        vector<pair<size_t,DCache::TransferRecord> >::iterator tIt = vTInfo.begin();
+        vector<pair<size_t,DCache::TransferRecord> >::iterator eIt = vEInfo.begin();
+
+        //合并排序
+        while (true)
+        {
+            if (tIt == vTInfo.end())
+            {
+                for (; eIt != vEInfo.end(); ++eIt)
+                {
+                    vTmpInfo.push_back(eIt->second);
+                }
+                break;
+            }
+            else if (eIt == vEInfo.end())
+            {
+                for (;tIt != vTInfo.end(); tIt++)
+                {
+                    vTmpInfo.push_back(tIt->second);
+                }
+                break;
+            }
+
+            if (tIt->first > eIt->first)
+            {
+                vTmpInfo.push_back(tIt->second);
+                tIt++;
+            }
+            else
+            {
+                vTmpInfo.push_back(eIt->second);
+                eIt++;
+            }
+        }
+
+        rsp.totalNum = vTmpInfo.size();
+
+        if (rsp.totalNum == 0)
+        {
+            return 0;
+        }
+
+        if ((req.index < 0) || (req.index > rsp.totalNum))
+        {
+            errmsg = "the index of request is wrong, less than 0 or greater than total number|index:" + TC_Common::tostr(req.index);
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return 0;
+        }
+
+        if ((req.number == -1) || ((req.index + req.number) > rsp.totalNum))
+        {
+            //获取到结束的全部数据
+            rsp.transferRecord.assign(vTmpInfo.begin() + req.index, vTmpInfo.end());
+        }
+        else if (req.number == 0)
+        {
+            //不获取数据
+            return 0;
+        }
+        else
+        {
+            rsp.transferRecord.assign(vTmpInfo.begin() + req.index, vTmpInfo.begin() + req.index + req.number);
+        }
+
+        return 0;
+    }
+    catch(exception &ex)
+    {
+        errmsg = string("get router change info catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = string("get router change info catch unkown exception");
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::switchServer(const SwitchReq & req, SwitchRsp & rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "new switch request|app name:" << req.appName << "|module name:"
+                      << req.moduleName << "|group name:" << req.groupName << "|force switch:"
+                      << req.forceSwitch << "|binlog diff time limit:" << req.diffBinlogTime << endl);
+
+    string &errmsg = rsp.errMsg;
+    try
+    {
+        //根据appName查询 router obj
+        string routerObj;
+        int iRet = getRouterObj(req.appName, routerObj, errmsg);
+        if (iRet != 0)
+        {
+            errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        RouterPrx routerPrx = Application::getCommunicator()->stringToProxy<RouterPrx>(routerObj);
+        routerPrx->tars_timeout(3000);
+
+        // 通知router发起切换
+        iRet = routerPrx->switchByGroup(req.moduleName, req.groupName, req.forceSwitch, req.diffBinlogTime, errmsg);
+
+        return iRet;
+    }
+    catch (exception &ex)
+    {
+        errmsg = string("active-standby switch catch an exception:") + string(ex.what()) + "|module name:" + req.moduleName + "|group name:" + req.groupName;
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = string("active-standby switch catch unkown exception") + "|module name:" + req.moduleName + "|group name:" + req.groupName;
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp & rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
+
+    string &errmsg = rsp.errMsg;
+
+    try
+    {
+        if ((req.index < 0) || (req.number < -1))
+        {
+            errmsg = "the index or number of request is wrong |index:" + TC_Common::tostr(req.index) + "|number:" + TC_Common::tostr(req.number);
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return 0;
+        }
+
+        const map<std::string, std::string> & cond = req.cond;
+
+        //根据查询条件cond的内容构造sql, t_router_switch表在 db_dcache_relation库中
+        string sql = "select * from t_router_switch ";
+
+        for (map<string, string>::const_iterator iter = cond.begin(); iter != cond.end(); ++iter)
+        {
+            if (iter == cond.begin())
+            {
+                sql += " where ";
+            }
+            else
+            {
+                sql += " and ";
+            }
+
+            if (iter->first == "appName")
+            {
+                sql += "app_name like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "moduleName")
+            {
+                sql += "module_name like'%" + iter->second + "%'";
+            }
+            else if (iter->first == "groupName")
+            {
+                sql += "group_name like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "masterServer")
+            {
+                sql += "master_server like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "slaveServer")
+            {
+                sql += "slave_server like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "mirrorIdc")
+            {
+                sql += "mirror_idc like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "masterMirror")
+            {
+                sql += "master_mirror like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "slaveMirror")
+            {
+                sql += "slave_mirror like '%" + iter->second + "%'";
+            }
+            else if (iter->first == "switchType")
+            {
+                sql += "switch_type=" + iter->second;
+            }
+            else if(iter->first == "switchResult")
+            {
+                sql += "switch_result=" + iter->second;
+            }
+            else if(iter->first == "groupStatus")
+            {
+                sql += "access_status=" + iter->second;
+            }
+            else if (iter->first == "switch_time")
+            {
+                vector<string> vTimes;
+                vTimes = TC_Common::sepstr<string>(iter->second, "|", false);
+                if (vTimes.size() != 2)
+                {
+                    errmsg = "switch time condition set wrongly:" + iter->second;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                sql += "(switch_time>='" + vTimes[0] + "' and switch_time<='" + vTimes[1] + "')";
+            }
+            else
+            {
+                errmsg = "unknown condition in switch info request:" + iter->first + "|" + iter->second;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+                return -1;
+            }
+        }
+
+        sql += " order by id desc ";
+
+        TC_Mysql::MysqlData switchInfoData = _mysqlRelationDB.queryRecord(sql);
+
+        // 返回记录总数
+        rsp.totalNum = switchInfoData.size();
+
+        size_t end = (req.number == -1) ? switchInfoData.size() : (req.number + req.index);
+
+        for (size_t i = req.index; i < switchInfoData.size() && i < end; ++i)
+        {
+            SwitchRecord info;
+            info.appName        = switchInfoData[i]["app_name"];
+            info.moduleName     = switchInfoData[i]["module_name"];
+            info.groupName      = switchInfoData[i]["group_name"];
+            info.masterServer   = switchInfoData[i]["master_server"];
+            info.slaveServer    = switchInfoData[i]["slave_server"];
+            info.mirrorIdc      = switchInfoData[i]["mirror_idc"];
+            info.masterMirror   = switchInfoData[i]["master_mirror"];
+            info.slaveMirror    = switchInfoData[i]["slave_mirror"];
+            info.switchTime     = switchInfoData[i]["switch_time"];
+            info.modifyTime     = switchInfoData[i]["modify_time"];
+            info.comment        = switchInfoData[i]["comment"];
+            info.switchProperty = switchInfoData[i]["switch_property"];
+            info.switchType     = TC_Common::strto<int>(switchInfoData[i]["switch_type"]);
+            info.switchResult   = TC_Common::strto<int>(switchInfoData[i]["switch_result"]);
+            info.groupStatus    = TC_Common::strto<int>(switchInfoData[i]["access_status"]);
+
+            string serverName = info.masterServer != "" ? info.masterServer : info.masterMirror;
+
+            int iRet = getCacheConfigFromDB(serverName, info.appName, info.moduleName, info.groupName, info.enableErase, info.dbFlag, info.memSize, errmsg);
+            if (iRet != 0)
+            {
+                continue;
+            }
+
+            rsp.switchRecord.push_back(info);
+        }
+
+        errmsg = "success";
+
+        return 0;
+    }
+    catch(exception &ex)
+    {
+        errmsg = string("get switch info catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = string("get switch info catch unkown exception");
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::stopTransfer(const StopTransferReq& req, StopTransferRsp &rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+
+    string & errmsg = rsp.errMsg;
+    try
+    {
+        int iRet = 0;
+
+        if (req.type == DCache::TRANSFER_TYPE)
+        {
+            // transfer
+            if (req.srcGroupName.size() < 1 || req.dstGroupName.size() < 1)
+            {
+                rsp.errMsg = string("stop transfer request wrong, src group or dst group is empty|src group size:")
+                           + TC_Common::tostr(req.srcGroupName.size()) + "|dst group size:" + TC_Common::tostr(req.dstGroupName.size());
+
+                return -1;
+            }
+
+            iRet = stopTransferForTransfer(req.appName, req.moduleName, req.srcGroupName, req.dstGroupName, rsp.errMsg);
+        }
+        else if (req.type == DCache::EXPAND_TYPE || req.type == DCache::REDUCE_TYPE)
+        {
+            // expand or reduce
+
+            iRet = stopTransferForExpandReduce(req.appName, req.moduleName, rsp.errMsg);
+        }
+
+        return iRet;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("stop transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::restartTransfer(const RestartTransferReq& req, RestartTransferRsp &rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+
+    string & errmsg = rsp.errMsg;
+    try
+    {
+        int iRet = 0;
+
+        if (req.type == DCache::TRANSFER_TYPE)
+        {
+            // transfer
+            if (req.srcGroupName.size() < 1 || req.dstGroupName.size() < 1)
+            {
+                rsp.errMsg = string("restart transfer request wrong, src group or dst group is empty|src group size:")
+                           + TC_Common::tostr(req.srcGroupName.size()) + "|dst group size:" + TC_Common::tostr(req.dstGroupName.size());
+
+                return -1;
+            }
+
+            // 重启迁移任务，则是重新创建迁移任务
+            iRet = insertTransfer2RouterDb(req.appName, req.moduleName, req.srcGroupName, req.dstGroupName, true, rsp.errMsg);
+        }
+        else if (req.type == DCache::EXPAND_TYPE || req.type == DCache::REDUCE_TYPE)
+        {
+            // expand or reduce
+            iRet = restartTransferForExpandReduce(req.appName, req.moduleName, rsp.errMsg);
+        }
+
+        return iRet;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("restart transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+
+tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTransferRsp& rsp,tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+
+    string & errmsg = rsp.errMsg;
+    try
+    {
+        int iRet = 0;
+
+        //删除迁移任务记录
+        if (req.type == DCache::TRANSFER_TYPE)
+        {
+            iRet = deleteTransferForTransfer(req.appName, req.moduleName, req.srcGroupName, req.dstGroupName, errmsg);
+        }
+        else if (req.type == DCache::EXPAND_TYPE || req.type == DCache::REDUCE_TYPE)
+        {
+            iRet = deleteTransferForExpandReduce(req.appName, req.moduleName, errmsg);
+        }
+        else
+        {
+            errmsg = "delete transfer record request has unknow type:" + TC_Common::tostr(req.type);
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        return iRet;
+    }
+    catch(exception &ex)
+    {
+        errmsg = string("delete transfer record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, RecoverMirrorRsp & rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|group name:" << req.groupName << "|mirror idc:" << req.mirrorIdc << "|db flag:" << req.dbFlag << "|enable erase:" << req.enableErase << endl);
+
+    string & errmsg = rsp.errMsg;
+    try
+    {
+        //状态保护, 如果不允许淘汰, 则不允许做状态恢复
+        if (TC_Common::upper(req.enableErase) == "N" || TC_Common::upper(req.enableErase) == "NO")
+        {
+            errmsg = string("module disable erase, deny recover mirror status|app name:") + req.appName + "|module name:" + req.moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        //根据appName查询 router obj
+        string routerObj;
+        int iRet = getRouterObj(req.appName, routerObj, errmsg);
+        if (iRet != 0)
+        {
+            errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        RouterPrx routerPrx = Application::getCommunicator()->stringToProxy<RouterPrx>(routerObj);
+        routerPrx->tars_timeout(3000);
+
+        iRet = routerPrx->recoverMirrorStat(req.moduleName, req.groupName, req.mirrorIdc, errmsg);
+
+        return iRet;
+    }
+    catch (exception &ex)
+    {
+        errmsg = string("recover mirrot status catch an exception:") + string(ex.what()) + "|module name:" + req.moduleName + "|group name:" + req.groupName + "|mirror idc:" + req.mirrorIdc;
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = string("recover mirrot status catch unkown exception") + "|module name:" + req.moduleName + "|group name:" + req.groupName + "|mirror idc:" + req.mirrorIdc;
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+/*
+* 获取服务列表
+*/
+tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, CacheServerListRsp& rsp, tars::TarsCurrentPtr current)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
+    std::string &errmsg = rsp.errMsg;
+
+    try
+    {
+        string sSql = "select * from t_cache_router where app_name='" + req.appName + "' and module_name='" + req.moduleName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+
+        for (size_t i = 0; i < data.size(); ++i)
+        {
+            rsp.cacheServerList.push_back(CacheServerInfo());
+            CacheServerInfo& cacheServer = rsp.cacheServerList.back();
+            cacheServer.serverName  = data[i]["cache_name"];
+            cacheServer.serverIp    = data[i]["cache_ip"];
+            cacheServer.serverType  = data[i]["server_status"];
+            cacheServer.groupName   = data[i]["group_name"];
+            cacheServer.idcArea     = data[i]["idc_area"];
+            cacheServer.memSize     = data[i]["mem_size"];
+        }
+
+        sSql = "select cacheType from t_config_appMod where appName='" + req.appName + "' and moduleName='" + req.moduleName + "'";
+        TC_Mysql::MysqlData dataCacheType = _mysqlRelationDB.queryRecord(sSql);
+        if (dataCacheType.size() != 1)
+        {
+            errmsg = string("select id from t_config_appMod result count not equal to 1, app name:") + req.appName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            throw DCacheOptException(errmsg);
+        }
+
+        stoe(dataCacheType[0]["cacheType"], rsp.cacheType);
+
+        return 0;
+    }
+    catch(const std::exception &ex)
+    {
+        errmsg = string("get cache server list catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
 
 /*
 * 配置中心操作接口
@@ -1280,6 +2260,35 @@ tars::Int32 DCacheOptImp::getServerConfigItemList(const ServerConfigReq & config
     return 0;
 }
 
+tars::Int32 DCacheOptImp::queryProperptyData(const DCache::QueryPropReq & req,vector<DCache::QueryResult> &rsp,tars::TarsCurrentPtr current)
+{
+    ostringstream os("");
+    req.displaySimple(os);
+    TLOGDEBUG(FUN_LOG << "request content:" << os.str() << endl);
+
+    string errmsg("");
+    try
+    {
+        const QueryPropCond& cond = reinterpret_cast<const QueryPropCond &>(req);
+        vector<QueriedResult> data;
+
+        int iRet = _propertyPrx->queryPropData(cond, data);
+        if (iRet == 0)
+        {
+            rsp = reinterpret_cast<vector<DCache::QueryResult> &>(data);
+
+            return 0;
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("query cache properpty data catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+        throw DCacheOptException(errmsg);
+    }
+
+    return -1;
+}
 
 /*
 *------------------------------
@@ -1288,6 +2297,8 @@ tars::Int32 DCacheOptImp::getServerConfigItemList(const ServerConfigReq & config
 */
 bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::string & sModuleName, const std::string & sRouterServerName, std::string &errmsg)
 {
+    TLOGDEBUG(FUN_LOG << "app:" << sApp << "|module name:" << sModuleName << "|router server name:" << sRouterServerName << endl);
+
     try
     {
         int times = 0;
@@ -1423,6 +2434,48 @@ tars::Bool DCacheOptImp::reloadRouterConfByModuleFromDB(const std::string & sApp
 
     errmsg = "";
     return true;
+}
+
+int DCacheOptImp::reloadRouterByModule(const std::string & app, const std::string & moduleName, const std::string & routerName, std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app:" << app << "|module name:" << moduleName << "|router server name:" << routerName << endl);
+
+    try
+    {
+        if (app.empty() || routerName.empty())
+        {
+            errmsg = "app and router server name can not be empty|app:" + app + "|router name:" + routerName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        RouterPrx routerPrx;
+        routerPrx = _communicator->stringToProxy<RouterPrx>(routerName + string(".RouterObj"));
+        vector<TC_Endpoint> vEndPoints = routerPrx->getEndpoint4All();
+
+        set<string> nodeIPset;
+        for (vector<TC_Endpoint>::size_type i = 0; i < vEndPoints.size(); i++)
+        {
+            //获取所有节点ip
+            nodeIPset.insert(vEndPoints[i].getHost());
+        }
+
+        set<string>::iterator pos;
+        for (pos = nodeIPset.begin(); pos != nodeIPset.end(); ++pos)
+        {
+            //通知router重新加载配置
+            _adminproxy->notifyServer(app, routerName.substr(7), *pos, "router.reloadRouterByModule " + moduleName, errmsg);
+        }
+
+        return 0;
+    }
+    catch (const TarsException& ex)
+    {
+        errmsg = string("reload router by module name catch TarsException:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
 }
 
 int DCacheOptImp::createRouterDBConf(const RouterParam &param, string &errmsg)
@@ -1615,7 +2668,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
 
     try
     {
-        tcMysql.init(param.dbIp, _routerDbUser, _routerDbPwd, "", "utf8", TC_Common::strto<int>(param.dbPort));
+        tcMysql.init(param.dbIp, param.dbUser, param.dbPwd, "", "utf8", TC_Common::strto<int>(param.dbPort));
 
         tcMysql.connect();
         MYSQL *pMysql = tcMysql.getMysql();
@@ -1871,7 +2924,7 @@ int DCacheOptImp::createRouterConf(const RouterParam &param, bool bRouterServerE
                                     "   </DB>\n" +
                                     "</Main>\n";
 
-        sRouterConf = TC_Common::replace(sRouterConf, "${AppName}", param.serverName);
+        sRouterConf = TC_Common::replace(sRouterConf, "${AppName}", param.appName);
         sRouterConf = TC_Common::replace(sRouterConf, "${DbName}", param.dbName);
         sRouterConf = TC_Common::replace(sRouterConf, "${DbIp}", param.dbIp);
         sRouterConf = TC_Common::replace(sRouterConf, "${DbPort}", param.dbPort);
@@ -1961,22 +3014,22 @@ int DCacheOptImp::matchItemId(const string &item, const string &path, string &it
     return 0;
 }
 
-int DCacheOptImp::insertAppModTable(const string &appName, const string &moudleName, int &id, bool bReplace, string & errmsg)
+int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleName, int &id, bool bReplace, string & errmsg)
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "app name:" << appName << "|moudle name:" << moudleName << endl);
+        TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
         map<string, pair<TC_Mysql::FT, string> > m;
 
         m["appName"]    = make_pair(TC_Mysql::DB_STR, appName);
-        m["moduleName"] = make_pair(TC_Mysql::DB_STR, moudleName);
+        m["moduleName"] = make_pair(TC_Mysql::DB_STR, moduleName);
 
         if (bReplace)
             _mysqlRelationDB.replaceRecord("t_config_appMod", m);
         else
             _mysqlRelationDB.insertRecord("t_config_appMod", m);
 
-        string sSql = "select id from t_config_appMod where appName='" + appName + "' and moduleName='" + moudleName + "'";
+        string sSql = "select id from t_config_appMod where appName='" + appName + "' and moduleName='" + moduleName + "'";
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() != 1)
         {
@@ -1989,7 +3042,44 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moudleN
     }
     catch(const std::exception &ex)
     {
-        errmsg = string("operate t_config_appMod error, app name:") + appName + "|module name:" + moudleName + "|catch exception:" + ex.what();
+        errmsg = string("operate t_config_appMod error, app name:") + appName + "|module name:" + moduleName + "|catch exception:" + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+        throw DCacheOptException(errmsg);
+    }
+
+    return 0;
+}
+
+int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleName, DCache::DCacheType eCacheType, int &id, bool bReplace, string & errmsg)
+{
+    try
+    {
+        TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|cache type:" << etos(eCacheType) << endl);
+        map<string, pair<TC_Mysql::FT, string> > m;
+
+        m["appName"]    = make_pair(TC_Mysql::DB_STR, appName);
+        m["moduleName"] = make_pair(TC_Mysql::DB_STR, moduleName);
+        m["cacheType"]  = make_pair(TC_Mysql::DB_STR, etos(eCacheType));
+
+        if (bReplace)
+            _mysqlRelationDB.replaceRecord("t_config_appMod", m);
+        else
+            _mysqlRelationDB.insertRecord("t_config_appMod", m);
+
+        string sSql = "select id from t_config_appMod where appName='" + appName + "' and moduleName='" + moduleName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() != 1)
+        {
+            errmsg = string("select id from t_config_appMod result count not equal to 1, app name:") + appName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            throw DCacheOptException(errmsg);
+        }
+
+        id = TC_Common::strto<int>(data[0]["id"]);
+    }
+    catch(const std::exception &ex)
+    {
+        errmsg = string("operate t_config_appMod error, app name:") + appName + "|module name:" + moduleName + "|catch exception:" + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
@@ -2006,18 +3096,15 @@ int DCacheOptImp::insertConfigFilesTable(const string &sFullServerName, const st
         map<string, pair<TC_Mysql::FT, string> > m;
         for (size_t i = 0; i < myVec.size(); i++)
         {
-            m["server_name"] = make_pair(TC_Mysql::DB_STR, sFullServerName);
-            m["host"]        = make_pair(TC_Mysql::DB_STR, sHost);
-            m["posttime"]    = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-            m["lastuser"]    = make_pair(TC_Mysql::DB_STR, "system");
-            m["level"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(level));
-            m["config_flag"] = make_pair(TC_Mysql::DB_INT, "0");
-            m["config_id"]   = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(config_id));
-
-            std::string item_id = myVec[i]["item_id"];
-            std::string config_value =  myVec[i]["config_value"];
-            m["item_id"]      = make_pair(TC_Mysql::DB_STR, item_id);
-            m["config_value"] = make_pair(TC_Mysql::DB_STR, config_value);
+            m["server_name"]    = make_pair(TC_Mysql::DB_STR, sFullServerName);
+            m["host"]           = make_pair(TC_Mysql::DB_STR, sHost);
+            m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+            m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "system");
+            m["level"]          = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(level));
+            m["config_flag"]    = make_pair(TC_Mysql::DB_INT, "0");
+            m["config_id"]      = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(config_id));
+            m["item_id"]        = make_pair(TC_Mysql::DB_STR, myVec[i]["item_id"]);
+            m["config_value"]   = make_pair(TC_Mysql::DB_STR, myVec[i]["config_value"]);
 
             if (bReplace)
                 _mysqlRelationDB.replaceRecord("t_config_table", m);
@@ -2146,7 +3233,10 @@ int DCacheOptImp::createKVCacheConf(const string &appName, const string &moduleN
 
     // 保存appname和modulename间的关系
     int iAppConfigId;
-    if (insertAppModTable(appName, moduleName, iAppConfigId, bReplace, errmsg) != 0)
+    //if (insertAppModTable(appName, moduleName, iAppConfigId, bReplace, errmsg) != 0)
+    //    return -1;
+
+    if (insertAppModTable(appName, moduleName, DCache::KVCACHE, iAppConfigId, bReplace, errmsg) != 0)
         return -1;
 
     // 模块公共配置
@@ -2154,7 +3244,7 @@ int DCacheOptImp::createKVCacheConf(const string &appName, const string &moduleN
         return -1;
 
     // 节点服务配置
-    for (size_t i=0; i < cacheHost.size(); i++)
+    for (size_t i = 0; i < cacheHost.size(); i++)
     {
         vector < map <string, string> > level2Vec;
 
@@ -2327,7 +3417,10 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
 
     // 保存 应用和模块之间的对应关系
     int iAppConfigId;
-    if (insertAppModTable(appName, moduleName, iAppConfigId, bReplace, errmsg) != 0)
+    //if (insertAppModTable(appName, moduleName, iAppConfigId, bReplace, errmsg) != 0)
+    //    return -1;
+
+    if (insertAppModTable(appName, moduleName, DCache::MKVCACHE, iAppConfigId, bReplace, errmsg) != 0)
         return -1;
 
     if (insertConfigFilesTable(appName, "", iAppConfigId, vtConfig, 1, bReplace, errmsg) != 0)
@@ -2379,12 +3472,14 @@ void DCacheOptImp::insertConfigItem2Vector(const string& sItem, const string &sP
     vtConfig.push_back(mMap);
 }
 
-int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &sRemark, const string& sRouterDbHost, const string& sRouterDbName, const string &sRouterDbPort, const string &DbUser, const string &DbPassword, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg)
+int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &sRemark, const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg)
 {
+    TLOGDEBUG(FUN_LOG << "insert module name and cache server info to router db table|module name:" << sModuleName << endl);
+
     TC_Mysql tcMysql;
     try
     {
-        tcMysql.init(sRouterDbHost, DbUser, DbPassword, sRouterDbName, "utf8", TC_Common::strto<int>(sRouterDbPort));
+        tcMysql.init(routerDbInfo);
 
         if (tcMysql.getRecordCount("t_router_module", "where module_name='" + sModuleName + "'") == 0)
         {
@@ -2712,7 +3807,7 @@ int DCacheOptImp::insertTarsDb(const ProxyParam &stProxyParam, const RouterParam
     return 0;
 }
 
-int DCacheOptImp::insertCache2TarsDb(const string &sRouterDbName, const string& sRouterDbHost, const string &sRouterDbPort,const string &sRouterDbUser, const string &sRouterDbPwd, const vector<DCache::CacheHostParam> & vtCacheHost, DCache::DCacheType eCacheType, const string &sTarsVersion, bool bReplace, std::string &errmsg)
+int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, DCache::DCacheType eCacheType, const string &sTarsVersion, bool bReplace, std::string &errmsg)
 {
     string sExePath;
     if (eCacheType == DCache::KVCACHE)
@@ -2723,48 +3818,82 @@ int DCacheOptImp::insertCache2TarsDb(const string &sRouterDbName, const string& 
     TC_Mysql tcMysql;
     try
     {
-        tcMysql.init(sRouterDbHost, sRouterDbUser, sRouterDbPwd, sRouterDbName, "utf8", TC_Common::strto<int>(sRouterDbPort));
+        tcMysql.init(routerDbInfo);
 
         for (size_t i = 0; i < vtCacheHost.size(); i++)
         {
             if (insertTarsServerTable("DCache", vtCacheHost[i].serverName, vtCacheHost[i].serverIp, vtCacheHost[i].templateFile, sExePath, sTarsVersion, false, bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache info to tars server conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sBinLogPort, sCachePort,sRouterPort,sBackUpPort,sWCachePort,sControlAckPort;
 
             if (selectPort(tcMysql, vtCacheHost[i].serverName, vtCacheHost[i].serverIp, sBinLogPort, sCachePort, sRouterPort, sBackUpPort, sWCachePort, sControlAckPort, errmsg) != 0)
+            {
+                errmsg = string("select cache servant info from releation cache router table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sBinLogServant = vtCacheHost[i].serverName + ".BinLogObj";
             string sBinLogEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 60000 -p " + sBinLogPort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sBinLogServant, sBinLogEndpoint, "3", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache binlog servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sCacheServant = vtCacheHost[i].serverName + ".CacheObj";
             string sCacheEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 60000 -p " + sCachePort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sCacheServant, sCacheEndpoint, "8", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache cache servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sRouterServant = vtCacheHost[i].serverName + ".RouterClientObj";
             string sRouterEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 180000 -p " + sRouterPort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sRouterServant, sRouterEndpoint, "5", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache router client servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sBackUpServant = vtCacheHost[i].serverName + ".BackUpObj";
             string sBackupEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 60000 -p " + sBackUpPort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sBackUpServant, sBackupEndpoint, "1", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache backup servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sWCacheServant = vtCacheHost[i].serverName + ".WCacheObj";
             string sWCacheEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 60000 -p " + sWCachePort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sWCacheServant, sWCacheEndpoint, "8", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache wcache servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
 
             string sControlAckServant = vtCacheHost[i].serverName + ".ControlAckObj";
             string sControlAckEndpoint = "tcp -h "+ vtCacheHost[i].serverIp + " -t 60000 -p " + sControlAckPort;
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sControlAckServant, sControlAckEndpoint, "1", bReplace, errmsg) != 0)
+            {
+                errmsg = string("insert cache control ack servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
+            }
         }
+
+        return 0;
     }
     catch(exception &ex)
     {
@@ -2781,7 +3910,7 @@ int DCacheOptImp::insertCache2TarsDb(const string &sRouterDbName, const string& 
         throw DCacheOptException(errmsg);
     }
 
-    return 0;
+    return -1;
 }
 
 int DCacheOptImp::insertTarsConfigFilesTable(const string &sFullServerName, const string &sConfName, const string &sHost, const string &sConfig, const int level, int &id, bool bReplace, string & errmsg)
@@ -2920,22 +4049,23 @@ int DCacheOptImp::insertTarsServerTable(const string &sApp, const string &sServe
         m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
         m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
         m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
-
-        m["enable_group"] = make_pair(TC_Mysql::DB_STR,(enableGroup)?"Y":"N");//是否启用IDC分组
+        m["enable_group"]   = make_pair(TC_Mysql::DB_STR, (enableGroup)?"Y":"N");//是否启用IDC分组
 
         if (bReplace)
             _mysqlTarsDb.replaceRecord("t_server_conf", m);
         else
             _mysqlTarsDb.insertRecord("t_server_conf", m);
+
+        return 0;
     }
-    catch(const std::exception &ex)
+    catch (const std::exception &ex)
     {
         errmsg = string("insert") + sApp + "."+ sServerName + "@" + sIp + "'s tars server config error, catch exception:" + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
-    return 0;
+    return -1;
 }
 
 int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerName, const string &sIp, const string &sServantName, const string &sEndpoint, const string &sThreadNum, bool bReplace, string & errmsg)
@@ -2961,6 +4091,8 @@ int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerNa
             _mysqlTarsDb.replaceRecord("t_adapter_conf", m);
         else
             _mysqlTarsDb.insertRecord("t_adapter_conf", m);
+
+        return 0;
     }
     catch(const std::exception &ex)
     {
@@ -2969,12 +4101,12 @@ int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerNa
         throw DCacheOptException(errmsg);
     }
 
-    return 0;
+    return -1;
 }
 
 bool DCacheOptImp::hasServer(const string&sApp, const string &sServerName)
 {
-    string sSql = "select id from t_server_conf where application='" + sApp + "' and server_name='" + sServerName +"'";
+    string sSql = "select id from t_server_conf where application='" + sApp + "' and server_name='" + sServerName + "'";
     return _mysqlTarsDb.existRecord(sSql);
 }
 
@@ -3190,7 +4322,7 @@ uint16_t DCacheOptImp::getRand()
     return (rand() % 20000) + 10000;
 }
 
-void DCacheOptImp::insertProxyRouter(const string &sProxyName, const string &sRouterName, const string &sDbName,const string &sIp, const string& sModuleNameList, bool bReplace, string & errmsg)
+void DCacheOptImp::insertProxyRouter(const string &sProxyName, const string &sRouterName, const string &sDbName, const string &sIp, const string& sModuleNameList, bool bReplace, string & errmsg)
 {
     try
     {
@@ -3242,7 +4374,7 @@ void DCacheOptImp::insertProxyRouter(const string &sProxyName, const string &sRo
     }
 }
 
-int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCacheIp, int memSize, const string &sRouterName, const RouterDbInfo &routerDBInfo, const string& sModuleName, bool bReplace, string & errmsg)
+int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCacheIp, int memSize, const string &sRouterName, const TC_DBConf &routerDbInfo, const string& sModuleName, bool bReplace, string & errmsg)
 {
     TLOGDEBUG(FUN_LOG << "cache server name:" << sCacheName << "|router server name:" << sRouterName << endl);
 
@@ -3266,9 +4398,9 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
     map<string, pair<TC_Mysql::FT, string> > mpProxyRouter;
     try
     {
-        TC_Mysql tRouterDb(routerDBInfo.sDbIp, routerDBInfo.sUserName, routerDBInfo.sPwd, routerDBInfo.sDbName, routerDBInfo.sCharSet, TC_Common::strto<int>(routerDBInfo.sPort));
+        TC_Mysql mysqlRouterDb(routerDbInfo);
         sSql = "select * from t_router_group where server_name='DCache." + sCacheName + "'";
-        TC_Mysql::MysqlData groupInfo = tRouterDb.queryRecord(sSql);
+        TC_Mysql::MysqlData groupInfo = mysqlRouterDb.queryRecord(sSql);
         if (groupInfo.size() != 1)
         {
             errmsg = string("select from t_router_group result data size:") + TC_Common::tostr(groupInfo.size()) + " no equal to 1.|cache server name:" + "DCache." + sCacheName;
@@ -3278,7 +4410,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
 
 
         sSql = "select idc_area from t_router_server where server_name='DCache." + sCacheName + "'";
-        TC_Mysql::MysqlData serverInfo = tRouterDb.queryRecord(sSql);
+        TC_Mysql::MysqlData serverInfo = mysqlRouterDb.queryRecord(sSql);
         if (serverInfo.size() != 1)
         {
             errmsg = string("select from t_router_server result data size:") + TC_Common::tostr(serverInfo.size()) + " no equal to 1.|cache server name:" + "DCache." + sCacheName;
@@ -3289,12 +4421,12 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         mpProxyRouter["cache_name"]     = make_pair(TC_Mysql::DB_STR, sCacheName);
         mpProxyRouter["cache_ip"]       = make_pair(TC_Mysql::DB_STR, sCacheIp);
         mpProxyRouter["router_name"]    = make_pair(TC_Mysql::DB_STR, sRouterName);
-        mpProxyRouter["db_name"]        = make_pair(TC_Mysql::DB_STR, routerDBInfo.sDbName);
-        mpProxyRouter["db_ip"]          = make_pair(TC_Mysql::DB_STR, routerDBInfo.sDbIp);
-        mpProxyRouter["db_port"]        = make_pair(TC_Mysql::DB_STR, routerDBInfo.sPort);
-        mpProxyRouter["db_user"]        = make_pair(TC_Mysql::DB_STR, routerDBInfo.sUserName);
-        mpProxyRouter["db_pwd"]         = make_pair(TC_Mysql::DB_STR, routerDBInfo.sPwd);
-        mpProxyRouter["db_charset"]     = make_pair(TC_Mysql::DB_STR, routerDBInfo.sCharSet);
+        mpProxyRouter["db_name"]        = make_pair(TC_Mysql::DB_STR, routerDbInfo._database);
+        mpProxyRouter["db_ip"]          = make_pair(TC_Mysql::DB_STR, routerDbInfo._host);
+        mpProxyRouter["db_port"]        = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(routerDbInfo._port));
+        mpProxyRouter["db_user"]        = make_pair(TC_Mysql::DB_STR, routerDbInfo._user);
+        mpProxyRouter["db_pwd"]         = make_pair(TC_Mysql::DB_STR, routerDbInfo._password);
+        mpProxyRouter["db_charset"]     = make_pair(TC_Mysql::DB_STR, routerDbInfo._charset);
         mpProxyRouter["module_name"]    = make_pair(TC_Mysql::DB_STR, sModuleName);
         mpProxyRouter["app_name"]       = make_pair(TC_Mysql::DB_STR, appNameData[0]["app_name"]);
         mpProxyRouter["idc_area"]       = make_pair(TC_Mysql::DB_STR, serverInfo[0]["idc_area"]);
@@ -3304,15 +4436,17 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         mpProxyRouter["mem_size"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(memSize));
 
         _mysqlRelationDB.replaceRecord("t_cache_router", mpProxyRouter);
+
+        return 0;
     }
-    catch(exception &ex)
+    catch (exception &ex)
     {
-        errmsg = string("query router db catch exception|db host:") + routerDBInfo.sDbIp + "|db name:"+ routerDBInfo.sDbName + "|port:" + routerDBInfo.sPort + "|exception:" + ex.what();
+        errmsg = string("query router db catch exception|db name:") + routerDbInfo._database + "|db host:" + routerDbInfo._host + "|port:" + TC_Common::tostr(routerDbInfo._port) + "|exception:" + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
-    return 0;
+    return -1;
 }
 
 void DCacheOptImp::insertProxyCache(const string &sProxyObj, const string & sCacheName, bool bReplace)
@@ -3327,47 +4461,7 @@ void DCacheOptImp::insertProxyCache(const string &sProxyObj, const string & sCac
         _mysqlRelationDB.insertRecord("t_proxy_cache", mpProxyCache);
 }
 
-/*int DCacheOptImp::getRouterDBFromAppTable(const string &appName, RouterDbInfo &routerDbInfo, string & sProxyName, string & sRouterName, string &errmsg)
-{
-    errmsg = "";
-    string sSql ("");
-    sSql = "select * from t_proxy_app where app_name='" + appName + "'";
-
-    TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
-
-    if (data.size() > 0)
-    {
-        sProxyName = data[0]["proxy_name"];
-
-        sSql = "select * from t_router_app where app_name='" + appName + "'";
-        data = _mysqlRelationDB.queryRecord(sSql);
-        if (data.size() > 0)
-        {
-            sRouterName = data[0]["router_name"];
-            routerDbInfo.sDbIp= data[0]["host"];
-            routerDbInfo.sDbName = data[0]["db_name"];
-            routerDbInfo.sPort = data[0]["port"];
-            routerDbInfo.sUserName = data[0]["user"];
-            routerDbInfo.sPwd = data[0]["password"];
-            routerDbInfo.sCharSet = data[0]["charset"];
-            return 0;
-        }
-        else
-        {
-            errmsg = string("no router selected for app name:") + appName;
-            TLOGERROR(FUN_LOG << "error:" << errmsg << "|sql:" << sSql << endl);
-        }
-    }
-    else
-    {
-        errmsg = string("no proxy selected for app name:") + appName;
-        TLOGERROR(FUN_LOG << "error:" << errmsg << endl);
-    }
-
-    return -1;
-}*/
-
-int DCacheOptImp::getRouterDBFromAppTable(const string &appName, RouterDbInfo &routerDbInfo, vector<string> & sProxyName, string & sRouterName, string &errmsg)
+int DCacheOptImp::getRouterDBFromAppTable(const string &appName, TC_DBConf &routerDbInfo, vector<string> & sProxyName, string & sRouterName, string &errmsg)
 {
     try
     {
@@ -3390,12 +4484,12 @@ int DCacheOptImp::getRouterDBFromAppTable(const string &appName, RouterDbInfo &r
             if (data.size() > 0)
             {
                 sRouterName             = data[0]["router_name"];
-                routerDbInfo.sDbIp      = data[0]["host"];
-                routerDbInfo.sDbName    = data[0]["db_name"];
-                routerDbInfo.sPort      = data[0]["port"];
-                routerDbInfo.sUserName  = data[0]["user"];
-                routerDbInfo.sPwd       = data[0]["password"];
-                routerDbInfo.sCharSet   = data[0]["charset"];
+                routerDbInfo._host      = data[0]["host"];
+                routerDbInfo._database  = data[0]["db_name"];
+                routerDbInfo._port      = TC_Common::strto<int>(data[0]["port"]);
+                routerDbInfo._user      = data[0]["user"];
+                routerDbInfo._password  = data[0]["password"];
+                routerDbInfo._charset   = data[0]["charset"];
 
                 return 0;
             }
@@ -3485,25 +4579,32 @@ int DCacheOptImp::expandCacheConf(const string &appName, const string &moduleNam
         }
 
         if (insertConfigFilesTable(vtCacheHost[i].serverName, vtCacheHost[i].serverIp, 0, level3Vec, 2, bReplace, errmsg) != 0)
+        {
+            errmsg = string("insert config file table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
+        }
 
         if (insertReferenceTable(iAppConfigId, vtCacheHost[i].serverName, vtCacheHost[i].serverIp, bReplace, errmsg) != 0)
+        {
+            errmsg = string("insert reference table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
-
+        }
     }
 
     return 0;
 }
 
-int DCacheOptImp::getAppModConfigId(const string &appName, const string &moudleName, int &id, string & errmsg)
+int DCacheOptImp::getAppModConfigId(const string &appName, const string &moduleName, int &id, string & errmsg)
 {
     try
     {
-        string sSql = "select id from t_config_appMod where appName = '" + appName + "' and moduleName = '" + moudleName + "'";
+        string sSql = "select id from t_config_appMod where appName = '" + appName + "' and moduleName = '" + moduleName + "'";
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() != 1)
         {
-            errmsg = string("get id from t_config_appMod error, appName:") + appName + ", moudleName:" + moudleName + ", size:" + TC_Common::tostr<int>(data.size()) + " not equal to 1.";
+            errmsg = string("get id from t_config_appMod error, appName:") + appName + ", moduleName:" + moduleName + ", size:" + TC_Common::tostr<int>(data.size()) + " not equal to 1.";
             TLOGERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
             return -1;
@@ -3513,7 +4614,7 @@ int DCacheOptImp::getAppModConfigId(const string &appName, const string &moudleN
     }
     catch(const std::exception &ex)
     {
-        errmsg = string("get id from t_config_appMod appName:") + appName + ", moudleName:" + moudleName + ", catch exception:" + ex.what();
+        errmsg = string("get id from t_config_appMod appName:") + appName + ", moduleName:" + moduleName + ", catch exception:" + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
@@ -3522,14 +4623,14 @@ int DCacheOptImp::getAppModConfigId(const string &appName, const string &moudleN
     return 0;
 }
 
-int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& sRouterDbName, const string& sRouterDbHost, const string& sRouterDbPort, const string &sRouterDbUser, const string &sRouterDbPwd, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg)
+int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg)
 {
     TC_Mysql tcMysql;
     try
     {
-        TLOGDEBUG(FUN_LOG << "router db name:" << sRouterDbName << "|host:" << sRouterDbHost << "|port:" << sRouterDbPort << endl);
+        TLOGDEBUG(FUN_LOG << "router db name:" << routerDbInfo._database << "|host:" << routerDbInfo._host << "|port:" << routerDbInfo._port << endl);
 
-        tcMysql.init(sRouterDbHost, sRouterDbUser, sRouterDbPwd, sRouterDbName, "utf8", TC_Common::strto<int>(sRouterDbPort));
+        tcMysql.init(routerDbInfo);
 
         uint16_t iPort = getPort(vtCacheHost[0].serverIp);
         if (0 == iPort)
@@ -3549,7 +4650,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["ip"]          = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].serverIp);
 
             uint16_t iBinLogPort = iPort;
-            while(true)
+            while (true)
             {
                 iBinLogPort = getPort(vtCacheHost[i].serverIp, iBinLogPort);
                 if (iBinLogPort == 0)
@@ -3563,13 +4664,14 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
                     iBinLogPort++;
                     continue;
                 }
+
                 break;
             }
             setAddr.insert(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iBinLogPort));
             mpServer["binlog_port"] = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(iBinLogPort));
 
             uint16_t iCachePort = iPort + 1;
-            while(true)
+            while (true)
             {
                 iCachePort = getPort(vtCacheHost[i].serverIp, iCachePort);
                 if (iCachePort == 0)
@@ -3589,7 +4691,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["cache_port"] = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(iCachePort));
 
             uint16_t iRouterPort = iPort + 2;
-            while(true)
+            while (true)
             {
                 iRouterPort = getPort(vtCacheHost[i].serverIp, iRouterPort);
                 if (iRouterPort == 0)
@@ -3609,7 +4711,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["routerclient_port"] = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(iRouterPort));
 
             uint16_t iBackUpPort = iPort + 3;
-            while(true)
+            while (true)
             {
                 iBackUpPort = getPort(vtCacheHost[i].serverIp, iBackUpPort);
                 if (iBackUpPort == 0)
@@ -3629,7 +4731,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["backup_port"] = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(iBackUpPort));
 
             uint16_t iWCachePort = iPort + 4;
-            while(true)
+            while (true)
             {
                 iWCachePort = getPort(vtCacheHost[i].serverIp, iWCachePort);
                 if (iWCachePort == 0)
@@ -3649,7 +4751,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["wcache_port"] = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(iWCachePort));
 
             uint16_t iControlAckPort = iPort + 5;
-            while(true)
+            while (true)
             {
                 iControlAckPort = getPort(vtCacheHost[i].serverIp, iControlAckPort);
                 if (iControlAckPort == 0)
@@ -3672,7 +4774,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             mpServer["POSTTIME"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
             mpServer["LASTUSER"] = make_pair(TC_Mysql::DB_STR, "sys");
 
-            if (tcMysql.getRecordCount("t_router_server", "where server_name='"+vtCacheHost[i].serverName+"'")==0)
+            if (tcMysql.getRecordCount("t_router_server", "where server_name='" + vtCacheHost[i].serverName + "'") == 0)
             {
                 if (bReplace)
                     tcMysql.replaceRecord("t_router_server", mpServer);
@@ -3685,7 +4787,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             if (!bReplace && vtCacheHost[i].type == "M" && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "' AND server_status='M'") > 0)
             {
                 errmsg = string("module_name:") + sModuleName + ", group_name:" + vtCacheHost[i].groupName + " has master cache server|server name:" + vtCacheHost[i].serverName;
-                TLOGERROR(FUN_LOG << errmsg<< endl);
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -3696,7 +4798,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
                 if (existRouterGroup[0]["source_server_name"] != vtCacheHost[i].bakSrcServerName)
                 {
                     errmsg = string("source_server_name incosistent-param:") + vtCacheHost[i].bakSrcServerName + "|database:" + existRouterGroup[0]["source_server_name"];
-                    TLOGERROR(FUN_LOG << errmsg<< endl);
+                    TLOGERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 else
@@ -3706,22 +4808,24 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
             }
 
             map<string, pair<TC_Mysql::FT, string> > mpGroup;
-            mpGroup["module_name"]   = make_pair(TC_Mysql::DB_STR, sModuleName);
-            mpGroup["group_name"]    = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].groupName);
-            mpGroup["server_name"]   = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].serverName);
-            mpGroup["server_status"] = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].type);
-            mpGroup["priority"]      = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].priority);
-            mpGroup["source_server_name"] = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].bakSrcServerName);
-            mpGroup["POSTTIME"]      = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-            mpGroup["LASTUSER"]      = make_pair(TC_Mysql::DB_STR, "sys");
+            mpGroup["module_name"]          = make_pair(TC_Mysql::DB_STR, sModuleName);
+            mpGroup["group_name"]           = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].groupName);
+            mpGroup["server_name"]          = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].serverName);
+            mpGroup["server_status"]        = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].type);
+            mpGroup["priority"]             = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].priority);
+            mpGroup["source_server_name"]   = make_pair(TC_Mysql::DB_STR, vtCacheHost[i].bakSrcServerName);
+            mpGroup["POSTTIME"]             = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+            mpGroup["LASTUSER"]             = make_pair(TC_Mysql::DB_STR, "sys");
 
             if (bReplace)
                 tcMysql.replaceRecord("t_router_group", mpGroup);
             else
                 tcMysql.insertRecord("t_router_group", mpGroup);
         }
+
+        return 0;
     }
-    catch(const std::exception &ex)
+    catch (const std::exception &ex)
     {
         errmsg = string("expand module name:") + sModuleName + " to router db's table catch exception:" + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
@@ -3729,105 +4833,147 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const string& 
         throw DCacheOptException(errmsg);
     }
 
-    return 0;
+    return -1;
 }
 
-int DCacheOptImp::getRouterDBInfoAndObj(const string &sWhereName, RouterDbInfo &routerDbInfo, string &routerObj, string & errmsg, int type)
+int DCacheOptImp::getRouterObj(const string & sWhereName, string & routerObj, string & errmsg, int type)
 {
-    errmsg = "";
-    string sSql ("");
-    if (type == 1)
+    try
     {
-        sSql = "select * from t_cache_router where app_name='" + sWhereName + "'";
-    }
-    else
-    {
-        sSql = "select * from t_cache_router where cache_name='" + sWhereName + "'";
-    }
-    TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        errmsg = "";
+        string sSql ("");
+        if (type == 1)
+        {
+            sSql = "select * from t_cache_router where app_name='" + sWhereName + "' limit 1";
+        }
+        else
+        {
+            sSql = "select * from t_cache_router where cache_name='" + sWhereName + "' limit 1";
+        }
 
-    if (data.size() > 0)
-    {
-        routerDbInfo.sDbIp      = data[0]["db_ip"];
-        routerDbInfo.sDbName    = data[0]["db_name"];
-        routerDbInfo.sPort      = data[0]["db_port"];
-        routerDbInfo.sUserName  = data[0]["db_user"];
-        routerDbInfo.sPwd       = data[0]["db_pwd"];
-        routerDbInfo.sCharSet   = data[0]["db_charset"];
-        routerObj               = data[0]["router_name"];
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            routerObj = data[0]["router_name"];
 
-        return 0;
+            return 0;
+        }
+        else
+        {
+            errmsg = "not find router info in t_cache_router";
+            TLOGERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
+        }
     }
-    else
+    catch(exception &ex)
     {
-        errmsg = "not find router info in t_cache_router";
-        TLOGERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
+        errmsg = string("get router obj from relation db t_cache_router table catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = "get router obj from relation db t_cache_router table catch unknown exception";
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
 }
 
-int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::string & moduleName,const vector<DCache::CacheHostParam> & vtCacheHost,const std::string & sTarsVersion,DCache::DCacheType cacheType, bool bReplace,std::string &err)
+int DCacheOptImp::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg)
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "appName:" << appName << "|moduleName:" << moduleName << "|cacheType:" << cacheType << "|replace:" << bReplace << endl);
+        string sSql("");
+        sSql = "select * from t_cache_router where app_name='" + appName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            routerDbInfo._host      = data[0]["db_ip"];
+            routerDbInfo._database  = data[0]["db_name"];
+            routerDbInfo._port      = TC_Common::strto<int>(data[0]["db_port"]);
+            routerDbInfo._user      = data[0]["db_user"];
+            routerDbInfo._password  = data[0]["db_pwd"];
+            routerDbInfo._charset   = data[0]["db_charset"];
+
+            return 0;
+        }
+        else
+        {
+            errmsg = string("not find router db config in relation db table t_cache_router|app name:") + appName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch(exception &ex)
+    {
+        errmsg = string("get router db info from relation db t_cache_router table catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = "get router db info from relation db t_cache_router table catch unknown exception";
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::string & moduleName,const vector<DCache::CacheHostParam> & vtCacheHost,const std::string & sTarsVersion,DCache::DCacheType cacheType,bool bReplace,std::string &errmsg)
+{
+    try
+    {
+        TLOGDEBUG(FUN_LOG << "appName:" << appName << "|moduleName:" << moduleName << "|cacheType:" << etos(cacheType) << "|replace:" << bReplace << endl);
 
         if (cacheType != DCache::KVCACHE && cacheType != DCache::MKVCACHE)
         {
-            err = "expand type error: KVCACHE-1 or MKVCACHE-2";
+            errmsg = "expand type error: KVCACHE-1 or MKVCACHE-2";
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         //初始化out变量
-        err = "success";
+        errmsg = "success";
 
         if (vtCacheHost.size() == 0)
         {
-            err = "no cache server specified,please make sure params is right";
+            errmsg = "no cache server specified, please make sure params is right";
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
-        /*RouterDbInfo routerDbInfo;
-        string sRouterObjName;
-        int iRet = getRouterDBInfoAndObj(expandDCacheReq.appName, routerDbInfo, sRouterObjName, err);
-        if (iRet == -1)
-        {
-            return -1;
-        }*/
-
-        RouterDbInfo routerDbInfo;
+        TC_DBConf routerDbInfo;
         vector<string> vtProxyName;
         string routerServerName;
-        int iRet = getRouterDBFromAppTable(appName, routerDbInfo, vtProxyName, routerServerName, err);
-        if (0 != iRet)
+
+        if (0 != getRouterDBFromAppTable(appName, routerDbInfo, vtProxyName, routerServerName, errmsg))
         {
+            errmsg = string("get router db and router server name failed|errmsg:") + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
-        if (expandCacheConf(appName, moduleName, vtCacheHost, bReplace, err) != 0)
+        if (expandCacheConf(appName, moduleName, vtCacheHost, bReplace, errmsg) != 0)
         {
-            err = string("failed to expand cache server conf") + err;
+            errmsg = string("failed to expand cache server conf|errmsg:") + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
-        if (expandCache2RouterDb(moduleName, routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, bReplace, err) != 0)
+        if (expandCache2RouterDb(moduleName, routerDbInfo, vtCacheHost, bReplace, errmsg) != 0)
         {
+            errmsg = string("failed to insert cache server info to router db table|errmsg:") + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
-        iRet = insertCache2TarsDb(routerDbInfo.sDbName, routerDbInfo.sDbIp, routerDbInfo.sPort, routerDbInfo.sUserName, routerDbInfo.sPwd, vtCacheHost, cacheType, sTarsVersion, bReplace, err);
-        if (iRet != 0)
+        if (insertCache2TarsDb(routerDbInfo, vtCacheHost, cacheType, sTarsVersion, bReplace, errmsg) != 0)
         {
-            err = "failed to insert catch info to tars db, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            errmsg = string("failed to insert cache server info to tars db table|errmsg:") + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         try
         {
-            RouterDbInfo tmpRouterDbInfo;
-            tmpRouterDbInfo = routerDbInfo;
             for (size_t i = 0; i < vtCacheHost.size(); ++i)
             {
                 for (size_t j = 0; j < vtProxyName.size(); j++)
@@ -3837,25 +4983,1603 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
                 }
 
                 // 保存cache serve和router server的对应关系
-                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize)*1024), routerServerName + ".RouterObj", tmpRouterDbInfo, moduleName, bReplace, err);
+                insertCacheRouter(vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, int(TC_Common::strto<float>(vtCacheHost[i].shmSize)*1024), routerServerName + ".RouterObj", routerDbInfo, moduleName, bReplace, errmsg);
             }
         }
         catch(exception &ex)
         {
             //这里捕捉异常以不影响安装结果
-            err = string("option relation db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << err << endl);
+            errmsg = string("option relation db catch exception:") + ex.what();
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("expand cache server catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferExisted,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+    try
+    {
+        //往已存在服务迁移
+        if (transferExisted)
+        {
+            string sSql = "select * from t_transfer_status where module_name='" + moduleName
+                        + "' and src_group='"   + srcGroupName
+                        + "' and app_name='"    + appName
+                        + "' and dst_group='"   + dstGroupName + "'";
+
+            TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+            if (data.size() == 0)
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["module_name"]            = make_pair(TC_Mysql::DB_STR, moduleName);
+                m["app_name"]               = make_pair(TC_Mysql::DB_STR, appName);
+                m["src_group"]              = make_pair(TC_Mysql::DB_STR, srcGroupName);
+                m["dst_group"]              = make_pair(TC_Mysql::DB_STR, dstGroupName);
+                m["status"]                 = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER));  // 1: 配置阶段完成
+                m["transfer_start_time"]    = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                _mysqlRelationDB.insertRecord("t_transfer_status", m);
+            }
+            else if (data[0]["status"] == TC_Common::tostr(TRANSFER_FINISH))
+            {
+                //status: 4: 迁移完成
+                //以前有成功记录，就覆盖
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["status"]                 = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 1: 配置阶段完成
+                m["transfer_start_time"]    = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                string cond = "where module_name='" + moduleName
+                            + "' and src_group='"   + srcGroupName
+                            + "' and app_name='"    + appName
+                            + "' and dst_group='"   + dstGroupName + "'";
+
+                _mysqlRelationDB.updateRecord("t_transfer_status", m, cond);
+            }
+
+            //改为往数据库中插入相关信息
+            TLOGDEBUG(FUN_LOG << "insert transfer record succ for exist dst group|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+
             return 0;
+        }
+        else
+        {
+            //往新部署服务迁移
+            string sSql = "select * from t_transfer_status where module_name='" + moduleName
+                        + "' and src_group='"   + srcGroupName
+                        + "' and app_name='"    + appName
+                        + "' and dst_group='"   + dstGroupName + "'";
+
+            TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+            if ((data.size() > 0) && (data[0]["status"] != TC_Common::tostr(TRANSFER_FINISH)))
+            {
+                //此阶段的配置已成功
+                if (data[0]["status"] != TC_Common::tostr(NEW_TASK))
+                {
+                    TLOGDEBUG(FUN_LOG << "configure transfer succ, app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+                    return 0;
+                }
+                else if (data[0]["status"] == TC_Common::tostr(NEW_TASK))
+                {
+                    // 0: 新建任务，如果配置阶段失败，则状态一直是0
+                    //上次在此阶段失败，需要清除下，再发起迁移
+                    errmsg = "configure transfer failed need clean, app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "|dst group name:" + dstGroupName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                }
+            }
+            else
+            {
+                //记录迁移信息并准备开始迁移
+                if (data.size() == 0)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["module_name"]            = make_pair(TC_Mysql::DB_STR, moduleName);
+                    m["app_name"]               = make_pair(TC_Mysql::DB_STR, appName);
+                    m["src_group"]              = make_pair(TC_Mysql::DB_STR, srcGroupName);
+                    m["dst_group"]              = make_pair(TC_Mysql::DB_STR, dstGroupName);
+                    m["status"]                 = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建迁移任务
+                    m["transfer_start_time"]    = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                    _mysqlRelationDB.insertRecord("t_transfer_status", m);
+                }
+                else
+                {
+                    //以前有成功记录，就覆盖
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建迁移任务
+                    m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                    string cond = "where module_name='" + moduleName
+                                + "' and src_group='"   + srcGroupName
+                                + "' and app_name='"    + appName
+                                + "' and dst_group='"   + dstGroupName + "'";
+
+                    _mysqlRelationDB.updateRecord("t_transfer_status", m, cond);
+                }
+            }
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert transfer status record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertExpandReduce2TransferDb(const std::string& appName, const std::string& moduleName, TransferType type, std::string& errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
+    try
+    {
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        {
+            //记录扩容或者缩容信息并准备开始迁移
+            if (data.size() == 0)
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["module_name"]        = make_pair(TC_Mysql::DB_STR, moduleName);
+                m["app_name"]           = make_pair(TC_Mysql::DB_STR, appName);
+                m["status"]             = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建任务
+                m["type"]               = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type)); // type: 1:expand, 2:reduce
+                m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                _mysqlRelationDB.insertRecord("t_expand_status", m);
+            }
+            else
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 1: 配置阶段完成
+                m["type"]   = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type));
+                m["expand_start_time"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+
+                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "'";
+
+                _mysqlRelationDB.updateRecord("t_expand_status", m, cond);
+            }
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert expand or reduce status record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, const std::string& moduleName, TransferType type, const vector<string> & groupName, std::string& errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
+    try
+    {
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        {
+            //记录扩容或者缩容信息并准备开始迁移
+            if (data.size() == 0)
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["module_name"]        = make_pair(TC_Mysql::DB_STR, moduleName);
+                m["app_name"]           = make_pair(TC_Mysql::DB_STR, appName);
+                m["status"]             = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建任务
+                m["type"]               = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type)); // type: 1:expand, 2:reduce
+                m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+                m["modify_group_name"]  = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(groupName.begin(), groupName.end())); // 多个组名以"|"隔开
+                // modify_group_name: 对于扩容是新扩的组名，对于缩容是要缩掉的组名
+
+                _mysqlRelationDB.insertRecord("t_expand_status", m);
+            }
+            else
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["status"]             = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 1: 配置阶段完成
+                m["type"]               = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type));
+                m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+                m["modify_group_name"]  = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(groupName.begin(), groupName.end())); // 多个组名以"|"隔开
+
+                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "'";
+
+                _mysqlRelationDB.updateRecord("t_expand_status", m, cond);
+            }
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert expand or reduce status record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+
+int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string &module, const string &srcGroup, const string &destGroup, unsigned int fromPage, unsigned int toPage, string &ids, std::string& errmsg)
+{
+    try
+    {
+        TLOGDEBUG(FUN_LOG << "|dstGroup:" << destGroup << "|srcGroup:" << srcGroup << "|fromPage:" << fromPage << "|toPage:" << toPage << endl);
+        if ((toPage - fromPage) > 10000)
+        {
+            for (unsigned int begin = fromPage; begin <= toPage; begin += 10000)
+            {
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["module_name"]        = make_pair(TC_Mysql::DB_STR, module);
+                m["from_page_no"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(begin));
+
+                unsigned int end = 0;
+                if ((begin + 9999) >= toPage)
+                {
+                    end = toPage;
+                }
+                else
+                {
+                    end = begin + 9999;
+                }
+
+                m["to_page_no"]         = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(end));
+                m["group_name"]         = make_pair(TC_Mysql::DB_STR, srcGroup);
+                m["trans_group_name"]   = make_pair(TC_Mysql::DB_STR, destGroup);
+                m["state"]              = make_pair(TC_Mysql::DB_INT, "3"); // 3-设置迁移页
+
+                tcMysql.insertRecord("t_router_transfer", m);
+
+                string sql = string("select * from t_router_transfer where module_name='") + module
+                           + string("' and from_page_no=") + TC_Common::tostr<int>(begin)
+                           + string(" and to_page_no=") + TC_Common::tostr<int>(end)
+                           + string(" and group_name='") + srcGroup
+                           + string("' and trans_group_name='") + destGroup
+                           + string("' order by id desc limit 1");
+
+                TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sql);
+
+                // 记录 迁移任务的 id
+                ids += transferData[0]["id"] + "|";
+            }
+        }
+        else
+        {
+            map<string, pair<TC_Mysql::FT, string> > m;
+            m["module_name"]    = make_pair(TC_Mysql::DB_STR, module);
+            m["from_page_no"]   = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(fromPage));
+            m["to_page_no"]     = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(toPage));
+            m["group_name"]     = make_pair(TC_Mysql::DB_STR, srcGroup);
+            m["trans_group_name"]     = make_pair(TC_Mysql::DB_STR, destGroup);
+            m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // 3-设置迁移页
+            tcMysql.insertRecord("t_router_transfer", m);
+
+            string sql = string("select * from t_router_transfer where module_name='") + module
+                       + string("' and from_page_no=") + TC_Common::tostr<int>(fromPage)
+                       + string(" and to_page_no=") + TC_Common::tostr<int>(toPage)
+                       + string(" and group_name='") + srcGroup
+                       + string("' and trans_group_name='") + destGroup
+                       + string("' order by id desc limit 1");
+
+            TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sql);
+
+            // 记录 迁移任务的 id
+            ids += transferData[0]["id"] + "|";
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert transfer record to router db table t_router_transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferData,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName<< "|srcGroup:" << srcGroupName << "|dstGroupName:" << dstGroupName << "|transferData:" << transferData << endl);
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_transfer_status where module_name='" + moduleName
+                    + "' and src_group='"   + srcGroupName
+                    + "' and dst_group='"   + dstGroupName
+                    + "' and app_name='"    + appName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            TC_Mysql tcMysql;
+            tcMysql.init(routerDbInfo);
+            tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+            string sql = string("select * from t_router_record where module_name='") + moduleName + string("' and group_name='") + srcGroupName + string("'");
+
+            TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sql);
+            if (recordData.size() == 0)
+            {
+                errmsg = "transfer page not find in router record table|moduleName:" + moduleName + "|srcGroupName:" + srcGroupName;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+                return -1;
+            }
+
+            if (transferData)
+            {
+                // 迁移数据，需要插入迁移记录
+                string id_str = "";
+                for (size_t i = 0; i < recordData.size(); ++i)
+                {
+                    insertTransferRecord2RouterDb(tcMysql, recordData[i]["module_name"], recordData[i]["group_name"], data[0]["dst_group"], TC_Common::strto<unsigned int>(recordData[i]["from_page_no"]), TC_Common::strto<unsigned int>(recordData[i]["to_page_no"]), id_str, errmsg);
+                }
+
+                map<string, pair<TC_Mysql::FT, string> > m_update;
+                m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING)); // 设置迁移状态为 3: 迁移中
+                m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, id_str);
+
+                string condition = "where id=" + data[0]["id"];
+
+                _mysqlRelationDB.updateRecord("t_transfer_status", m_update, condition);
+
+                vector<string> tmp = TC_Common::sepstr<string>(id_str, "|");
+                for (size_t j = 0; j < tmp.size(); ++j)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m_update;
+                    m_update["state"] = make_pair(TC_Mysql::DB_INT, "0"); // 设置路由迁移任务状态为 0: 未迁移
+
+                    string condition = "where id=" + tmp[j];
+
+                    tcMysql.updateRecord("t_router_transfer", m_update, condition);
+                }
+            }
+            else
+            {
+                //无数据迁移，直接把路由信息由源组改成目的组
+                for (size_t i = 0; i < recordData.size(); i++)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["group_name"] = make_pair(TC_Mysql::DB_STR, dstGroupName);
+
+                    tcMysql.updateRecord("t_router_record", m, "where id=" + recordData[i]["id"]);
+                }
+
+                //修改模块版本号
+                sql = "select * from t_router_module where module_name='" +  moduleName + "'";
+                TC_Mysql::MysqlData moduleData = tcMysql.queryRecord(sql);
+                if (moduleData.size() == 0)
+                {
+                    errmsg = "router module info not find in router module table|module name:" + moduleName + "|src group name:" + srcGroupName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+                map<string, pair<TC_Mysql::FT, string> > m;
+                m["version"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TC_Common::strto<int>(moduleData[0]["version"]) + 1));
+
+                tcMysql.updateRecord("t_router_module", m, "where id=" + moduleData[0]["id"]);
+
+                //根据appName查询 router obj
+                string routerObj("");
+                iRet = getRouterObj(appName, routerObj, errmsg);
+                if (iRet != 0)
+                {
+                    errmsg = "get router obj info failed|appName:" + appName + "|errmsg:" + errmsg;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                vector<string> tmp = TC_Common::sepstr<string>(routerObj, ".");
+                iRet = reloadRouterByModule("DCache", moduleName, tmp[0] + "." + tmp[1], errmsg);
+                if (iRet != 0)
+                {
+                    errmsg = "reload router by module failed, router server name:" + tmp[1] + "|module name:" + moduleName + "|errmsg:" + errmsg;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                // 更新 迁移状态为 迁移完成
+                map<string, pair<TC_Mysql::FT, string> > m_update;
+                m_update["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_FINISH));
+
+                _mysqlRelationDB.updateRecord("t_transfer_status", m_update, "where id=" + data[0]["id"]);
+            }
+
+            return 0;
+        }
+        else
+        {
+            errmsg = "no record in transgfer status table|moduleName:" + moduleName + "|srcGroupName:" + srcGroupName + "|dstGroupName:" + dstGroupName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert tarnsfer record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const vector<std::string> & dstGroupNames,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|dstGroupNames:" << TC_Common::tostr(dstGroupNames) << endl);
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            {
+                TC_Mysql tcMysql;
+                tcMysql.init(routerDbInfo);
+                tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+                sSql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name='") + moduleName + string("' order by num asc");
+
+                TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sSql);
+                if (recordData.size() == 0)
+                {
+                    errmsg = string("transfer page not find in router record table|appName:") + appName + "|moduleName:" + moduleName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                //记录现有组的路由信息
+                vector<RouterInfoPtr> groupRouter;
+
+                //记录以开始页为索引的路由信息
+                map<int, RouterInfoPtr> fromPageRouter;
+
+                //记录以结束页为索引的路由信息
+                map<int, RouterInfoPtr> toPageRouter;
+
+                //记录源组可分配出去的路由页数
+                map<string, int> srcGroupPages;
+
+                //用于校验路由是否完整
+                int pageCount = 0;
+
+                for (size_t i = 0; i < recordData.size(); i++)
+                {
+                    RouterInfoPtr tmpR = new RouterInfo;
+                    tmpR->fromPage  = TC_Common::strto<unsigned int>(recordData[i]["from_page_no"]);
+                    tmpR->toPage    = TC_Common::strto<unsigned int>(recordData[i]["to_page_no"]);
+                    tmpR->groupName = recordData[i]["group_name"];
+                    tmpR->flags     = true;
+
+                    groupRouter.push_back(tmpR);
+
+                    fromPageRouter[tmpR->fromPage] = tmpR;
+                    toPageRouter[tmpR->toPage] = tmpR;
+
+                    srcGroupPages[tmpR->groupName] += TC_Common::strto<int>(recordData[i]["num"]);
+
+                    pageCount += TC_Common::strto<int>(recordData[i]["num"]);
+                }
+
+                if (pageCount != TOTAL_ROUTER_PAGE_NUM)
+                {
+                    errmsg = string("router page is not complete|appName:") + appName + "|moduleName:" + moduleName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+                else
+                {
+                    TLOGDEBUG(FUN_LOG << "router record group size:" << groupRouter.size() << endl);
+                }
+
+                unsigned int totalGroupSize = srcGroupPages.size() + dstGroupNames.size();//扩容后总的服务组数
+                unsigned int pageNumPer = TOTAL_ROUTER_PAGE_NUM / totalGroupSize;//扩容后每组拥有的页数
+
+                map<string, int> dstGroupPages;//记录目的组需要分配的剩余路由页数
+                for (size_t i = 0; i < dstGroupNames.size(); i++)
+                {
+                    dstGroupPages[dstGroupNames[i]] = pageNumPer;
+                }
+
+                //计算源组可分配的路由页数
+                for (map<string, int>::iterator it = srcGroupPages.begin(); it != srcGroupPages.end(); it++)
+                {
+                    it->second -= pageNumPer;
+                }
+
+                string id_str = "";
+
+                for (size_t i = 0; (i < groupRouter.size()) && (dstGroupPages.size() > 0); )
+                {
+                    if ((groupRouter[i]->flags == false) || (srcGroupPages[groupRouter[i]->groupName] <= 0))
+                    {
+                        //这个路由已经分配了
+                        i++;
+                        continue;
+                    }
+
+                    map<string, int>::iterator destIt = dstGroupPages.begin();
+
+                    //这个记录的路由页数
+                    int tmpNum = groupRouter[i]->toPage - groupRouter[i]->fromPage + 1;
+
+                    //本次可分配的页数
+                    int needPageNum = (srcGroupPages[groupRouter[i]->groupName] < destIt->second) ? srcGroupPages[groupRouter[i]->groupName] : destIt->second;
+
+                    int tmpBeginPage = groupRouter[i]->fromPage;
+                    int tmpEndPage = 0;
+
+                    if (tmpNum <= needPageNum)
+                    {
+                        tmpEndPage = groupRouter[i]->toPage;
+                    }
+                    else
+                    {
+                        tmpEndPage = tmpBeginPage + needPageNum - 1;
+
+                        if(tmpEndPage > groupRouter[i]->toPage)
+                        {
+                            tmpEndPage = groupRouter[i]->toPage;
+                        }
+                    }
+
+                    if (tmpEndPage == groupRouter[i]->toPage)
+                    {
+                        //这个记录已经分配了，标记为不可用
+                        groupRouter[i]->flags = false;
+                    }
+                    else
+                    {
+                        groupRouter[i]->fromPage = tmpEndPage + 1;
+                    }
+
+                    //插入记录
+                    insertTransferRecord2RouterDb(tcMysql, moduleName, groupRouter[i]->groupName, destIt->first, tmpBeginPage, tmpEndPage, id_str, errmsg);
+
+                    srcGroupPages[groupRouter[i]->groupName] -= tmpEndPage - tmpBeginPage + 1;
+
+                    //记录目的组剩余需要迁移的页数
+                    destIt->second -= tmpEndPage - tmpBeginPage + 1;
+                    if (destIt->second <= 0)
+                    {
+                        //这个目的组完成了
+                        dstGroupPages.erase(destIt);
+
+                        TLOGDEBUG(FUN_LOG << "dst group:" << destIt->first << " done! " << destIt->second << " left dst group size:" << dstGroupPages.size() << endl);
+                        continue;
+                    }
+
+                    //找下一个连续的块
+                    int cBeginPage = tmpBeginPage;
+                    int cEndPage = tmpEndPage;
+                    while (destIt->second > 0)
+                    {
+                        map<int, RouterInfoPtr>::iterator fromPageIt = fromPageRouter.find(cEndPage + 1);//接尾的块
+                        map<int, RouterInfoPtr>::iterator toPageIt = toPageRouter.find(cBeginPage - 1);//接头的块
+
+                        RouterInfoPtr routerPtr = NULL;
+
+                        bool isfromPage;
+                        if (fromPageIt == fromPageRouter.end())
+                        {
+                            if (toPageIt == toPageRouter.end())
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                routerPtr = toPageIt->second;
+                                isfromPage = false;
+                            }
+                        }
+                        else if (toPageIt == toPageRouter.end())
+                        {
+                            if (fromPageIt == fromPageRouter.end())
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                routerPtr = fromPageIt->second;
+                                isfromPage = true;
+                            }
+                        }
+                        else
+                        {
+                            if ((fromPageIt->second->flags == false) || (fromPageIt->second->fromPage != fromPageIt->first) || (srcGroupPages[fromPageIt->second->groupName] <= 0))
+                            {
+                                routerPtr = toPageIt->second;
+                                isfromPage = false;
+                            }
+                            else if ((toPageIt->second->flags == false) || (toPageIt->second->toPage != toPageIt->first) || (srcGroupPages[toPageIt->second->groupName] <= 0))
+                            {
+                                routerPtr = fromPageIt->second;
+                                isfromPage = true;
+                            }
+                            else
+                            {
+                                //找一个最小的而且是完整的块
+                                unsigned int fromPageNum = fromPageIt->second->toPage - fromPageIt->second->fromPage + 1;
+                                unsigned int toPageNum = toPageIt->second->toPage - toPageIt->second->fromPage + 1;
+
+                                unsigned int fromAbleNum = (srcGroupPages[fromPageIt->second->groupName] < destIt->second)?srcGroupPages[fromPageIt->second->groupName]:destIt->second;
+                                unsigned int toAbleNum = (srcGroupPages[toPageIt->second->groupName] < destIt->second)?srcGroupPages[toPageIt->second->groupName]:destIt->second;
+
+                                if (fromAbleNum < fromPageNum)
+                                {
+                                    routerPtr = toPageIt->second;
+                                    isfromPage = false;
+                                }
+                                else if (toAbleNum < toPageNum)
+                                {
+                                    routerPtr = fromPageIt->second;
+                                    isfromPage = true;
+                                }
+                                else
+                                {
+                                    if (fromPageNum <= toPageNum)
+                                    {
+                                        routerPtr = fromPageIt->second;
+                                        isfromPage = true;
+                                    }
+                                    else
+                                    {
+                                        routerPtr = toPageIt->second;
+                                        isfromPage = false;
+                                    }
+                                }
+                            }
+                        }
+
+                        if ((routerPtr->flags == false) || ((srcGroupPages[routerPtr->groupName] <= 0)))
+                        {
+                            break;
+                        }
+
+                        int tmpBeginPage = 0;
+                        int tmpEndPage = 0;
+                        if (isfromPage)
+                        {
+                            if (routerPtr->fromPage != (cEndPage + 1))
+                            {
+                                TLOGERROR(FUN_LOG << "router page is discontinuous, next begin page:" << routerPtr->fromPage << " is not equal to last end page increase one:" << (cEndPage + 1) << endl);
+                                break;//接不上，直接退出
+                            }
+
+                            int tmpNum = (srcGroupPages[routerPtr->groupName] < destIt->second)?srcGroupPages[routerPtr->groupName]:destIt->second;
+
+                            tmpBeginPage = routerPtr->fromPage;
+
+                            if (tmpNum < (routerPtr->toPage - routerPtr->fromPage + 1))
+                            {
+                                tmpEndPage = tmpBeginPage + tmpNum - 1;
+                                routerPtr->fromPage = tmpEndPage + 1;
+
+                                if (tmpEndPage > routerPtr->toPage)
+                                {
+                                    tmpEndPage = routerPtr->toPage;
+                                }
+                            }
+                            else
+                            {
+                                tmpEndPage = routerPtr->toPage;
+                                routerPtr->flags = false;
+                            }
+
+                            cEndPage = tmpEndPage;
+                        }
+                        else
+                        {
+                            if (routerPtr->toPage != (cBeginPage - 1))
+                            {
+                                TLOGERROR(FUN_LOG << "router page is discontinuous, last end page:" << routerPtr->toPage << " is not equal to next begin page decrease one:" << (cBeginPage - 1) << endl);
+                                break;//接不上，直接退出
+                            }
+
+                            int tmpNum = (srcGroupPages[routerPtr->groupName] < destIt->second)?srcGroupPages[routerPtr->groupName]:destIt->second;
+
+                            tmpEndPage = routerPtr->toPage;
+
+                            if (tmpNum < (routerPtr->toPage - routerPtr->fromPage + 1))
+                            {
+                                tmpBeginPage = tmpEndPage - tmpNum - 1;
+                                routerPtr->toPage = tmpBeginPage - 1;
+
+                                if(tmpBeginPage < routerPtr->fromPage)
+                                {
+                                    tmpBeginPage = routerPtr->fromPage;
+                                }
+                            }
+                            else
+                            {
+                                tmpBeginPage = routerPtr->fromPage;
+                                routerPtr->flags = false;
+                            }
+
+                            cBeginPage = tmpBeginPage;
+                        }
+
+                        //插入记录
+                        insertTransferRecord2RouterDb(tcMysql, moduleName, routerPtr->groupName, destIt->first, tmpBeginPage, tmpEndPage, id_str, errmsg);
+
+                        srcGroupPages[routerPtr->groupName] -= tmpEndPage - tmpBeginPage + 1;
+
+                        //记录目的组剩余需要迁移的页数
+                        destIt->second -= tmpEndPage - tmpBeginPage + 1;
+                    }
+
+                    if (destIt->second <= 0)
+                    {
+                        //这个目的组完成了
+                        dstGroupPages.erase(destIt);
+                        continue;
+                    }
+                }
+
+                map<string, pair<TC_Mysql::FT, string> > m_update;
+                m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING));
+                m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, id_str);
+
+                string condition = "where id=" + data[0]["id"];
+
+                _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
+
+                vector<string> tmp = TC_Common::sepstr<string>(id_str, "|");
+                for (size_t j = 0; j < tmp.size(); j++)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m_update;
+                    m_update["state"] = make_pair(TC_Mysql::DB_INT, "0");
+
+                    string condition = "where id=" + tmp[j];
+                    tcMysql.updateRecord("t_router_transfer", m_update, condition);
+                }
+
+                return 0;
+            }
+        }
+        else
+        {
+            errmsg = string("no record in transgfer db expand status table|appName:") + appName + "|moduleName:" + moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert expand transfer record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, const std::string& moduleName, const std::vector<std::string> &srcGroupNames, std::string& errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|srcGroupNames:" << TC_Common::tostr(srcGroupNames) << endl);
+
+    std::vector<std::string> vtSrcGroupNames = srcGroupNames;
+    size_t oldSize = vtSrcGroupNames.size();
+
+    //先对参数排重
+    std::sort(vtSrcGroupNames.begin(), vtSrcGroupNames.end());
+    vtSrcGroupNames.erase(std::unique(vtSrcGroupNames.begin(), vtSrcGroupNames.end()), vtSrcGroupNames.end());
+
+    if (vtSrcGroupNames.size() != oldSize)
+    {
+        errmsg = string("src group name is not unique|app:") + appName + "|module:" + moduleName;
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            {
+                string ids;
+
+                TC_Mysql tcMysql;
+                tcMysql.init(routerDbInfo);
+                tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+                string sql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name='") + moduleName + string("' order by num asc");
+                TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sql);
+                if (recordData.size() == 0)
+                {
+                    errmsg = string("transfer page not find in router record table|appName:") + appName + "|moduleName:" + moduleName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                //记录现有组的路由信息
+                vector<RouterInfoPtr> groupRouter;
+
+                //记录以开始页为索引的路由信息
+                map<int, RouterInfoPtr> fromPageRouter;
+
+                //记录以结束页为索引的路由信息
+                map<int, RouterInfoPtr> toPageRouter;
+
+                //记录原有组的路由页数
+                map<string, int> dstGroupPages; //原所有组的全部页数
+
+                //用于校验路由是否完整
+                int pageCount = 0;
+
+                for (size_t i = 0; i < recordData.size(); i++)
+                {
+                    RouterInfoPtr tmpR = new RouterInfo;
+                    tmpR->fromPage  = TC_Common::strto<unsigned int>(recordData[i]["from_page_no"]);
+                    tmpR->toPage    = TC_Common::strto<unsigned int>(recordData[i]["to_page_no"]);
+                    tmpR->groupName = recordData[i]["group_name"];
+                    tmpR->flags     = true;
+
+                    groupRouter.push_back(tmpR);
+
+                    fromPageRouter[tmpR->fromPage]  = tmpR;
+                    toPageRouter[tmpR->toPage]      = tmpR;
+
+                    dstGroupPages[tmpR->groupName] += TC_Common::strto<int>(recordData[i]["num"]);
+
+                    pageCount += TC_Common::strto<int>(recordData[i]["num"]);
+                }
+
+                if (pageCount != TOTAL_ROUTER_PAGE_NUM)
+                {
+                    errmsg = string("router page is not complete|appName:") + appName + "|moduleName:" + moduleName;
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+                else
+                {
+                    TLOGDEBUG(FUN_LOG << "router record group size:" << groupRouter.size() << endl);
+                }
+
+                //把路由页数为0的去掉
+                map<string, int>::iterator dstGroupPagesIt = dstGroupPages.begin();
+                for (; dstGroupPagesIt != dstGroupPages.end(); )
+                {
+                    if (dstGroupPagesIt->second == 0)
+                    {
+                        dstGroupPages.erase(dstGroupPagesIt++);
+                    }
+                    else
+                    {
+                        dstGroupPagesIt++;
+                    }
+                }
+
+                //校验传入迁移源组是否存在
+                for (size_t i = 0; i < vtSrcGroupNames.size(); i++)
+                {
+                    if (dstGroupPages.find(vtSrcGroupNames[i]) == dstGroupPages.end())
+                    {
+                        errmsg = "src group name not existed:" + vtSrcGroupNames[i];
+                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        return -1;
+                    }
+                }
+
+                if (dstGroupPages.size() <= vtSrcGroupNames.size())
+                {
+                    errmsg = "src group num exceed the total group count";
+                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    return -1;
+                }
+
+                // vtSrcGroupNames 记录的是需要缩容的组名
+                unsigned int totalGroupSize = dstGroupPages.size() - vtSrcGroupNames.size();//缩容后总的服务组数
+                unsigned int pageNumPer = TOTAL_ROUTER_PAGE_NUM / totalGroupSize + 1;//缩容后每组拥有的页数
+
+
+                map<string, int> srcGroupPages;//记录源组需要迁移走的剩余路由页数
+                for (size_t i = 0; i < vtSrcGroupNames.size(); i++)
+                {
+                    srcGroupPages[vtSrcGroupNames[i]] = dstGroupPages[vtSrcGroupNames[i]];
+                    dstGroupPages.erase(vtSrcGroupNames[i]);
+                }
+
+                // 需要把源组的路由页全部迁走 srcGroupPages
+
+                map<string, int>::iterator it = dstGroupPages.begin();
+                for (; it != dstGroupPages.end(); ++it)
+                {
+                    it->second = pageNumPer - it->second;
+                }
+
+                //开始做迁移逻辑
+                for (size_t i = 0; i < recordData.size(); ++i)
+                {
+                    string groupName = recordData[i]["group_name"];
+                    unsigned int toPage     = TC_Common::strto<unsigned int >(recordData[i]["to_page_no"]);
+                    unsigned int fromPage   = TC_Common::strto<unsigned int >(recordData[i]["from_page_no"]);
+
+                    //检查是否是目的组
+                    map<string, int>::iterator groupIt = dstGroupPages.find(groupName);
+                    if (groupIt == dstGroupPages.end())
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        groupRouter[i]->flags = false;
+
+                        if (groupIt->second <= 0)
+                        {
+                            continue;
+                        }
+                    }
+
+                    while (true)
+                    {
+                        //先查找路由范围后面的能不能迁移
+                        map<int, RouterInfoPtr>::iterator it = fromPageRouter.find(toPage + 1);
+                        if (it != fromPageRouter.end() && it->second->flags == true)
+                        {
+                            map<string, int>::iterator srcIt = srcGroupPages.find(it->second->groupName);
+                            if (srcIt != srcGroupPages.end())
+                            {
+
+                                int num = it->second->toPage - it->second->fromPage + 1; // 源组上的一个路由页范围
+
+                                if (dstGroupPages[groupName] > 0)
+                                {
+                                    if (dstGroupPages[groupName] >= num)
+                                    {
+                                        toPage = it->second->toPage;
+
+                                        srcIt->second -= num;
+                                        dstGroupPages[groupName] -= num;
+
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, groupName, it->second->fromPage, it->second->toPage, ids, errmsg);
+
+                                        it->second->flags = false;
+
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        toPage = it->second->fromPage+dstGroupPages[groupName]-1;
+
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, groupName, it->second->fromPage, toPage, ids, errmsg);
+
+                                        it->second->fromPage = toPage + 1;
+
+                                        srcIt->second -= dstGroupPages[groupName];
+                                        dstGroupPages[groupName] = 0;
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        //再找路由范围前的能不能迁移
+                        if (fromPage == 0)
+                        {
+                            break;
+                        }
+
+                        it = toPageRouter.find(fromPage - 1);
+                        if (it != toPageRouter.end() && it->second->flags == true)
+                        {
+                            map<string, int>::iterator srcIt = srcGroupPages.find(it->second->groupName);
+                            if (srcIt != srcGroupPages.end())
+                            {
+                                //找到可以迁移的
+                                int num = it->second->toPage - it->second->fromPage + 1;
+
+                                if (dstGroupPages[groupName] > 0)
+                                {
+                                    if (dstGroupPages[groupName] >= num)
+                                    {
+                                        fromPage = it->second->fromPage;
+
+                                        srcIt->second -= num;
+                                        dstGroupPages[groupName] -= num;
+
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, groupName, it->second->fromPage, it->second->toPage, ids, errmsg);
+
+                                        it->second->flags = false;
+
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        fromPage = it->second->toPage - dstGroupPages[groupName] + 1;
+
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, groupName, fromPage, it->second->toPage, ids, errmsg);
+
+                                        it->second->toPage = fromPage - 1;
+
+                                        srcIt->second -= dstGroupPages[groupName];
+                                        dstGroupPages[groupName] = 0;
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
+                //到这里迁移能路由范围连续的都已经做了，这里再处理剩下的
+                for (size_t i = 0; i < groupRouter.size(); i++)
+                {
+                    if (groupRouter[i]->flags == true)
+                    {
+                        map<string, int>::iterator srcIt = srcGroupPages.find(groupRouter[i]->groupName);
+                        if (srcIt != srcGroupPages.end())
+                        {
+                            unsigned int fromPage   = groupRouter[i]->fromPage;
+                            unsigned int toPage     = groupRouter[i]->toPage;
+
+                            int num = toPage - fromPage + 1;
+
+                            map<string, int>::iterator destIt = dstGroupPages.begin();
+                            for (; destIt != dstGroupPages.end(); destIt++)
+                            {
+                                if (destIt->second > 0)
+                                {
+                                    if (destIt->second > num)
+                                    {
+                                        groupRouter[i]->flags = false;
+                                        destIt->second -= num;
+
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, destIt->first, fromPage,toPage, ids, errmsg);
+
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        //插入记录
+                                        insertTransferRecord2RouterDb(tcMysql, moduleName, srcIt->first, destIt->first, fromPage, fromPage + destIt->second -1, ids, errmsg);
+
+                                        num -= destIt->second;
+                                        fromPage = fromPage + destIt->second;
+                                        destIt->second = 0;
+
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                map<string, pair<TC_Mysql::FT, string> > m_update;
+                m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING));
+                m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, ids);
+
+                string condition = "where id=" + data[0]["id"];
+
+                _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
+                TLOGDEBUG("upadte t_expand_status sql:" << _mysqlRelationDB.getLastSQL() << endl);
+
+                vector<string> tmp = TC_Common::sepstr<string>(ids, "|");
+                for (size_t j = 0; j < tmp.size(); j++)
+                {
+                    map<string, pair<TC_Mysql::FT, string> > m_update;
+                    m_update["state"] = make_pair(TC_Mysql::DB_INT, "0");
+
+                    string condition = "where id=" + tmp[j];
+                    tcMysql.updateRecord("t_router_transfer", m_update, condition);
+                }
+
+                return 0;
+            }
+        }
+        else
+        {
+            errmsg = string("no record in transgfer db expand status|appName:") + appName + "|moduleName:" + moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("insert reduce transfer record catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &appName, const string &moduleName, const string &groupName, string &sEnableErase, string &sDBFlag, string &sMemSize, string & errmsg)
+{
+    try
+    {
+        string sSql = "select id from t_config_item where item='EnableErase' and path='Main/Cache'";
+        TC_Mysql::MysqlData itemData = _mysqlRelationDB.queryRecord(sSql);
+        if (itemData.size() != 1)
+        {
+            errmsg = "cache config item wrong, item='EnableErase' and path='Main/Cache' not existed";
+            return -1;
+        }
+
+        string enableEraseId = itemData[0]["id"];
+
+        sSql = "select id from t_config_item where item='DBFlag' and path='Main/DbAccess'";
+        itemData = _mysqlRelationDB.queryRecord(sSql);
+        if (itemData.size() != 1)
+        {
+            errmsg = "cache config item wrong, item='DBFlag' and path='Main/DbAccess' not existed";
+            return -1;
+        }
+
+        string dbFlagId = itemData[0]["id"];
+
+        string referenceID;
+        sSql = "select reference_id from t_config_reference where server_name='" + serverName + "'";
+
+        TC_Mysql::MysqlData referData = _mysqlRelationDB.queryRecord(sSql);
+
+        for (size_t i = 0; i < referData.size(); ++i)
+        {
+            referenceID = referData[i]["reference_id"];
+
+            if (referenceID != "")
+            {
+                sSql = "select item_id,config_value from t_config_table where config_id='" + referenceID + "' and (item_id=" + enableEraseId + " or item_id=" + dbFlagId + ")";
+
+                TC_Mysql::MysqlData configData = _mysqlRelationDB.queryRecord(sSql);
+
+                for (size_t j = 0; j < configData.size(); ++j)
+                {
+                    if (configData[j]["item_id"] == enableEraseId)
+                    {
+                        sEnableErase = configData[j]["config_value"];
+                    }
+                    else if (configData[j]["item_id"] == dbFlagId)
+                    {
+                        sDBFlag= configData[j]["config_value"];
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    if (sEnableErase != "" && sDBFlag != "")
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        sSql = "select mem_size from t_cache_router where app_name='" + appName + "' and module_name='" + moduleName + "' and group_name='" + groupName + "'";
+
+        TC_Mysql::MysqlData memData = _mysqlRelationDB.queryRecord(sSql);
+        if (memData.size() > 0)
+        {
+            sMemSize = memData[0]["mem_size"];
+        }
+
+        return 0;
+    }
+    catch (exception &ex)
+    {
+        errmsg = string("get cache server config from relation db catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = "get cache server config from relation db catch unknown exception";
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_transfer_status where module_name='" + moduleName + "' and src_group='" + srcGroupName + "' and dst_group='" + dstGroupName + "' and app_name='" + appName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            TransferStatus status = (TransferStatus)TC_Common::strto<int>(data[0]["status"]);
+            if (status != TRANSFERRING)
+            {
+                errmsg = "transfer status is not transferring, can not stop transfer|app name:" + appName + "|module name:" + moduleName + "|srcGroupName:" + srcGroupName;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+            }
+            else
+            {
+                {
+                    TC_ThreadLock::Lock lock(TransferThread::_lock);
+                    TC_Mysql tcMysql;
+                    tcMysql.init(routerDbInfo);
+                    tcMysql.connect();
+
+                    vector<string> transferId = TC_Common::sepstr<string>(data[0]["router_transfer_id"], "|");
+                    for (size_t j = 0; j < transferId.size(); ++j)
+                    {
+                        map<string, pair<TC_Mysql::FT, string> > m;
+                        m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // stop
+
+                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j]);
+                    }
+
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_STOP));
+
+                    _mysqlRelationDB.updateRecord("t_transfer_status", m, "where id = " + data[0]["id"]);
+
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            errmsg = "there is no transfer record for app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "|dst group name:" + dstGroupName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("stop transfer for transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            TransferStatus status = (TransferStatus)TC_Common::strto<int>(data[0]["status"]);
+            if (status != TRANSFERRING)
+            {
+                errmsg = "expand status is not transferring, can not stop transfer|app name:" + appName + "|module name:" + moduleName;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+            }
+            else
+            {
+                {
+                    TC_ThreadLock::Lock lock(ExpandThread::_lock);
+                    TC_Mysql tcMysql;
+                    tcMysql.init(routerDbInfo);
+                    tcMysql.connect();
+
+                    vector<string> transferId = TC_Common::sepstr<string>(data[0]["router_transfer_id"], "|");
+                    for (size_t j = 0; j < transferId.size(); j++)
+                    {
+                        map<string, pair<TC_Mysql::FT, string> > m;
+                        m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // 3-stop
+
+                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j]);
+                    }
+
+                    int count = 3;
+                    while (count-- > 0)
+                    {
+                        sleep(1);
+
+                        //再把迁移状态读出来
+                        string sql = "select * from t_router_transfer where id in(";
+                        for (size_t j = 0; j < transferId.size(); j++)
+                        {
+                            if (j == 0)
+                            {
+                                sql += transferId[j];
+                            }
+                            else
+                            {
+                                sql += string(",") + transferId[j];
+                            }
+                        }
+                        sql += ")";
+
+                        bool bRunning = false;
+                        TC_Mysql::MysqlData statusData = tcMysql.queryRecord(sql);
+
+                        for (size_t j = 0; j < statusData.size(); j++)
+                        {
+                            if (statusData[j]["state"] == "1")
+                            {
+                                bRunning = true;
+                                break;
+                            }
+                        }
+
+                        if (bRunning)
+                        {
+                            //还在跑就再停止一次
+                            for (size_t j = 0; j < transferId.size(); j++)
+                            {
+                                map<string, pair<TC_Mysql::FT, string> > m;
+                                m["state"] = make_pair(TC_Mysql::DB_INT, "3");
+
+                                tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j] + " and state = 1");
+                            }
+
+                            continue;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_STOP));
+
+                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id = " + data[0]["id"]);
+
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            errmsg = "there is no expand record for app name:" + appName + "|module name:" + moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(const std::exception &ex)
     {
-        err = TC_Common::tostr(__FUNCTION__) + string("catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << err << endl);
-        return -1;
+        errmsg = string("stop transfer for expand catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
 
-    return 0;
+    return -1;
 }
 
+int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    try
+    {
+        //根据appName查询路由数据库信息
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            TransferStatus status = (TransferStatus)TC_Common::strto<int>(data[0]["status"]);
+            if (status != TRANSFER_STOP)
+            {
+                errmsg = "expand status is not stop, can not restart transfer|app name:" + appName + "|module name:" + moduleName;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+            }
+            else
+            {
+                {
+                    TC_ThreadLock::Lock lock(ExpandThread::_lock);
+                    TC_Mysql tcMysql;
+                    tcMysql.init(routerDbInfo);
+                    tcMysql.connect();
+
+                    vector<string> transferId = TC_Common::sepstr<string>(data[0]["router_transfer_id"], "|");
+                    for (size_t j = 0; j < transferId.size(); j++)
+                    {
+                        string sSql = "select * from t_router_transfer where id=" + transferId[j];
+
+                        TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
+                        if (transferData.size() > 0)
+                        {
+                            if (transferData[0]["remark"] != "e_Succ" && transferData[0]["state"] != "1")
+                            {
+                                map<string, pair<TC_Mysql::FT, string> > m_update;
+                                m_update["state"]   = make_pair(TC_Mysql::DB_INT, "0"); // 重新设置状态为未迁移
+                                m_update["remark"]  = make_pair(TC_Mysql::DB_STR, "");
+
+                                if (TC_Common::strto<int>(transferData[0]["transfered_page_no"]) != 0)
+                                {
+                                    m_update["from_page_no"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<int>(TC_Common::strto<int>(transferData[0]["transfered_page_no"]) + 1));
+                                }
+
+                                string condition = "where id=" + transferId[j];
+                                tcMysql.updateRecord("t_router_transfer", m_update, condition);
+                            }
+                        }
+                        else
+                        {
+                            errmsg = "transfer record or expand not existed, transfer id:" + transferId[j];
+                            TLOGERROR(FUN_LOG << errmsg << endl);
+                        }
+                    }
+
+                    map<string, pair<TC_Mysql::FT, string> > m;
+                    m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING)); // 重启迁移后，设置状态为 3-迁移中
+
+                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id=" + data[0]["id"]);
+
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            errmsg = "there is no expand record for app name:" + appName + "|module name:" + moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch(const std::exception &ex)
+    {
+        errmsg = string("restart transfer for expand or reduce catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+
+    try
+    {
+        string sql = "select * from t_transfer_status where app_name='" + appName + "' and module_name='" + moduleName + "' and src_group='" + srcGroupName + "' and dst_group='" + dstGroupName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
+        if (data.size() == 0)
+        {
+            errmsg = "not find transfer record|app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "dst group nane:" + dstGroupName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        for (size_t i = 0; i < data.size(); i++)
+        {
+            //正在迁移，不应该删除
+            if (data[i]["status"] == TC_Common::tostr(TRANSFERRING))
+            {
+                errmsg = "current transfer record is transfering, can not delete|app name:" + data[i]["app_name"]
+                       + "|module name:" + data[i]["module_name"]
+                       + "|src group name:" + data[i]["src_group"]
+                       + "|dst group name:" + data[i]["dst_group"];
+                TLOGERROR(FUN_LOG << errmsg << endl);
+
+                return -1;
+            }
+
+            /*string cond = "where app_name='" + data[i]["app_name"]
+                        + "' and module_name='" + data[i]["module_name"]
+                        + "' and src_group='" + data[i]["src_group"]
+                        + "' and dst_group='" + data[i]["dst_group"] + "'";*/
+
+            string cond = "where id=" + data[i]["id"];
+
+            _mysqlRelationDB.deleteRecord("t_transfer_status", cond);
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("stop transfer record for transfer catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+{
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    try
+    {
+        string sql = "select * from t_expand_status where app_name='" + appName + "' and module_name='" + moduleName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
+        if (data.size() == 0)
+        {
+            errmsg = "not find expand or reduce transfer record|app name:" + appName + "|module name:" + moduleName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        for (size_t i = 0; i < data.size(); i++)
+        {
+            //正在迁移，不应该删除
+            if (data[i]["status"] == TC_Common::tostr(TRANSFERRING))
+            {
+                errmsg = "current expand or reduce transfer record is transfering, can not delete|app name:" + data[i]["app_name"]
+                       + "|module name:" + data[i]["module_name"];
+                TLOGERROR(FUN_LOG << errmsg << endl);
+
+                return -1;
+            }
+
+            // string cond = "where app_name='" + data[i]["app_name"] + "' and module_name='" + data[i]["module_name"] + "'";
+            string cond = "where id=" + data[i]["id"];
+
+            _mysqlRelationDB.deleteRecord("t_expand_status", cond);
+        }
+
+        return 0;
+    }
+    catch(const std::exception &ex)
+    {
+        errmsg = string("delete transfer record for expand or reduce catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
 

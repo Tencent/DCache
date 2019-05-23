@@ -33,21 +33,21 @@ class UninstallThread;
 struct UninstallRequest
 {
     string requestId;
-    UninstallInfo info;
+    UninstallReq info;
 };
 
 enum UnStatus
 {
     UNINSTALLING,
-    FINISH,
-    UNERROR
+    UNINSTALL_FINISH,
+    UNINSTALL_FAILED
 };
 
 struct UninstallStatus
 {
-    string sPercent;
+    int percent;
     UnStatus status;
-    string sError;
+    string errmsg;
 };
 
 class UninstallRequestQueueManager :  public TC_ThreadLock
@@ -101,7 +101,7 @@ public:
     /**
     *设置下线进度记录
     */
-    void setUninstallRecord(const string &sRequestId, const string &sPercent, UnStatus status, const string &sError="");
+    void setUninstallRecord(const string &sRequestId, int percent, UnStatus status, const string &errmsg="");
 
     /**
     * 获取下线进度
@@ -158,6 +158,8 @@ protected:
     int getRouterInfo(TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, string &moduleName, string &routerObj);
 
     void reloadRouterConfByModuleFromDB(const string &moduleName, const string &routerObj);
+
+    int getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg);
 
 private:
     UninstallRequestQueueManager * _queueManager;

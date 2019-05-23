@@ -80,14 +80,14 @@ void ReleaseRequestQueueManager::addProgressRecord(int requestId, ReleaseRequest
 {
     TC_ThreadLock::Lock lock(_progressMutex);
     ReleaseProgress tmpProgress;
-    tmpProgress.releaseStatus.percent = "0";
-    tmpProgress.releaseStatus.status  = RELEASING;
-    tmpProgress.releaseStatus.error   = "";
-    tmpProgress.releaseReq            = request;
+    tmpProgress.releaseStatus.percent   = 0;
+    tmpProgress.releaseStatus.status    = RELEASING;
+    tmpProgress.releaseStatus.errmsg    = "";
+    tmpProgress.releaseReq              = request;
     _releaseProgress[requestId] = tmpProgress;
 }
 
-void ReleaseRequestQueueManager::setProgressRecord(int requestId, const string &sPercent, ReStatus status, const string &sError)
+void ReleaseRequestQueueManager::setProgressRecord(int requestId, int percent, ReStatus status, const string &errmsg)
 {
     TC_ThreadLock::Lock lock(_progressMutex);
 
@@ -98,12 +98,12 @@ void ReleaseRequestQueueManager::setProgressRecord(int requestId, const string &
         return;
     }
 
-    it->second.releaseStatus.percent = sPercent;
-    it->second.releaseStatus.status = status;
-    it->second.releaseStatus.error = sError;
+    it->second.releaseStatus.percent    = percent;
+    it->second.releaseStatus.status     = status;
+    it->second.releaseStatus.errmsg     = errmsg;
 }
 
-ReleaseStatus ReleaseRequestQueueManager::getProgressRecord(int requestId, vector<ReleaseInfo> & info)
+ReleaseStatus ReleaseRequestQueueManager::getProgressRecord(int requestId, vector<ReleaseInfo> & releaseInfo)
 {
     TC_ThreadLock::Lock lock(_progressMutex);
 
@@ -112,7 +112,7 @@ ReleaseStatus ReleaseRequestQueueManager::getProgressRecord(int requestId, vecto
     {
         throw runtime_error(requestId + " no found");
     }
-    info = it->second.releaseReq->info;
+    releaseInfo = it->second.releaseReq->releaseInfo;
 
     return it->second.releaseStatus;
 }
@@ -188,63 +188,66 @@ void ReleaseThread::run()
 
 void ReleaseThread::terminate()
 {
-    _shutDown = false;
+    _shutDown = true;
 }
 
 void ReleaseThread::doReleaseRequest(ReleaseRequest* request)
 {
-    TLOGDEBUG(FUN_LOG<< "release request id:" << request->requestId << "|appname:" << request->info[0].appName << endl);
-    string errMsg("");
+    TLOGDEBUG(FUN_LOG<< "release request id:" << request->requestId << endl);
+    string errmsg("");
 
     try
     {
         int iUnit = 0;
-        if (request->info.size() > 0)
+        if (request->releaseInfo.size() > 0)
         {
-            iUnit = 100 / request->info.size();
+            iUnit = 100 / request->releaseInfo.size();
         }
         else
         {
-            _queueManager->setProgressRecord(request->requestId, "100", REFINISH);
+            _queueManager->setProgressRecord(request->requestId, 100, RELEASE_FINISH);
         }
 
         int iPercent = 0;
-        for (size_t i = 0; i < request->info.size(); ++i)
+        for (size_t i = 0; i < request->releaseInfo.size(); ++i)
         {
-            int iRet = releaseServer(request->info[i], errMsg);
+            int iRet = releaseServer(request->releaseInfo[i], errmsg);
             if (iRet != 0)
             {
-                request->info[i].status = -1;
-                request->info[i].error = errMsg;
-                _queueManager->setProgressRecord(request->requestId, TC_Common::tostr(iPercent), REERROR, errMsg);
+                request->releaseInfo[i].status = -1;
+                request->releaseInfo[i].errmsg = errmsg;
+                _queueManager->setProgressRecord(request->requestId, iPercent, RELEASE_FAILED, errmsg);
+                continue;
             }
-            request->info[i].status = 1;
+
+            request->releaseInfo[i].status = 1;
             iPercent += iUnit;
-            if (i == (request->info.size() - 1))
+            if (i == (request->releaseInfo.size() - 1))
             {
-                _queueManager->setProgressRecord(request->requestId, "100", REFINISH);
+                _queueManager->setProgressRecord(request->requestId, 100, RELEASE_FINISH);
                 break;
             }
 
-            _queueManager->setProgressRecord(request->requestId, TC_Common::tostr(iPercent),  RELEASING);
+            _queueManager->setProgressRecord(request->requestId, iPercent, RELEASING);
         }
+
         return;
     }
     catch (exception &ex)
     {
-        errMsg = string("catch exception|request id:") + TC_Common::tostr(request->requestId) + "|exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errMsg << endl);
+        errmsg = string("release server catch exception:") + ex.what() + "|request id:" + TC_Common::tostr(request->requestId);
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
     catch(...)
     {
-        errMsg = string("catch unknown exception|request id:") + TC_Common::tostr(request->requestId);
-        TLOGERROR(FUN_LOG << errMsg << endl);
+        errmsg = string("catch unknown exception|request id:") + TC_Common::tostr(request->requestId);
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
 
-    _queueManager->setProgressRecord(request->requestId, "0", REERROR, errMsg);
+    _queueManager->setProgressRecord(request->requestId, 0, RELEASE_FAILED, errmsg);
 }
 
-int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errMsg)
+int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errmsg)
 {
     string resultStr;
 
@@ -269,8 +272,8 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errMsg)
     int iRet = _adminproxy->batchPatch(req, resultStr);
     if (iRet != 0)
     {
-        errMsg = string("patch server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|error:" + resultStr;
-        TLOGERROR(FUN_LOG << errMsg << endl);
+        errmsg = string("patch server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|errmsg:" + resultStr;
+        TLOGERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -279,31 +282,32 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errMsg)
     {
         if (0 != _adminproxy->getPatchPercent(req.appname, req.servername, req.nodename, patchInfo))
         {
-            errMsg = string("get patch percent failed|servername:") + req.servername + "|server ip:" + req.nodename + "|patch server result:" + patchInfo.sResult;
-            TLOGERROR(FUN_LOG << errMsg << endl);
+            errmsg = string("get patch percent failed|servername:") + req.servername + "|server ip:" + req.nodename + "|patch server result:" + patchInfo.sResult;
+            TLOGERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         if (!patchInfo.bPatching && patchInfo.iPercent == 100)
         {
-            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent + "%" << endl);
+            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
             break;
         }
         else
         {
-            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent + "%" << endl);
+            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
         }
 
         usleep(100000);
     }
-    TLOGDEBUG(FUN_LOG << "patch server succ:" << iRet << endl);
+
+    TLOGDEBUG(FUN_LOG << "patch server successfully" << endl);
 
     // 启动服务
     iRet = _adminproxy->startServer("DCache", req.servername, req.nodename, resultStr);
     if (iRet != 0)
     {
-        errMsg = string("start server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|error:"+resultStr;
-        TLOGERROR(FUN_LOG << errMsg << endl);
+        errmsg = string("start server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|errmsg:" + resultStr;
+        TLOGERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -323,8 +327,8 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errMsg)
             }
             else
             {
-                errMsg = string("adminproxy: server state is unusual|servername:") + req.servername + "|server ip:" + req.nodename + "|cache server may be inactive! getServerState result:" + resultStr;
-                TLOGERROR(FUN_LOG << errMsg << endl);
+                errmsg = string("adminproxy: server state is unusual|servername:") + req.servername + "|server ip:" + req.nodename + "|cache server may be inactive! getServerState result:" + resultStr;
+                TLOGERROR(FUN_LOG << errmsg << endl);
                 // 服务未正常启动，不终止流程，继续发布其他服务
                 break;
             }
@@ -334,7 +338,8 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errMsg)
             break;
         }
     }
-    TLOGDEBUG(FUN_LOG << "release server finish, result:" << iRet << "|appname:" << req.appname << "|servername:" << req.servername << "|server ip:" << req.nodename << endl);
+
+    TLOGDEBUG(FUN_LOG << "release server finish, result:" << (iRet == 0 ? "success" : "failed") << "|appname:" << req.appname << "|servername:" << req.servername << "|server ip:" << req.nodename << endl);
 
     return 0;
 }

@@ -15,6 +15,49 @@
 module DCache
 {
 
+enum DCacheType
+{
+    KVCACHE  = 1,
+    MKVCACHE = 2
+};
+
+enum TransferType
+{
+    UNSPECIFIED_TYPE    = -1,   // 未指定
+    TRANSFER_TYPE       = 0,    // 迁移
+    EXPAND_TYPE         = 1,    // 扩容
+    REDUCE_TYPE         = 2,    // 缩容
+    DEFRAG_TYPE         = 3     // 路由整理
+};
+
+enum TransferStatus
+{
+    NEW_TASK        = 0,    // 新建任务
+    CONFIG_SERVER   = 1,    // 配置阶段
+    RELEASE_SERVER  = 2,    // 发布阶段
+    TRANSFERRING    = 3,    // 迁移中
+    TRANSFER_FINISH = 4,    // 完成
+    TRANSFER_STOP   = 5     // 停止
+};
+
+enum UninstallType
+{
+    SERVER          = 0,    //按服务下线
+    GROUP           = 1,    //按服务组下线
+    MODULE          = 2,    //按模块下线
+    QUOTA_SERVER    = 3     //按配额服务下线
+};
+
+struct DBInfo
+{
+    0 require string ip;        //连接ip
+    1 require string user;      //用户名
+    2 require string pwd;       //密码
+    3 require string port;      //端口
+    4 require string charset;   //字符集
+    5 require string dbName;    //数据库名
+};
+
 struct RouterParam
 {
     0 require bool installRouter;           //是否安装Router服务
@@ -45,25 +88,11 @@ struct ProxyParam
     4 require string templateFile;          //服务用的模板文件名，installProxy为true时有效
 };
 
-struct InstallAppReq
-{
-    0 require string appName;
-    1 require RouterParam routerParam;
-    2 require ProxyParam proxyParam;
-    3 require string version;
-    4 require bool replace=false;
-};
-
-struct InstallAppRsp
-{
-    0 require string errMsg;
-};
-
 struct CacheHostParam
 {
     0 require string serverName;        //服务名， 如MqqCacheServer
     1 require string serverIp;          //IP地址
-    2 require string templateFile;      //服务用的taf模板文件名
+    2 require string templateFile;      //服务用的tars模板文件名
     3 require string type;              //表明服务是主还是备， M/S
     4 require string bakSrcServerName;  //如果服务是备机，指定备份的源机，否则为空
     5 require string idc;               //服务所在idc
@@ -128,6 +157,91 @@ struct RouterConsistRes
     1 require string  sInfo;    //一致性信息
 };
 
+struct ModuleServer
+{
+    0 require string serverName;    //服务名
+    1 require string idc;           //地区，sz为深圳;bj为北京;sh为上海;nj为南京;hk为香港;cd为成都
+    2 require string type;          //类型，M为主机;S为备机;I为镜像主机;B为镜像备机
+};
+
+struct TransferRecord
+{
+    0 require string appName;           //应用名
+    1 require string moduleName;        //模块名
+    2 require string srcGroupName;      //迁移源组
+    3 require string dstGroupName;      //迁移目的组
+    4 require TransferStatus status;    //状态，0为新增迁移任务，1为配置阶段完成，2为发布完成，3为正在迁移，4为完成，5为停止
+    5 require int progress;             //迁移进度，单位为%
+    6 require TransferType type;        //迁移:0, 扩容:1, 缩容:2, 路由整理:3
+    7 require string beginTime;         //产生迁移记录的时间，返回的是db里面存的时间
+    8 optional string endTime;          //迁移结束的时间，返回的是db里面存的时间
+};
+
+//切换信息结构体
+struct SwitchRecord
+{
+    0  require string appName;          //application name
+    1  require string moduleName;       //module name
+    2  require string groupName;        //group name
+    3  require string masterServer;     //masterServer
+    4  require string slaveServer;      //slaveServer
+    5  require string mirrorIdc;        //mirrorIdc
+    6  require string masterMirror;     //master mirror
+    7  require string slaveMirror;      //slave mirror
+    8  require string switchTime;       //切换时间
+    9  require string modifyTime;       //记录修改时间
+    10 require string comment;          //备注
+    11 require string dbFlag;           //是否带DB或文件,Y/N
+    12 require string enableErase;      //是否允许淘汰数,Y/N
+    13 require int    switchType;       //切换类型: 0:主备切换, 1:镜像切换, 2:镜像无备机切换
+    14 require int    switchResult;     //切换状态: 0:正在切换, 1:切换成功, 2:未切换, 3:切换失败
+    15 require int    groupStatus;      //组的访问状态, 0标识读写，1标识只读,2镜像不可用
+    16 require string memSize;          //group下的cache内存大小,单位(MB)
+    17 optional string switchProperty;  //切换属性:'auto'自动切换, 'manual'手动切换
+};
+
+struct ReleaseInfo
+{
+    0 require string appName;       //服务应用名
+    1 require string serverName;    //服务名
+    2 require string nodeName;      //服务IP地址
+    3 require string groupName;     //服务组名 cache发布填“DCacheServerGroup”，proxy填“ProxyServer”，router填“RouterServer”
+    4 require string version;       //发布版本号
+    5 require string user;          //发布用户
+    6 require string md5;           //发布包的md5
+    7 require int status = 0;       //发布线程状态管理，前台不用填写。
+    8 optional string errmsg;
+    9 optional string ostype;
+};
+
+struct CacheServerInfo
+{
+    0 require string serverName;
+    1 require string serverIp;
+    2 require string serverType; // M-主机, S-备机, I-镜像
+    3 require string groupName;
+    4 require string idcArea;
+    5 require string memSize;
+};
+
+/*
+* 接口请求和回应结构体
+*/
+
+struct InstallAppReq
+{
+    0 require string appName;
+    1 require RouterParam routerParam;
+    2 require ProxyParam proxyParam;
+    3 require string version;
+    4 require bool replace=false;
+};
+
+struct InstallAppRsp
+{
+    0 require string errMsg;
+};
+
 struct InstallKVCacheReq
 {
     0 require string appName;
@@ -161,31 +275,13 @@ struct InstallMKVCacheRsp
     1 require string errMsg;
 };
 
-struct DBInfo
-{
-    0 require string ip;        //连接ip
-    1 require string user;      //用户名
-    2 require string pwd;       //密码
-    3 require string port;      //端口
-    4 require string charset;   //字符集
-    5 require string dbName;    //数据库名
-};
-
-enum UninstallType
-{
-    SERVER,  //按服务下线
-    GROUP,   //按服务组下线
-    MODULE,  //按模块下线
-    QUOTA_SERVER //按配额服务下线
-};
-
-struct UninstallInfo
+struct UninstallReq
 {
     0 require UninstallType unType;     //下线类型,0为单个Cache服务 1为按服务组,2为按模块,3为配额单服务下线
-    1 require string moduleName;        //模块名
-    2 require string serverName;        //cache服务名, 当unType!=0时可为空
-    3 require string groupName;         //cache服务组名, 当unType!=1时可为空
-    4 require DBInfo routerDb;          //路由数据库信息
+    1 require string appName;
+    2 require string moduleName;        //模块名
+    3 optional string serverName;       //cache服务名, 当unType!=0时可为空
+    4 optional string groupName;        //cache服务组名, 当unType!=1时可为空
 };
 
 struct UninstallRsp
@@ -195,23 +291,8 @@ struct UninstallRsp
 
 struct UninstallProgressRsp
 {
-    0 require string percent;
+    0 require int percent;
     1 require string errMsg;
-};
-
-
-struct ReleaseInfo
-{
-    0 require string appName;       //服务应用名
-    1 require string serverName;    //服务名
-    2 require string nodeName;      //服务IP地址
-    3 require string groupName;     //服务组名 cache发布填“DCacheServerGroup”，proxy填“ProxyServer”，router填“RouterServer”
-    4 require string version;       //发布版本号
-    5 require string user;          //发布用户
-    6 require string md5;           //发布包的md5
-    7 require int status = 0;       //发布线程状态管理，前台不用填写。
-    8 optional string error;
-    9 optional string ostype;
 };
 
 struct ReleaseReq
@@ -233,25 +314,33 @@ struct ReleaseProgressReq
 struct ReleaseProgressRsp
 {
     0 require int releaseId;
-    1 require string percent;
+    1 require int percent;
     2 require vector<ReleaseInfo> releaseInfo;
     3 require string errMsg;
 };
 
-
-enum DCacheType
+// transfer/expand/reduce
+struct TransferReq
 {
-    KVCACHE = 1,
-    MKVCACHE = 2
+    0 require string appName;
+    1 require string moduleName;
+    2 require string srcGroupName;
+    3 require vector<CacheHostParam> cacheHost;
+    4 require DCacheType cacheType;
+    5 require string version;
 };
 
-// expand/transfer
+struct TransferRsp
+{
+    0 require string errMsg;
+};
+
 struct ExpandReq
 {
     0 require string appName;
     1 require string moduleName;
     2 require vector<CacheHostParam> cacheHost;
-    3 require DCacheType cacheType;
+    3 require DCacheType cacheType;  // cache type
     4 require string version;
     5 require bool replace=false;
 };
@@ -261,23 +350,209 @@ struct ExpandRsp
     0 require string errMsg;
 };
 
-struct TransferReq
+struct ReduceReq
 {
     0 require string appName;
     1 require string moduleName;
-    2 require string srcGroupName;
-    3 require bool hasDestServer;
-    4 require vector<CacheHostParam> cacheHost;
-    5 require DCacheType cacheType;
-    6 require string version;
+    2 require vector<string> srcGroupName; // 源组组名
 };
 
-struct TransferRsp
+struct ReduceRsp
+{
+    0 require string errMsg;
+};
+
+// 迁移任务: 适用于迁移，扩容，缩容
+struct ConfigTransferReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require TransferType type; // TRANSFER(0): 迁移， EXPAND(1): 扩容， REDUCE(2): 缩容
+    3 optional vector<string> srcGroupName; // 源组组名
+    4 optional vector<string> dstGroupName; // 目的组组名
+    5 optional bool transferData=true;      // 是否迁移数据(true: 迁移数据, false: 不迁移数据,仅用于type为TRANSFER)
+};
+
+struct ConfigTransferRsp
 {
     0 require string errMsg;
 };
 
 
+struct ModuleStructReq
+{
+    0 require string appName;
+    1 require string moduleName;
+};
+
+struct ModuleStructRsp
+{
+    0 require string errMsg;
+    1 require vector<ModuleServer> serverInfo;
+    2 require DCacheType cacheType;     // 服务类型 1:KVCache, 2:MKVCache
+    3 require string idc;               // 主机idc
+    4 optional int nodeNum;             // 主机服务节点数
+    5 optional string totalMemSize;     // 主机总内存大小
+    6 optional string avgMemSize;       // 主机平均内存大小
+};
+
+/* 查询路由变更(迁移，扩容，缩容)
+* cond 查询条件: <"appName", "Test">表示查询应用名为Test的变更信息
+*   map的key是TransferRecord中的成员: appName, moduleName, srcGroupName, dstGroupName, status, type
+*   map的key都是字符串
+*   status: "0"-新增迁移任务，"1"-配置阶段完成，"2"-发布完成，"3"-正在迁移，"4"-完成，5""-停止
+*   type: "0"-迁移, "1"-扩容, "2"-缩容, "3"-路由整理
+* index: 获取数据的索引(从0开始)
+* number: 一次获取数据的个数(获取全部数据 number设置为-1)
+*/
+struct RouterChangeReq
+{
+    0 require map<string, string> cond; // 查询条件
+    1 require int index;                // 获取数据的索引(从0开始)
+    2 require int number;               // 一次获取数据的个数(获取全部数据 number设置为-1)
+};
+
+struct RouterChangeRsp
+{
+    0 require string errMsg;
+    1 require int totalNum;      // 符合查询条件的全部记录个数
+    2 require vector<TransferRecord> transferRecord;
+};
+
+// 切换
+struct SwitchReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require string groupName;
+    3 optional bool forceSwitch; // 是否强制切换
+    4 optional int diffBinlogTime;
+};
+
+struct SwitchRsp
+{
+    0 require string errMsg;
+};
+
+/*
+* 查询切换信息请求
+* cond 查询条件，<"appName", "Test">表示查询应用名为Test的切换信息，
+*   索引值为 SwitchRecord 中的成员: appName, moduleName, groupName, msterServer, slaveServer, mirrorIdc, masterMirror, slaveMirror, switchTime, switchType, switchResult, groupStatus,
+*   除switchTime外其它为字符串值，switchTime为时间范围，其条件格式为从小到大的时间且以"|"分隔:"2019-01-01 12:00:00|2019-01-01 13:00:00"
+*   switchType: "0"-主备切换，"1"-镜像主备切换，"2"-无镜像备机切换，"3"-备机不可读
+*   switchResult: "0"-正在切换, "1"-切换成功, "2"-未切换, "3"-切换失败
+*   groupStatus: "0"-标识读写, "1"-标识只读, "2"-镜像不可用
+* index: 获取数据的索引(从0开始)
+* number: 一次获取数据的个数(获取全部数据 number设置为-1)
+*/
+struct SwitchInfoReq
+{
+    0 require map<string, string> cond;
+    1 require int index;
+    2 require int number;
+};
+
+struct SwitchInfoRsp
+{
+    0 require string errMsg;
+    1 require int totalNum;      // 符合查询条件的全部记录个数
+    2 require vector<SwitchRecord> switchRecord;
+};
+
+// 停止迁移任务: 适用于迁移，扩容，缩容
+struct StopTransferReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require TransferType type; // TRANSFER_TYPE(0): 迁移， EXPAND_TYPE(1): 扩容， REDUCE_TYPE(2): 缩容
+    3 optional string srcGroupName; // 源组组名
+    4 optional string dstGroupName; // 目的组组名
+};
+
+struct StopTransferRsp
+{
+    0 require string errMsg;
+};
+
+// 重启迁移任务: 适用于迁移，扩容，缩容
+struct RestartTransferReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require TransferType type; // TRANSFER_TYPE(0): 迁移， EXPAND_TYPE(1): 扩容， REDUCE_TYPE(2): 缩容
+    3 optional string srcGroupName; // 源组组名(type为迁移时必填，扩容和缩容不填)
+    4 optional string dstGroupName; // 目的组组名(type为迁移时必填，扩容和缩容不填)
+};
+
+struct RestartTransferRsp
+{
+    0 require string errMsg;
+};
+
+// 删除迁移任务: 适用于迁移，扩容，缩容
+struct DeleteTransferReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require TransferType type; // TRANSFER_TYPE(0): 迁移， EXPAND_TYPE(1): 扩容， REDUCE_TYPE(2): 缩容
+    3 optional string srcGroupName; // 源组组名
+    4 optional string dstGroupName; // 目的组组名
+};
+
+struct DeleteTransferRsp
+{
+    0 require string errMsg;
+};
+
+// 向已存在的组迁移
+struct TransferGroupReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require string srcGroupName;  // 源组组名
+    3 require string dstGroupName;  // 目的组组名
+    4 require bool transferData;    // 是否迁移数据(true: 迁移数据, false: 不迁移数据)
+};
+
+struct TransferGroupRsp
+{
+    0 require string errMsg;
+};
+
+// 发生镜像切换后，恢复镜像状态时使用
+struct RecoverMirrorReq
+{
+    0 require string appName;
+    1 require string moduleName;
+    2 require string groupName;
+    3 require string mirrorIdc;
+    4 require string dbFlag;        // 是否有DB
+    5 require string enableErase;   // 是否使能淘汰
+};
+
+struct RecoverMirrorRsp
+{
+    0 require string errMsg;
+};
+
+struct CacheServerListReq
+{
+    0 require string appName;
+    1 require string moduleName;
+};
+
+struct CacheServerListRsp
+{
+    0 require string errMsg;
+    //1 require string moduleName;
+    1 require vector<CacheServerInfo> cacheServerList;
+    2 require DCacheType cacheType;
+};
+
+
+/*
+* 配置中心
+*/
 struct CacheConfigReq
 {
     0 optional string id;       // config item 表索引id
@@ -307,6 +582,29 @@ struct ConfigRsp
     1 optional vector<map<string, string> > configItemList;
 };
 
+struct QueryPropReq
+{
+    0 require string moduleName;    //Dcache模块名
+    1 require string serverName;    //服务名 DCache.xxx, 不填表示查询模块下所有服务合并统计数据，填"*"表示列出所有服务的独立数据
+    2 require vector<string> date;  //需要查询的日期，日期格式20190508
+    3 require string startTime;     //e.g. 0800
+    4 require string endTime;       //e.g. 2360
+};
+
+struct QueryProp
+{
+    0 require string timeStamp;     //e.g. 0800, 为空表示全天合并数据
+    1 require map<string, double> propData;   //<属性名，属性值>
+};
+
+struct QueryResult
+{
+    0 require string moduleName;    //Dcache模块名
+    1 require string serverName;    //服务名 DCache.xxx，服务名为空表示result是模块所有服务合并数据
+    2 require string date;          //e.g. 20190508
+    3 require vector<QueryProp> data;
+};
+
 interface DCacheOpt
 {
     /*
@@ -315,9 +613,13 @@ interface DCacheOpt
     int installApp(InstallAppReq installReq, out InstallAppRsp instalRsp);
 
     /*
-    *模块安装
+    * KVCache模块安装
     */
     int installKVCacheModule(InstallKVCacheReq kvCacheReq, out InstallKVCacheRsp kvCacheRsp);
+
+    /*
+    * MKVCache模块安装
+    */
     int installMKVCacheModule(InstallMKVCacheReq mkvCacheReq, out InstallMKVCacheRsp mkvCacheRsp);
 
     /*
@@ -333,12 +635,12 @@ interface DCacheOpt
     /**
     *下线接口
     */
-    int uninstall4DCache(UninstallInfo uninstallInfo, out UninstallRsp uninstallRsp);
+    int uninstall4DCache(UninstallReq uninstallInfo, out UninstallRsp uninstallRsp);
 
     /*
     *获取下线进度
     */
-    int getUninstallPercent(UninstallInfo uninstallInfo, out UninstallProgressRsp progressRsp);
+    int getUninstallPercent(UninstallReq uninstallInfo, out UninstallProgressRsp progressRsp);
 
     /*
     *从数据库中重新加载路由配置信息
@@ -353,13 +655,73 @@ interface DCacheOpt
     /*
     * 迁移DCache(包含一期和二期)
     */
-    int transferDCache(TransferReq transferReq, out TransferRsp transferRsp);
+    int transferDCache(TransferReq req, out TransferRsp rsp);
+
+    /*
+    * 迁移DCache到已经存在的组(包含一期和二期)
+    */
+    int transferDCacheGroup(TransferGroupReq req, out TransferGroupRsp rsp);
 
     /*
     *扩容DCache(包含一期和二期)
     */
-    int expandDCache(ExpandReq expandReq, out ExpandRsp expandRsq);
+    int expandDCache(ExpandReq expandReq, out ExpandRsp expandRsp);
 
+     /*
+    *缩容DCache(包含一期和二期)
+    */
+    int reduceDCache(ReduceReq reduceReq, out ReduceRsp reduceRsp);
+
+    /*
+    * 配置迁移任务(迁移，扩容，缩容共用)
+    */
+    int configTransfer(ConfigTransferReq req, out ConfigTransferRsp rsp);
+
+    /*
+    * 获取模块结构信息
+    */
+    int getModuleStruct(ModuleStructReq req, out ModuleStructRsp rsp);
+
+    /*
+    * 获取路由变化信息
+    */
+    int getRouterChange(RouterChangeReq req, out RouterChangeRsp rsp);
+
+    /*
+    * 主备切换
+    */
+    int switchServer(SwitchReq req, out SwitchRsp rsp);
+
+    /*
+    * 获取自动切换或手动切换的结果
+    */
+    int getSwitchInfo(SwitchInfoReq req, out SwitchInfoRsp rsp);
+
+    /*
+    * 停止迁移任务(迁移，扩容，缩容 共用)
+    */
+    int stopTransfer(StopTransferReq req, out StopTransferRsp rsp);
+
+    /*
+    * 重启迁移任务(迁移，扩容，缩容 共用)
+    */
+    int restartTransfer(RestartTransferReq req, out RestartTransferRsp rsp);
+
+    /*
+    * 删除迁移任务(迁移，扩容，缩容 共用)
+    */
+    int deleteTransfer(DeleteTransferReq req, out DeleteTransferRsp rsp);
+
+    /*
+    * 发生镜像切换后，恢复镜像状态时使用
+    */
+    int recoverMirrorStatus(RecoverMirrorReq req, out RecoverMirrorRsp rsp);
+
+
+    /*
+    * 获取服务列表
+    */
+    int getCacheServerList(CacheServerListReq req, out CacheServerListRsp rsp);
 
     /*
     * 配置中心操作接口
@@ -386,6 +748,12 @@ interface DCacheOpt
     int getServerNodeConfigItemList(ServerConfigReq configReq, out ConfigRsp configRsp);
 
     int getServerConfigItemList(ServerConfigReq configReq, out ConfigRsp configRsp);
+
+    /**
+    * 查询属性统计信息
+    * @return int,      返回0表示成功
+    */
+    int queryProperptyData(QueryPropReq req, out vector<QueryResult> rsp);
 
   };
 
