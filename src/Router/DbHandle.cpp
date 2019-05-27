@@ -3794,6 +3794,7 @@ bool DbHandle::doTransaction(const vector<string> &vSqlSet, string &sErrMsg)
 
 int DbHandle::addMemTransferMutexCond(const TransferInfo &transferInfo)
 {
+    TC_ThreadLock::Lock lock(_transLock);
     map<string, map<string, TransferMutexCondPtr>>::iterator _it =
         _mapTransferMutexCond.find(transferInfo.moduleName);
     if (_it != _mapTransferMutexCond.end())
