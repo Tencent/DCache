@@ -26,8 +26,8 @@ interface BackUp
     * 恢复mirror和binlog，路径下没有mirror，则只恢复binlog，有的话先恢复mirror，再恢复binlog
     * mirrorPath: mirror文件绝对路径
     * binlogPath: binlog文件绝对路径
-    * lastTime: 表示恢复的最后时间
-    * normal:是否强制恢复，正常的恢复流程再加载完镜像和binlog后，会再从主机同步一条binlog
+    * lastTime: 恢复到该时间点，unix时间戳，精度：秒
+    * normal:是否强制恢复，正常的恢复流程在加载完镜像和binlog后，会再从主机同步一条binlog
     *        强制恢复流程，则是加载完镜像和binlog后，就认为恢复完成
     */
     int restore(string mirrorPath, vector<string>binlogPath, int lastTime, bool normal, out string errmsg);
