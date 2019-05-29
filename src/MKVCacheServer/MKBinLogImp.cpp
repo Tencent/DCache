@@ -287,7 +287,7 @@ tars::Int32 MKBinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::Bi
 
         bool bNextFile = findNextLogFile(sTmpCurLogfile, sNextLogfile);
         string line;
-        string lastTimeString("");
+        string lastLine("");
         uint32_t iCurSize = 0, iCurLineCount = 0;
         while (true)
         {
@@ -302,7 +302,7 @@ tars::Int32 MKBinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::Bi
                 else
                 {
                     //获取最后的同步时间
-                    MKBinLogEncode::GetTimeString(line, lastTimeString);
+                    lastLine = line;
 
                     rsp.curSeek = ifs.tellg();
                     ++iCurLineCount;
@@ -372,9 +372,9 @@ tars::Int32 MKBinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::Bi
                 break;
             }
         }
-        if (!lastTimeString.empty())
+        if (!lastLine.empty())
         {
-            rsp.syncTime = MKBinLogEncode::GetTime(lastTimeString);
+            rsp.syncTime = MKBinLogEncode::GetTime(lastLine);
             if (g_app.gstat()->serverType() == MASTER)
                 g_app.gstat()->setBinlogTime(rsp.syncTime, 0);
         }
@@ -537,7 +537,7 @@ tars::Int32 MKBinLogImp::getLogCompressWithPart(const DCache::BinLogReq &req, DC
 
             bool bNextFile = findNextLogFile(sTmpCurLogfile, sNextLogfile);
             string line;
-            string lastTimeString("");
+            string lastLine("");
             uint32_t iCurSize = 0, iCurLineCount = 0;
             while (true)
             {
@@ -552,7 +552,7 @@ tars::Int32 MKBinLogImp::getLogCompressWithPart(const DCache::BinLogReq &req, DC
                     else
                     {
                         //获取最后的同步时间
-                        MKBinLogEncode::GetTimeString(line, lastTimeString);
+                        lastLine = line;
 
                         rspData.curSeek = ifs.tellg();
                         ++iCurLineCount;
@@ -622,9 +622,9 @@ tars::Int32 MKBinLogImp::getLogCompressWithPart(const DCache::BinLogReq &req, DC
                     break;
                 }
             }
-            if (!lastTimeString.empty())
+            if (!lastLine.empty())
             {
-                rspData.syncTime = MKBinLogEncode::GetTime(lastTimeString);
+                rspData.syncTime = MKBinLogEncode::GetTime(lastLine);
                 if (g_app.gstat()->serverType() == MASTER)
                     g_app.gstat()->setBinlogTime(rspData.syncTime, 0);
             }
