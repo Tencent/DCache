@@ -45,11 +45,6 @@ void UndeployThread::run()
     {
         try
         {
-            {
-                TC_ThreadLock::Lock lock(*this);
-                timedWait(60 * 1000);
-            }
-
             // 查询迁移状态表
             time_t tNow = TC_TimeProvider::getInstance()->getNow();
 
@@ -204,6 +199,12 @@ void UndeployThread::run()
 
                 tLastCheck = tNow;
             }
+
+            {
+                TC_ThreadLock::Lock lock(*this);
+                timedWait(60 * 1000);
+            }
+
         }
         catch (exception& e)
         {

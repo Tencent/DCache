@@ -110,7 +110,7 @@ ReleaseStatus ReleaseRequestQueueManager::getProgressRecord(int requestId, vecto
     map<int, ReleaseProgress>::iterator it = _releaseProgress.find(requestId);
     if (it == _releaseProgress.end())
     {
-        throw runtime_error(requestId + " no found");
+        throw runtime_error(TC_Common::tostr(requestId) + " no found");
     }
     releaseInfo = it->second.releaseReq->releaseInfo;
 

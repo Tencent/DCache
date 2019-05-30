@@ -50,16 +50,6 @@ void DCacheOptImp::initialize()
     relationDbConf.loadFromMap(_relationDBInfo);
     _mysqlRelationDB.init(relationDbConf);
 
-    /*map<string, string> routerConnInfo = _tcConf.getDomainMap("/Main/RouterConfDb");
-    TC_DBConf routerConfDb;
-    routerConfDb.loadFromMap(routerConnInfo);
-    _mysqlRouterConfDb.init(routerConfDb);*/
-
-    /*map<string, string> transferExpandDb = _tcConf.getDomainMap("/Main/DB/TransferExpand");
-    TC_DBConf transferExpandDbConf;
-    transferExpandDbConf.loadFromMap(transferExpandDb);
-    _mysqlTransferExpandDb.init(transferExpandDbConf);*/
-
     _communicator = Application::getCommunicator();
 
     _adminproxy = _communicator->stringToProxy<AdminRegPrx>(_tcConf.get("/Main/<AdminRegObj>", "tars.tarsAdminRegistry.AdminRegObj"));
@@ -1845,19 +1835,11 @@ tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTra
 
 tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, RecoverMirrorRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|group name:" << req.groupName << "|mirror idc:" << req.mirrorIdc << "|db flag:" << req.dbFlag << "|enable erase:" << req.enableErase << endl);
+    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|group name:" << req.groupName << "|mirror idc:" << req.mirrorIdc << endl);
 
     string & errmsg = rsp.errMsg;
     try
     {
-        //状态保护, 如果不允许淘汰, 则不允许做状态恢复
-        if (TC_Common::upper(req.enableErase) == "N" || TC_Common::upper(req.enableErase) == "NO")
-        {
-            errmsg = string("module disable erase, deny recover mirror status|app name:") + req.appName + "|module name:" + req.moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
-            return -1;
-        }
-
         //根据appName查询 router obj
         string routerObj;
         int iRet = getRouterObj(req.appName, routerObj, errmsg);
