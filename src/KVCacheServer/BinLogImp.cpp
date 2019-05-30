@@ -293,7 +293,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
         string line;
         uint32_t iCurSize = 0, iCurLineCount = 0;
         set<string> keySet;
-        string lastLine("");
+        int64_t iLastTimestamp = 0;
         //beginTime = TC_TimeProvider::getInstance()->getNowMs();
         while (true)
         {
@@ -308,7 +308,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
                 else
                 {
                     //获取最后的同步时间
-                    lastLine = line;
+                    iLastTimestamp = TBinLogEncode::GetTime(line);
 
                     rsp.curSeek = ifs.tellg();
                     ++iCurLineCount;
@@ -394,15 +394,11 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
             }
         }
 
-        if (!lastLine.empty())
+        if (iLastTimestamp != 0)
         {
-            int32_t iTmpTime = TBinLogEncode::GetTime(lastLine);
-            if (iTmpTime != 0)
-            {
-                rsp.syncTime = iTmpTime;
-                if (g_app.gstat()->serverType() == MASTER)
-                    g_app.gstat()->setBinlogTime(rsp.syncTime, 0);
-            }
+            rsp.syncTime = iLastTimestamp;
+            if (g_app.gstat()->serverType() == MASTER)
+                g_app.gstat()->setBinlogTime(rsp.syncTime, 0);
         }
 
         if (ifs.eof())
