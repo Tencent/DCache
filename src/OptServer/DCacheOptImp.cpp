@@ -1881,7 +1881,33 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
 
     try
     {
-        string sSql = "select * from t_cache_router where app_name='" + req.appName + "' and module_name='" + req.moduleName + "'";
+        TC_DBConf routerDbInfo;
+        int iRet = getRouterDBInfo(req.appName, routerDbInfo, errmsg);
+        if (iRet == -1)
+        {
+            errmsg = "get router db info failed, maybe the selected app is not existed|app name:" + req.appName + "|errmsg:" + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        TC_Mysql tcMysql;
+        tcMysql.init(routerDbInfo);
+        tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
+
+
+        string sSql = "select cacheType from t_config_appMod where appName='" + req.appName + "' and moduleName='" + req.moduleName + "'";
+        TC_Mysql::MysqlData dataCacheType = _mysqlRelationDB.queryRecord(sSql);
+        if (dataCacheType.size() > 0)
+        {
+            stoe(dataCacheType[0]["cacheType"], rsp.cacheType);
+        }
+        else
+        {
+            TLOGDEBUG(FUN_LOG << "the record of the selected module is not existed, app name:" << req.appName << "|module name:" << req.moduleName << endl);
+            return 0;
+        }
+
+        sSql = "select * from t_cache_router where app_name='" + req.appName + "' and module_name='" + req.moduleName + "'";
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
 
         for (size_t i = 0; i < data.size(); ++i)
@@ -1894,22 +1920,18 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
             cacheServer.groupName   = data[i]["group_name"];
             cacheServer.idcArea     = data[i]["idc_area"];
             cacheServer.memSize     = data[i]["mem_size"];
-        }
 
-        sSql = "select cacheType from t_config_appMod where appName='" + req.appName + "' and moduleName='" + req.moduleName + "'";
-        TC_Mysql::MysqlData dataCacheType = _mysqlRelationDB.queryRecord(sSql);
-        if (dataCacheType.size() != 1)
-        {
-            errmsg = string("select id from t_config_appMod result count not equal to 1, app name:") + req.appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
-            throw DCacheOptException(errmsg);
+            iRet = getCacheGroupRouterPageNo(tcMysql, cacheServer.groupName, cacheServer.routerPageNo, errmsg);
+            if (iRet != 0)
+            {
+                errmsg = string("get group router page number failed|errmsg:") + errmsg;
+                TLOGERROR(FUN_LOG << errmsg << endl);
+            }
         }
-
-        stoe(dataCacheType[0]["cacheType"], rsp.cacheType);
 
         return 0;
     }
-    catch(const std::exception &ex)
+    catch (const std::exception &ex)
     {
         errmsg = string("get cache server list catch exception:") + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
@@ -6559,6 +6581,45 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
     catch(const std::exception &ex)
     {
         errmsg = string("delete transfer record for expand or reduce catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}
+
+/*
+* 按组获取路由页页数
+*/
+int DCacheOptImp::getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& groupName, long& groupPageNo, string& errmsg)
+{
+    try
+    {
+        string sql = "select sum(to_page_no-from_page_no+1) as router_page_no from t_router_record where group_name='" + groupName + "';";
+
+        TC_Mysql::MysqlData groupPageInfo = tcMysql.queryRecord(sql);
+
+        if (groupPageInfo.size() <= 0)
+        {
+            errmsg = "can not find group router page info|group name:" + groupName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+            return -1;
+        }
+
+        groupPageNo = 0;
+
+        if (groupPageInfo[0]["router_page_no"].size() > 0)
+        {
+            groupPageNo = TC_Common::strto<long>(groupPageInfo[0]["router_page_no"]);
+        }
+
+
+        tcMysql.disconnect();
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        errmsg = string("get cache group router page number catch exception:") + ex.what();
         TLOGERROR(FUN_LOG << errmsg << endl);
     }
 

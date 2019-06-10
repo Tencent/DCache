@@ -222,6 +222,7 @@ struct CacheServerInfo
     3 require string groupName;
     4 require string idcArea;
     5 require string memSize;
+    6 require long   routerPageNo; // 路由页页数
 };
 
 /*

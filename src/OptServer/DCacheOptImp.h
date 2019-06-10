@@ -386,6 +386,8 @@ private:
 
     int deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg);
 
+    int getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& groupName, long& groupPageNo, string& errmsg);
+
 private:
 
     TC_Config _tcConf;
