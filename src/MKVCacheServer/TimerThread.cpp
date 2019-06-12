@@ -141,9 +141,18 @@ void* TimerThread::Run(void* arg)
             sActive += "\n";
 
             if (pthis->_recordBinLog)
+            {
                 WriteBinLog::writeToFile(sActive, pthis->_binlogFile);
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
+                
             if (pthis->_recordKeyBinLog)
+            {
                 WriteBinLog::writeToFile(sActive, pthis->_keyBinlogFile);
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
 
             tLastBinlogHeartbeat = tNow;
         }
