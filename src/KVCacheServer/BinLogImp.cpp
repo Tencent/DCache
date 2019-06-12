@@ -308,8 +308,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
                 else
                 {
                     //获取最后的同步时间
-                    if (line.find("Active") == string::npos)
-                        iLastTimestamp = TBinLogEncode::GetTime(line);
+                    iLastTimestamp = TBinLogEncode::GetTime(line);
 
                     rsp.curSeek = ifs.tellg();
                     ++iCurLineCount;

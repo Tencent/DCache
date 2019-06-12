@@ -122,10 +122,19 @@ void* TimerThread::Run(void* arg)
             sActive += "\n";
 
             if (pthis->_recordBinLog)
+            {
                 CacheServer::WriteToFile(sActive, pthis->_binlogFile);
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
+                
             if (pthis->_recordKeyBinLog)
+            {
+            
                 CacheServer::WriteToFile(sActive, pthis->_keyBinlogFile);
-
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
             tLastBinlogHeartbeat = tNow;
         }
         for (int i = 1; i <= g_app.gstat()->hitIndex(); i++)
