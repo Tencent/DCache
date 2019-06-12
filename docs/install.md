@@ -16,7 +16,7 @@
 
 
 ## <a id = "1"></a> 1. 依赖环境
-DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
+DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以上）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
 
 ![Tars管理平台主页](images/tars_mainPage.png)
 
