@@ -178,7 +178,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         string strRouterName;
 
         int iRet = getRouterDBFromAppTable(kvCacheReq.appName, routerDbInfo, vsProxyName, strRouterName, err);
-        if (-1 == iRet)
+        if (0 != iRet)
         {
             return -1;
         }
@@ -211,7 +211,6 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         }
 
         // 通知router加载新模块的信息
-        //reloadRouterConfByModuleFromDB("DCache", kvCacheReq.moduleName, strRouterName, err, current);
         (void)reloadRouterByModule("DCache", kvCacheReq.moduleName, strRouterName, err);
 
         if (!checkRouterLoadModule("DCache", kvCacheReq.moduleName, strRouterName, err))
@@ -287,7 +286,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         vector<string> vtProxyName;
         string strRouterName;
         int iRet = getRouterDBFromAppTable(mkvCacheReq.appName, routerDbInfo, vtProxyName, strRouterName, err);
-        if (-1 == iRet)
+        if (0 != iRet)
         {
             return -1;
         }
@@ -321,7 +320,6 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         }
 
         // 通知router加载新模块的信息
-        //reloadRouterConfByModuleFromDB("DCache", mkvCacheReq.moduleName, strRouterName, err, current);
         (void)reloadRouterByModule("DCache", mkvCacheReq.moduleName, strRouterName, err);
 
         if (!checkRouterLoadModule("DCache", mkvCacheReq.moduleName, strRouterName, err))
@@ -536,7 +534,7 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const UninstallReq & uninstallInfo
         }
 
         UninstallStatus currentStatus = g_app.uninstallRequestQueueManager()->getUninstallRecord(sRequestId);
-        TLOGDEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent" << currentStatus.percent << "|request id:" << sRequestId << endl);
+        TLOGDEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent:" << currentStatus.percent << "|request id:" << sRequestId << endl);
 
         if (currentStatus.status != UNINSTALL_FAILED)
         {
@@ -670,7 +668,7 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << etos(expandReq.cacheType) << endl);
+        TLOGDEBUG(FUN_LOG << "new expand request|appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << etos(expandReq.cacheType) << endl);
 
         int iRet = insertExpandReduceStatusRecord(expandReq.appName, expandReq.moduleName, DCache::EXPAND_TYPE, vector<string>(), expandRsp.errMsg);
         if (iRet == 0)
@@ -697,7 +695,7 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
                     map<string, pair<TC_Mysql::FT, string> > m_update;
                     m_update["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER));
 
-                    string condition = "where module_name='" + expandReq.moduleName + "' and app_name='" + expandReq.appName + "'";
+                    string condition = "where module_name='" + expandReq.moduleName + "' and app_name='" + expandReq.appName + "' and type=" + TC_Common::tostr(DCache::EXPAND_TYPE);
 
                     _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
 
@@ -1111,7 +1109,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
         string condition("");
         string sSql("");
 
-        // 没有 设置type，或者查询 迁移任务，，查询 t_transfer_status 表
+        // 没有 设置type，或者查询 迁移任务，查询 t_transfer_status 表
         if ((type == DCache::UNSPECIFIED_TYPE) || (type == DCache::TRANSFER_TYPE))
         {
             //生成条件语句
@@ -1270,13 +1268,13 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                 for (map<std::string, std::string>::const_iterator it = cond.begin(); it != cond.end(); it++)
                 {
                     //剔除源组和目的组条件
-                    if (it->first == "src_group")
+                    if (it->first == "srcGroupName")
                     {
                         sCondSrcGroup = it->second;
                         continue;
                     }
 
-                    if (it->first == "dst_group")
+                    if (it->first == "dstGroupName")
                     {
                         sCondDstGroup = it->second;
                         continue;
@@ -1361,7 +1359,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     vector<string> tmp = TC_Common::sepstr<string>(data[i]["router_transfer_id"], "|");
                     if (tmp.size() == 0)
                     {
-                       errmsg = string("not find transfer record info in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName;
+                       errmsg = string("not find transfer record info in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|type:" + etos(tmpInfo.type);
                        TLOGERROR(FUN_LOG << errmsg << endl);
                        continue;
                     }
@@ -1377,7 +1375,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                         TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
                         if (transferData.size() == 0)
                         {
-                           errmsg = string("not find transfer record in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|id:" + tmp[j];
+                           errmsg = string("not find transfer record in t_router_transfer table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|id:" + tmp[j];
                            TLOGERROR(FUN_LOG << errmsg << endl);
                            continue;
                         }
@@ -1417,7 +1415,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                             insertInfo.srcGroupName = it1->first;
                             insertInfo.dstGroupName = it2->first;
 
-                            insertInfo.progress = int(float(it2->second.second)/float(it2->second.first) * 100);
+                            insertInfo.progress = int(float(it2->second.second) / float(it2->second.first) * 100);
 
                             //有过滤条件
                             if ((iStatus == TRANSFERRING) && (insertInfo.progress == 100))
@@ -1742,7 +1740,7 @@ tars::Int32 DCacheOptImp::stopTransfer(const StopTransferReq& req, StopTransferR
         {
             // expand or reduce
 
-            iRet = stopTransferForExpandReduce(req.appName, req.moduleName, rsp.errMsg);
+            iRet = stopTransferForExpandReduce(req.appName, req.moduleName, req.type, rsp.errMsg);
         }
 
         return iRet;
@@ -1782,7 +1780,7 @@ tars::Int32 DCacheOptImp::restartTransfer(const RestartTransferReq& req, Restart
         else if (req.type == DCache::EXPAND_TYPE || req.type == DCache::REDUCE_TYPE)
         {
             // expand or reduce
-            iRet = restartTransferForExpandReduce(req.appName, req.moduleName, rsp.errMsg);
+            iRet = restartTransferForExpandReduce(req.appName, req.moduleName, req.type, rsp.errMsg);
         }
 
         return iRet;
@@ -1813,7 +1811,7 @@ tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTra
         }
         else if (req.type == DCache::EXPAND_TYPE || req.type == DCache::REDUCE_TYPE)
         {
-            iRet = deleteTransferForExpandReduce(req.appName, req.moduleName, errmsg);
+            iRet = deleteTransferForExpandReduce(req.appName, req.moduleName, req.type, errmsg);
         }
         else
         {
@@ -2891,6 +2889,8 @@ int DCacheOptImp::createRouterConf(const RouterParam &param, bool bRouterServerE
                                     "   </Transfer>\n" +
 
                                     "   <Switch>\n" +
+                                    "       # 是否开启cache主备自动切换\n" +
+                                    "       enable=N\n" +
                                     "       # 自动切换超时的检测间隔(秒)\n" +
                                     "       SwitchCheckInterval= 10\n" +
                                     "       # 自动切换的超时时间(秒)\n" +
@@ -3717,7 +3717,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         }
 
         // 根据组的个数均分路由页
-        int num    = MAX_ROUTER_PAGE_NUM / data.size();
+        int num    = TOTAL_ROUTER_PAGE_NUM / data.size();
         int iBegin = 0;
         int iEnd   = MAX_ROUTER_PAGE_NUM;
         for (size_t i = 0; i < data.size(); i++)
@@ -5123,57 +5123,12 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
     return -1;
 }
 
-int DCacheOptImp::insertExpandReduce2TransferDb(const std::string& appName, const std::string& moduleName, TransferType type, std::string& errmsg)
-{
-    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
-    try
-    {
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "'";
-
-        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
-        {
-            //记录扩容或者缩容信息并准备开始迁移
-            if (data.size() == 0)
-            {
-                map<string, pair<TC_Mysql::FT, string> > m;
-                m["module_name"]        = make_pair(TC_Mysql::DB_STR, moduleName);
-                m["app_name"]           = make_pair(TC_Mysql::DB_STR, appName);
-                m["status"]             = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建任务
-                m["type"]               = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type)); // type: 1:expand, 2:reduce
-                m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-
-                _mysqlRelationDB.insertRecord("t_expand_status", m);
-            }
-            else
-            {
-                map<string, pair<TC_Mysql::FT, string> > m;
-                m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 1: 配置阶段完成
-                m["type"]   = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(type));
-                m["expand_start_time"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-
-                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "'";
-
-                _mysqlRelationDB.updateRecord("t_expand_status", m, cond);
-            }
-        }
-
-        return 0;
-    }
-    catch (const std::exception &ex)
-    {
-        errmsg = string("insert expand or reduce status record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
-    }
-
-    return -1;
-}
-
 int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, const std::string& moduleName, TransferType type, const vector<string> & groupName, std::string& errmsg)
 {
     TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "'";
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         {
@@ -5199,7 +5154,7 @@ int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, con
                 m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
                 m["modify_group_name"]  = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(groupName.begin(), groupName.end())); // 多个组名以"|"隔开
 
-                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "'";
+                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
 
                 _mysqlRelationDB.updateRecord("t_expand_status", m, cond);
             }
@@ -5263,12 +5218,12 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
         else
         {
             map<string, pair<TC_Mysql::FT, string> > m;
-            m["module_name"]    = make_pair(TC_Mysql::DB_STR, module);
-            m["from_page_no"]   = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(fromPage));
-            m["to_page_no"]     = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(toPage));
-            m["group_name"]     = make_pair(TC_Mysql::DB_STR, srcGroup);
-            m["trans_group_name"]     = make_pair(TC_Mysql::DB_STR, destGroup);
-            m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // 3-设置迁移页
+            m["module_name"]        = make_pair(TC_Mysql::DB_STR, module);
+            m["from_page_no"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(fromPage));
+            m["to_page_no"]         = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<unsigned int>(toPage));
+            m["group_name"]         = make_pair(TC_Mysql::DB_STR, srcGroup);
+            m["trans_group_name"]   = make_pair(TC_Mysql::DB_STR, destGroup);
+            m["state"]              = make_pair(TC_Mysql::DB_INT, "3"); // 3-设置迁移页
             tcMysql.insertRecord("t_router_transfer", m);
 
             string sql = string("select * from t_router_transfer where module_name='") + module
@@ -5443,7 +5398,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(DCache::EXPAND_TYPE);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -5815,7 +5770,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(DCache::REDUCE_TYPE);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -5876,7 +5831,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 }
                 else
                 {
-                    TLOGDEBUG(FUN_LOG << "router record group size:" << groupRouter.size() << endl);
+                    TLOGDEBUG(FUN_LOG << "router record size:" << groupRouter.size() << endl);
                 }
 
                 //把路由页数为0的去掉
@@ -6288,9 +6243,9 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
     return -1;
 }
 
-int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -6303,7 +6258,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6405,9 +6360,9 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
     return -1;
 }
 
-int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -6420,7 +6375,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "'and app_name='" + appName + "'";
+        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6543,12 +6498,12 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
     return -1;
 }
 
-int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg)
+int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
     TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
     try
     {
-        string sql = "select * from t_expand_status where app_name='" + appName + "' and module_name='" + moduleName + "'";
+        string sql = "select * from t_expand_status where app_name='" + appName + "' and module_name='" + moduleName + "' and type=" + TC_Common::tostr(type);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
         if (data.size() == 0)

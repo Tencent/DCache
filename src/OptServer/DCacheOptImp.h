@@ -362,8 +362,6 @@ private:
 
     int insertTransferStatusRecord(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferExisted,std::string &errmsg);
 
-    int insertExpandReduce2TransferDb(const std::string& appName, const std::string& moduleName, TransferType type, std::string& errmsg);
-
     int insertExpandReduceStatusRecord(const std::string& appName, const std::string& moduleName, TransferType type, const vector<string> & groupName, std::string& errmsg);
 
     int insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string &module, const string &srcGroup, const string &destGroup, unsigned int fromPage, unsigned int toPage, string &ids, std::string& errmsg);
@@ -378,13 +376,13 @@ private:
 
     int stopTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg);
 
-    int stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg);
+    int stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
 
-    int restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg);
+    int restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
 
     int deleteTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg);
 
-    int deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,std::string &errmsg);
+    int deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
 
     int getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& groupName, long& groupPageNo, string& errmsg);
 
