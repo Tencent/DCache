@@ -43,6 +43,8 @@ public:
 
 protected:
 
+    void doUndeploy(time_t tLastCheck);
+
     int getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg);
 
 private:

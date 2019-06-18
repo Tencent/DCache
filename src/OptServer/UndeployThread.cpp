@@ -43,121 +43,73 @@ void UndeployThread::run()
 
     while (!_terminate)
     {
-        try
+        // 查询迁移状态表
+        time_t tNow = TC_TimeProvider::getInstance()->getNow();
+
+        if (tLastCheck + _checkInterval < tNow)
         {
-            // 查询迁移状态表
-            time_t tNow = TC_TimeProvider::getInstance()->getNow();
+            doUndeploy(tLastCheck);
 
-            if (tLastCheck + _checkInterval < tNow)
+            tLastCheck = tNow;
+        }
+
+        {
+            TC_ThreadLock::Lock lock(*this);
+            timedWait(60 * 1000);
+        }
+    }
+}
+
+void UndeployThread::terminate()
+{
+    _terminate = true;
+}
+
+void UndeployThread::doUndeploy(time_t tLastCheck)
+{
+    try
+    {
+        string sSql = "select * from t_transfer_status where UNIX_TIMESTAMP(auto_updatetime) >= " + TC_Common::tostr(tLastCheck)
+                    + " and status=" + TC_Common::tostr(DCache::TRANSFER_FINISH);
+
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            for (size_t i = 0; i < data.size(); ++i)
             {
-                string sSql = "select * from t_transfer_status where UNIX_TIMESTAMP(auto_updatetime) >= " + TC_Common::tostr(tLastCheck)
-                            + " and status=" + TC_Common::tostr(DCache::TRANSFER_FINISH);
-
-                TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
-                if (data.size() > 0)
+                // 根据 appname,modulename,和组名查找服务名，检查是否还存在路由记录，如果不存在，则通知下线(增加判断条件，确保不会误下)
+                TC_DBConf routerDbInfo;
+                string errmsg("");
+                if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
                 {
-                    for (size_t i = 0; i < data.size(); ++i)
-                    {
-                        // 根据 appname,modulename,和组名查找服务名，检查是否还存在路由记录，如果不存在，则通知下线(增加判断条件，确保不会误下)
-                        TC_DBConf routerDbInfo;
-                        string errmsg("");
-                        if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
-                        {
-                           TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << endl);
-                           continue;
-                        }
-
-                        TC_Mysql tcMysql(routerDbInfo);
-                        tcMysql.connect();
-
-                        string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + data[i]["src_group"] + "' limit 1";
-                        TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
-                        if (routerRecordData.size() == 0)
-                        {
-                            // 该组已经没有路由记录则可以下线
-
-                            // 查询该组的全部服务名和ip
-                            sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + data[i]["src_group"] + "'";
-                            TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
-                            if (cacheData.size() > 0)
-                            {
-                                for (size_t j = 0; j < cacheData.size(); ++j)
-                                {
-                                    string resultStr("");
-                                    int iRet = _adminRegPrx->stopServer("DCache", cacheData[j]["cache_name"], cacheData[j]["cache_ip"], resultStr);
-                                    if (iRet != 0)
-                                    {
-                                        TLOGERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
-                                                          << "|server ip:" << cacheData[j]["cache_ip"]
-                                                          << "|errmsg:" << resultStr
-                                                          << endl);
-
-                                        // 停止服务失败，则不能下线
-                                        break;
-                                    }
-
-                                    // 等待服务停止完成
-                                    sleep(3);
-                                }
-
-                                // 构造下线服务请求
-                                UninstallRequest request;
-                                request.info.unType     = DCache::GROUP; // 按组下线
-                                request.info.appName    = data[i]["app_name"];
-                                request.info.moduleName = data[i]["module_name"];
-                                request.info.groupName  = data[i]["src_group"];
-                                request.requestId       = data[i]["src_group"];
-
-                                TLOGDEBUG(FUN_LOG << "for transfer|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
-                                                  << "|module name:" << data[i]["module_name"]
-                                                  << "|group name:" << data[i]["src_group"]
-                                                  << endl);
-
-                                g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
-                                g_app.uninstallRequestQueueManager()->push_back(request);
-                            }
-                        }
-                    }
+                   TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << "|errmsg:" << errmsg << endl);
+                   continue;
                 }
 
-                // 查询 t_expand_status(缩容: type=2)，然后下线路由页为0的组
-                sSql = "select * from t_expand_status where UNIX_TIMESTAMP(auto_updatetime) >= " + TC_Common::tostr(tLastCheck)
-                     + " and type=2"
-                     + " and status=" + TC_Common::tostr(DCache::TRANSFER_FINISH);
+                TC_Mysql tcMysql(routerDbInfo);
+                tcMysql.connect();
 
-                data = _mysqlRelationDB.queryRecord(sSql);
-                if (data.size() > 0)
+                string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + data[i]["src_group"] + "' limit 1";
+                TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
+                if (routerRecordData.size() == 0)
                 {
-                    for (size_t i = 0; i < data.size(); ++i)
+                    // 该组已经没有路由记录则可以下线
+
+                    // 查询该组的全部服务名和ip
+                    sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + data[i]["src_group"] + "'";
+                    TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
+                    if (cacheData.size() > 0)
                     {
-                        TC_DBConf routerDbInfo;
-                        string errmsg("");
-                        if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
+                        do
                         {
-                           TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << endl);
-                           continue;
-                        }
-
-                        TC_Mysql tcMysql(routerDbInfo);
-                        tcMysql.connect();
-
-                        vector<string> srcGroupName = TC_Common::sepstr<string>(data[i]["modify_group_name"], "|");
-                        for (size_t ii = 0; ii < srcGroupName.size(); ++ii)
-                        {
-                            string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + srcGroupName[ii] + "' limit 1";
-
-                            TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
-                            if (routerRecordData.size() == 0)
+                            bool bFailed = false;
+                            for (size_t j = 0; j < cacheData.size(); ++j)
                             {
-                                // 该组已经没有路由记录则可以下线
-
-                                // 查询该组的全部服务名和ip
-                                sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + srcGroupName[ii] + "'";
-
-                                TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
-                                if (cacheData.size() > 0)
+                                // 停止服务增加重试逻辑
+                                int retryTimes = 3;
+                                do
                                 {
-                                    for (size_t j = 0; j < cacheData.size(); ++j)
+                                    try
                                     {
                                         string resultStr("");
                                         int iRet = _adminRegPrx->stopServer("DCache", cacheData[j]["cache_name"], cacheData[j]["cache_ip"], resultStr);
@@ -168,58 +120,195 @@ void UndeployThread::run()
                                                               << "|errmsg:" << resultStr
                                                               << endl);
 
-                                            // 停止服务失败，则不能下线
+                                            // 停止服务失败，则重试
+                                        }
+                                        else
+                                        {
+                                            // stop successfully
                                             break;
                                         }
-
-                                        // 等待服务停止完成
-                                        sleep(3);
+                                    }
+                                    catch (exception& e)
+                                    {
+                                        TLOGERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
+                                    }
+                                    catch (...)
+                                    {
+                                        TLOGERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
                                     }
 
-                                    // 构造下线服务请求
-                                    UninstallRequest request;
-                                    request.info.unType     = DCache::GROUP; // 按组下线
-                                    request.info.appName    = data[i]["app_name"];
-                                    request.info.moduleName = data[i]["module_name"];
-                                    request.info.groupName  = srcGroupName[ii];
-                                    request.requestId       = srcGroupName[ii];
+                                    --retryTimes;
 
-                                    TLOGDEBUG(FUN_LOG << "for reduce|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
-                                                      << "|module name:" << data[i]["module_name"]
-                                                      << "|group name:" << srcGroupName[ii]
-                                                      << endl);
+                                } while (retryTimes);
 
-                                    g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
-                                    g_app.uninstallRequestQueueManager()->push_back(request);
+                                if (retryTimes <= 0)
+                                {
+                                    // 停止服务失败，则不能下线
+                                    bFailed = true;
+                                    TLOGERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
+                                                      << "|server ip:" << cacheData[j]["cache_ip"] << endl);
+                                    break;
                                 }
+
+                                // 等待服务停止完成
+                                sleep(3);
                             }
+
+                            // 有服务停止失败，则不进行下线
+                            if (bFailed)
+                            {
+                                break;
+                            }
+
+                            // 构造下线服务请求
+                            UninstallRequest request;
+                            request.info.unType     = DCache::GROUP; // 按组下线
+                            request.info.appName    = data[i]["app_name"];
+                            request.info.moduleName = data[i]["module_name"];
+                            request.info.groupName  = data[i]["src_group"];
+                            request.requestId       = data[i]["src_group"];
+
+                            TLOGDEBUG(FUN_LOG << "for transfer|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
+                                              << "|module name:" << data[i]["module_name"]
+                                              << "|group name:" << data[i]["src_group"]
+                                              << endl);
+
+                            g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
+                            g_app.uninstallRequestQueueManager()->push_back(request);
+
+                        } while (0);
+                    }
+                }
+            }
+        }
+
+        // 查询 t_expand_status(缩容: type=2)，然后下线路由页为0的组
+        sSql = "select * from t_expand_status where UNIX_TIMESTAMP(auto_updatetime) >= " + TC_Common::tostr(tLastCheck)
+             + " and type=" + TC_Common::tostr(DCache::REDUCE_TYPE)
+             + " and status=" + TC_Common::tostr(DCache::TRANSFER_FINISH);
+
+        data = _mysqlRelationDB.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            for (size_t i = 0; i < data.size(); ++i)
+            {
+                TC_DBConf routerDbInfo;
+                string errmsg("");
+                if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
+                {
+                   TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << endl);
+                   continue;
+                }
+
+                TC_Mysql tcMysql(routerDbInfo);
+                tcMysql.connect();
+
+                vector<string> srcGroupName = TC_Common::sepstr<string>(data[i]["modify_group_name"], "|");
+                for (size_t ii = 0; ii < srcGroupName.size(); ++ii)
+                {
+                    string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + srcGroupName[ii] + "' limit 1";
+
+                    TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
+                    if (routerRecordData.size() == 0)
+                    {
+                        // 该组已经没有路由记录则可以下线
+
+                        // 查询该组的全部服务名和ip
+                        sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + srcGroupName[ii] + "'";
+
+                        TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
+                        if (cacheData.size() > 0)
+                        {
+                            do
+                            {
+                                bool bFailed = false;
+                                for (size_t j = 0; j < cacheData.size(); ++j)
+                                {
+                                    // 停止服务增加重试逻辑
+                                    int retryTimes = 3;
+                                    do
+                                    {
+                                        try
+                                        {
+                                            string resultStr("");
+                                            int iRet = _adminRegPrx->stopServer("DCache", cacheData[j]["cache_name"], cacheData[j]["cache_ip"], resultStr);
+                                            if (iRet != 0)
+                                            {
+                                                TLOGERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
+                                                                  << "|server ip:" << cacheData[j]["cache_ip"]
+                                                                  << "|errmsg:" << resultStr
+                                                                  << endl);
+
+                                                // 停止服务失败，则重试
+                                            }
+                                            else
+                                            {
+                                                break;
+                                            }
+                                        }
+                                        catch (exception& e)
+                                        {
+                                            TLOGERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
+                                        }
+                                        catch (...)
+                                        {
+                                            TLOGERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
+                                        }
+
+                                        --retryTimes;
+
+                                    } while (retryTimes);
+
+                                    if (retryTimes <= 0)
+                                    {
+                                        // 停止服务失败，则不能下线
+                                        bFailed = true;
+                                        TLOGERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
+                                                          << "|server ip:" << cacheData[j]["cache_ip"] << endl);
+                                        break;
+                                    }
+
+                                    // 等待服务停止完成
+                                    sleep(3);
+                                }
+
+                                // 有服务停止失败，则不进行下线
+                                if (bFailed)
+                                {
+                                    break;
+                                }
+
+                                // 构造下线服务请求
+                                UninstallRequest request;
+                                request.info.unType     = DCache::GROUP; // 按组下线
+                                request.info.appName    = data[i]["app_name"];
+                                request.info.moduleName = data[i]["module_name"];
+                                request.info.groupName  = srcGroupName[ii];
+                                request.requestId       = srcGroupName[ii];
+
+                                TLOGDEBUG(FUN_LOG << "for reduce|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
+                                                  << "|module name:" << data[i]["module_name"]
+                                                  << "|group name:" << srcGroupName[ii]
+                                                  << endl);
+
+                                g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
+                                g_app.uninstallRequestQueueManager()->push_back(request);
+
+                            } while (0);
                         }
                     }
                 }
-
-                tLastCheck = tNow;
             }
-
-            {
-                TC_ThreadLock::Lock lock(*this);
-                timedWait(60 * 1000);
-            }
-
-        }
-        catch (exception& e)
-        {
-            TLOGERROR(FUN_LOG << "catch exception:" << e.what() << endl);
-        }
-        catch (...)
-        {
-            TLOGERROR(FUN_LOG << "catch unkown exception" << endl);
         }
     }
-}
-
-void UndeployThread::terminate()
-{
-    _terminate = true;
+    catch (exception& e)
+    {
+        TLOGERROR(FUN_LOG << "catch exception:" << e.what() << endl);
+    }
+    catch (...)
+    {
+        TLOGERROR(FUN_LOG << "catch unkown exception" << endl);
+    }
 }
 
 int UndeployThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg)
