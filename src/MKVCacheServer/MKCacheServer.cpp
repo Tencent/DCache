@@ -682,15 +682,12 @@ MKCacheServer::initialize()
     iRet = _gStat.init();
     assert(iRet == 0);
 
-    //定义标记， 是否成功从Router成功同步最新路由
-    bool bSyncFromRouter = false;
-    bool bOnlyMaster = false;
-
     //初始化RouterHandle
     _routerHandle = RouterHandle::getInstance();
     _routerHandle->init(_tcConf);
 
     //初始化路由
+    bool bSyncFromRouter = false;
     if (_routerHandle->initRoute(false, bSyncFromRouter) != 0)
     {
         TLOGERROR("MKCacheServer::initialize init route failed" << endl);
@@ -702,16 +699,6 @@ MKCacheServer::initialize()
     g_route_table.getGroup(sServerName, groupinfo);
     _gStat.setGroupName(groupinfo.groupName);
     TLOGDEBUG("MKCacheServer::initialize groupName:" << groupinfo.groupName << endl);
-
-    //检查是否有备机
-    {
-        ServerInfo __bakServerInfo;
-        //如果没有备机，标记一下
-        if (g_route_table.getBakSource(sServerName, __bakServerInfo) != UnpackTable::RET_SUCC)
-        {
-            bOnlyMaster = true;
-        }
-    }
 
     // 设置允许产生coredump的大小
     struct rlimit rl;
@@ -872,13 +859,10 @@ MKCacheServer::initialize()
     }
     _shmKey = TC_Common::tostr(key);
 
-    if (!sSemKey.empty())
+    if (!sSemKey.empty() && sSemKey != _shmKey)
     {
-        if (sSemKey != _shmKey)
-        {
-            TLOGERROR("[MKCacheServer::initialize] semkey from file != ftok/config, (" << sSemKey << " != " << key << ")" << endl);
-            assert(false);
-        }
+        TLOGERROR("[MKCacheServer::initialize] semkey from file != ftok/config, (" << sSemKey << " != " << key << ")" << endl);
+        assert(false);
     }
     TLOGDEBUG("MKCacheServer::initialize semkey = " << key << endl);
 
@@ -895,13 +879,13 @@ MKCacheServer::initialize()
     }
     else
     {
-        // 从文件中获取semkey失败时，加强限制
-        if (sSemKey == "")
+        if (sSemKey.empty()) //文件中读取的内容为空
         {
             int iShmid = shmget(key, 0, 0);
             if (iShmid == -1)
             {
-                TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno << endl);
+                TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist and has no content, and shmget "
+                        << key << " failed, errno = " << errno << endl);
                 assert(false);
             }
             else
@@ -921,14 +905,30 @@ MKCacheServer::initialize()
         }
         else
         {
-            //从文件中获取semkey成功，但连接共享内存失败时，加强限制 add by jianfengli
-            //从文件获取semkey成世但共找不到共享内存，且同步路由失败，且有备机时，不启动
             int iShmid = shmget(key, 0, 0);
-            if (iShmid == -1 && !bSyncFromRouter && !bOnlyMaster)
+            if (iShmid == -1)
             {
-                TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
-                             << " and Sync from Router failed, and Cache have a backup" << endl);
-                assert(false);
+                if (MASTER == getServerType()) //主机不允许启动，应该触发主备切换
+                {
+                    TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
+                             << ",master server assert." << endl);
+                    assert(false);
+                }
+                else
+                {
+                    bool hasDb = _tcConf["/Main/DbAccess<DBFlag>"] == "Y" ? true : false;
+                    if (hasDb)
+                    {
+                        TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
+                                                                     << ",allowed boot up because there is backend DB." << endl);
+                    }
+                    else
+                    {
+                        TLOGERROR("[MKCacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
+                                                                     << ",has no backend DB, assert." << endl);
+                        assert(false);
+                    }
+                }
             }
         }
     }

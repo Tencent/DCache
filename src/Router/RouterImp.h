@@ -92,6 +92,11 @@ public:
                                              const string &groupName,
                                              tars::TarsCurrentPtr current);
 
+    virtual tars::Bool procAdminCommand(const string &command,
+                                        const string &params,
+                                        string &result,
+                                        tars::TarsCurrentPtr current);
+
 private:
     int sendHeartBeat(const std::string &serverName);
 
@@ -117,6 +122,7 @@ private:
     map<string, string> _cityToIDC;       // idc_city到idc的映射
     std::string _masterRouterObj;         // Router master的OBJ字符串
     RouterPrx _prx;                       // 和Router master通信的proxy
+    std::string _selfObj;                 // Router本机的obj
 };
 
 #endif  // __ROUTERIMP_H__

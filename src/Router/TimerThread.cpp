@@ -135,8 +135,9 @@ void TimerThread::run()
 void TimerThread::terminate()
 {
     _transferDispatcher->terminate();
+    
+	TC_ThreadLock::Lock sync(*this);
     _stop = true;
-    TC_ThreadLock::Lock sync(*this);
     notifyAll();
 }
 
@@ -148,11 +149,13 @@ void TimerThread::doClearProxy() { _outerProxy->clearProxy(); }
 // 若还有空闲工作线程， 分配给剩下的有迁移任务的组，上限为_maxSizeEachGroup
 void TimerThread::doTransferParallel()
 {
-    auto transTask = std::make_shared<TransferInfo>();
+	TransferInfo transInfo;
 
     //获取迁移任务
-    while (_dbHandle->getTransferTask(*transTask) == 0)
+    while (_dbHandle->getTransferTask(transInfo) == 0)
     {
+		auto transTask = std::make_shared<TransferInfo>(transInfo);
+
         _transferDispatcher->addTransferTask(transTask);
     }
 

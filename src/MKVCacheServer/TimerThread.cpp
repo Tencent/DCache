@@ -33,19 +33,18 @@ void TimerThread::init(const string &sConf)
     string sKeyRecordBinLog = _tcConf.get("/Main/BinLog<KeyRecord>", "N");
     _recordKeyBinLog = (sKeyRecordBinLog == "Y" || sKeyRecordBinLog == "y") ? true : false;
 
-    _srp_dirtyCnt = Application::getCommunicator()->getStatReport()->createPropertyReport("DirtyNum", PropertyReport::avg());
-    _srp_hitcount = Application::getCommunicator()->getStatReport()->createPropertyReport("HitCount", PropertyReport::avg());
-    _srp_memSize = Application::getCommunicator()->getStatReport()->createPropertyReport("MemSize", PropertyReport::avg());
-    _srp_memInUse = Application::getCommunicator()->getStatReport()->createPropertyReport("DataMemUsedRatio", PropertyReport::avg());
-    _srp_dirtyRatio = Application::getCommunicator()->getStatReport()->createPropertyReport("DirtyRatio", PropertyReport::avg());
-    _srp_chunksOnceEle = Application::getCommunicator()->getStatReport()->createPropertyReport("Chunks/OnceElement", PropertyReport::avg());
-    _srp_mkMemInUse = Application::getCommunicator()->getStatReport()->createPropertyReport("MKMemUsedRatio", PropertyReport::avg());
-    _srp_elementCount = Application::getCommunicator()->getStatReport()->createPropertyReport("ElementCount", PropertyReport::avg());
-    _srp_onlykeyCount = Application::getCommunicator()->getStatReport()->createPropertyReport("OnlyKeyCount", PropertyReport::avg());
-    _srp_bigChunk = Application::getCommunicator()->getStatReport()->createPropertyReport("BigChunk", PropertyReport::avg());
-    _srp_missCount = Application::getCommunicator()->getStatReport()->createPropertyReport("MissCount", PropertyReport::avg());
+    _srp_dirtyCnt = Application::getCommunicator()->getStatReport()->createPropertyReport("CountOfDirtyRecords", PropertyReport::avg());
+    _srp_hitcount = Application::getCommunicator()->getStatReport()->createPropertyReport("CacheHitRatio", PropertyReport::avg());
+    _srp_memSize = Application::getCommunicator()->getStatReport()->createPropertyReport("CacheMemSize_MB", PropertyReport::avg());
+    _srp_memInUse = Application::getCommunicator()->getStatReport()->createPropertyReport("DataMemUsage", PropertyReport::avg());
+    _srp_dirtyRatio = Application::getCommunicator()->getStatReport()->createPropertyReport("ProportionOfDirtyRecords", PropertyReport::avg());
+    _srp_chunksOnceEle = Application::getCommunicator()->getStatReport()->createPropertyReport("ChunkUsedPerRecord", PropertyReport::avg());
+    _srp_mkMemInUse = Application::getCommunicator()->getStatReport()->createPropertyReport("MKV_MainkeyMemUsage", PropertyReport::avg());
+    _srp_elementCount = Application::getCommunicator()->getStatReport()->createPropertyReport("TotalCountOfRecords", PropertyReport::avg());
+    _srp_onlykeyCount = Application::getCommunicator()->getStatReport()->createPropertyReport("CountOfOnlyKey", PropertyReport::avg());
+    _srp_maxJmemUsage = Application::getCommunicator()->getStatReport()->createPropertyReport("MaxMemUsageOfJmem", PropertyReport::avg());
     if (_srp_dirtyCnt == 0 || _srp_hitcount == 0 || _srp_memSize == 0 || _srp_memInUse == 0 || _srp_dirtyRatio == 0 ||
-            _srp_chunksOnceEle == 0 || _srp_mkMemInUse == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_bigChunk == 0 || _srp_missCount == 0)
+        _srp_chunksOnceEle == 0 || _srp_mkMemInUse == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_maxJmemUsage == 0)
     {
         TLOGERROR("TimerThread::init createPropertyReport error" << endl);
         assert(false);
@@ -142,9 +141,18 @@ void* TimerThread::Run(void* arg)
             sActive += "\n";
 
             if (pthis->_recordBinLog)
+            {
                 WriteBinLog::writeToFile(sActive, pthis->_binlogFile);
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
+                
             if (pthis->_recordKeyBinLog)
+            {
                 WriteBinLog::writeToFile(sActive, pthis->_keyBinlogFile);
+                if (g_app.gstat()->serverType() == MASTER)
+                    g_app.gstat()->setBinlogTime(0, TNOW);
+            }
 
             tLastBinlogHeartbeat = tNow;
         }
@@ -174,7 +182,7 @@ void* TimerThread::Run(void* arg)
                 if (iUseRatio > biggest)
                     biggest = iUseRatio;
             }
-            pthis->_srp_bigChunk->report(biggest);
+            pthis->_srp_maxJmemUsage->report(biggest);
 
             pthis->_srp_onlykeyCount->report(g_HashMap.onlyKeyCount());
 
@@ -193,12 +201,12 @@ void* TimerThread::Run(void* arg)
             if (totalElementCount == 0)
             {
                 pthis->_srp_dirtyRatio->report(0);
-                pthis->_srp_chunksOnceEle->report(100);
+                pthis->_srp_chunksOnceEle->report(0);
             }
             else
             {
                 pthis->_srp_dirtyRatio->report((int)((float)totalDirtyCount / totalElementCount * 100));
-                pthis->_srp_chunksOnceEle->report((int)((float)totalDataUsedChunk / totalElementCount * 100));
+                pthis->_srp_chunksOnceEle->report((int)((float)totalDataUsedChunk / totalElementCount));
             }
             pthis->_srp_dirtyCnt->report(totalDirtyCount);
             pthis->_srp_elementCount->report(totalElementCount);

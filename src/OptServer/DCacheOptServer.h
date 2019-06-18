@@ -20,6 +20,9 @@
 
 #include "UninstallThread.h"
 #include "ReleaseThread.h"
+#include "TransferThread.h"
+#include "ExpandThread.h"
+#include "UndeployThread.h"
 
 using namespace tars;
 
@@ -69,6 +72,15 @@ protected:
 
     // uninstall 请求管理器
     UninstallRequestQueueManager _uninstallRequestQueueManager;
+
+    // 迁移线程
+    TransferThread _transferThread;
+
+    // 扩容线程
+    ExpandThread _expandThread;
+
+    // 下线线程
+    UndeployThread _undeployThread;
 };
 
 extern DCacheOptServer g_app;

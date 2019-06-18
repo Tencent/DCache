@@ -3,7 +3,7 @@ export -e APP
 TOPDIR	:= .
 
 DIRS            = TarsComm ConfigServer Router Comm KVCacheServer MKVCacheServer Proxy PropertyServer OptServer
-DIRS_RElEASE    = TarsComm ConfigServer DbAccess Router KVCacheServer MKVCacheServer Proxy OptServer
+DIRS_RElEASE    = TarsComm ConfigServer DbAccess Router KVCacheServer MKVCacheServer Proxy PropertyServer OptServer
 
 all:
 	@for dir in $(DIRS); do make -C $$dir; echo; done

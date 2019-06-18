@@ -53,6 +53,7 @@ public:
      */
     int insert2Db(const PropertyMsg &mPropMsg, const string &sDate, const string &sFlag);
 
+    int queryPropData(const DCache::QueryPropCond &req, vector<DCache::QueriedResult> &rsp);
     /**
      * 设置结束标志
      *
@@ -65,7 +66,8 @@ private:
     int createTable(const string &sTbName);
 
     int updateEcsStatus(const string &sLastTime, const string &sTbNamePre = "");
-    
+    int getLastTimestamp(string &date, string &time);
+
     int createEcsTable(const string &sTbName, const string &sSql);
     
     int insert2Db(const PropertyMsg &mPropMsg, const string &sDate, const string &sFlag, const string &sTbNamePre, int iOldWriteNum, int &iNowWriteNum);

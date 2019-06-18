@@ -369,7 +369,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
             return -1;
         }
 
-        //注意:只要删除db_taf信息成功就返回0，以下始终返回0
+        //注意:只要删除db_tars信息成功就返回0，以下始终返回0
         //删路径
         try
         {
@@ -425,7 +425,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
                 }
             }
 
-            //删除taf服务本身的记录
+            //删除tars服务本身的记录
             string sWhere = "where application='" + sApplication + "' and server_name='" + sServerName + "' and node_name='" + sIp + "'";
             mysqlTarsDb.deleteRecord("t_adapter_conf", sWhere);
             mysqlTarsDb.deleteRecord("t_server_conf", sWhere);

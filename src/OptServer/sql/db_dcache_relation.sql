@@ -221,6 +221,77 @@ CREATE TABLE `t_idc_map` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `t_transfer_status`
+--
+
+DROP TABLE IF EXISTS `t_transfer_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `t_transfer_status` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `app_name` varchar(50) NOT NULL DEFAULT '',
+  `module_name` varchar(50) NOT NULL DEFAULT '',
+  `src_group` varchar(128) NOT NULL DEFAULT '',
+  `dst_group` varchar(120) NOT NULL DEFAULT '',
+  `status` tinyint(4) NOT NULL DEFAULT '0',
+  `router_transfer_id` text,
+  `auto_updatetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `transfer_start_time` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `transfer_record` (`app_name`,`module_name`,`src_group`,`dst_group`)
+) ENGINE=InnoDB AUTO_INCREMENT=52975 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+--
+-- Table structure for table `t_expand_status`
+--
+
+DROP TABLE IF EXISTS `t_expand_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `t_expand_status` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `app_name` varchar(50) NOT NULL,
+  `module_name` varchar(50) NOT NULL,
+  `status` tinyint(4) NOT NULL,
+  `router_transfer_id` text,
+  `auto_updatetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `type` int(4) DEFAULT '0',
+  `expand_start_time` varchar(32) DEFAULT NULL,
+  `modify_group_name` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1999 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `t_router_switch`
+--
+
+DROP TABLE IF EXISTS `t_router_switch`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `t_router_switch` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `app_name` varchar(128) NOT NULL,
+  `module_name` varchar(128) NOT NULL,
+  `group_name` varchar(128) DEFAULT NULL,
+  `master_server` varchar(128) DEFAULT NULL,
+  `slave_server` varchar(128) DEFAULT NULL,
+  `mirror_idc` varchar(128) DEFAULT NULL,
+  `master_mirror` varchar(128) DEFAULT NULL,
+  `slave_mirror` varchar(128) DEFAULT NULL,
+  `switch_type` int(11) NOT NULL,
+  `switch_result` int(11) NOT NULL DEFAULT '0',
+  `access_status` int(11) NOT NULL DEFAULT '0',
+  `comment` varchar(256) DEFAULT NULL,
+  `switch_time` datetime DEFAULT NULL,
+  `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `switch_property` enum('auto','manual') DEFAULT 'manual',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=18083 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 
 -- Dump completed on 2018-11-29 11:18:13

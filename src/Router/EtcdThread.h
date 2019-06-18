@@ -26,7 +26,7 @@ class EtcdThread : public tars::TC_Thread, public tars::TC_ThreadLock
 {
 public:
     EtcdThread()
-        : _stop(false), _regMasterInterval(0), _refreshHeartbeatInterval(0), _heartbeatTTL(0)
+        : _recovered(false), _stop(false), _regMasterInterval(0), _refreshHeartbeatInterval(0), _heartbeatTTL(0)
     {
     }
 
@@ -38,27 +38,31 @@ public:
 
     void terminate();
 
+    void updateLastHeartbeat(const int64_t lastHeartbeat);
+
 private:
     // 判断当前主机是否是Master
     bool isRouterMaster() const;
 
     // 抢主。只有在备机才会执行
-    int registerMaster() const;
+    int registerMaster();
 
-    // 刷新心跳。只有在主机上才会执行。
-    int refreshHeartBeat() const;
+    // 刷新心跳，只有在主机上才会执行。
+    int refreshHeartBeat(const bool sync = false) const;
 
     // 阻塞调用，用于备机上，来监听主机是否挂掉。
     void watchMasterDown() const;
 
     // 尝试恢复服务的状态
-    void recoverRouterType() const;
+    void recoverRouterType();
 
 private:
+    std::atomic<bool> _recovered;   // 标记是否已经恢复服务状态
     std::atomic<bool> _stop;        // 标记线程是否停止
     int _regMasterInterval;         // 抢主的时间间隔(单位:秒)
     int _refreshHeartbeatInterval;  // 刷新心跳的时间间隔(单位:秒)
     int _heartbeatTTL;              // 心跳的超时时间(即TTL, 单位:秒)
+    int64_t _lastHeartbeat;         // 最后一次心跳上报成功时间
     std::string _selfObj;           //
     std::shared_ptr<EtcdHandle> _etcdHandle;
 };

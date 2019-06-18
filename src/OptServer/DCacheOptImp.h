@@ -21,7 +21,10 @@
 #include "servant/Communicator.h"
 #include "servant/CommunicatorFactory.h"
 
+#include "Proxy.h"
+#include "Router.h"
 #include "Node.h"
+#include "Property.h"
 #include "DCacheOpt.h"
 #include "ReleaseThread.h"
 
@@ -42,16 +45,15 @@ class DCacheOptImp : public DCache::DCacheOpt
 {
 public:
 
-    typedef struct tagRouterDbInfo
+    //临时路由结构
+    struct RouterInfo : public tars::TC_HandleBase
     {
-        string sDbName;
-        string sDbIp;
-        string sPort;
-        string sUserName;
-        string sPwd;
-        string sCharSet;
-    }RouterDbInfo;
-
+        bool flags;//是否可用标记
+        int fromPage;
+        int toPage;
+        string groupName;
+    };
+    typedef tars::TC_AutoPtr<RouterInfo> RouterInfoPtr;
 
 public:
     DCacheOptImp(){}
@@ -95,12 +97,12 @@ public:
     /*
     * 下线服务
     */
-    virtual tars::Int32 uninstall4DCache(const UninstallInfo & uninstallInfo, UninstallRsp & uninstallRsp, tars::TarsCurrentPtr current);
+    virtual tars::Int32 uninstall4DCache(const UninstallReq & uninstallInfo, UninstallRsp & uninstallRsp, tars::TarsCurrentPtr current);
 
     /*
     * 获取下线服务进度
     */
-    virtual tars::Int32 getUninstallPercent(const UninstallInfo & uninstallInfo, UninstallProgressRsp & progressRsp, tars::TarsCurrentPtr current);
+    virtual tars::Int32 getUninstallPercent(const UninstallReq & uninstallInfo, UninstallProgressRsp & progressRsp, tars::TarsCurrentPtr current);
 
     /*
     * reload router
@@ -108,15 +110,74 @@ public:
     virtual tars::Bool reloadRouterConfByModuleFromDB(const std::string & sApp, const std::string & sModuleName, const std::string & sRouterServerName, std::string &errmsg,tars::TarsCurrentPtr current);
 
     /*
-    * expand cache
+    * transfer cache
     */
-    virtual tars::Int32 transferDCache(const TransferReq & transferReq, TransferRsp & transferRsp, tars::TarsCurrentPtr current);
+    virtual tars::Int32 transferDCache(const TransferReq & req, TransferRsp & rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * transfer to existed group
+    */
+    virtual tars::Int32 transferDCacheGroup(const TransferGroupReq & req, TransferGroupRsp & rsp, tars::TarsCurrentPtr current);
 
     /*
     * expand cache
     */
-    virtual tars::Int32 expandDCache(const ExpandReq & expandReq, ExpandRsp & expandRsq, tars::TarsCurrentPtr current);
+    virtual tars::Int32 expandDCache(const ExpandReq & expandReq, ExpandRsp & expandRsp, tars::TarsCurrentPtr current);
 
+    /*
+    * reduce cache
+    */
+    virtual tars::Int32 reduceDCache(const ReduceReq & reduceReq, ReduceRsp & reduceRsp, tars::TarsCurrentPtr current);
+
+    /*
+    * config transfer task
+    */
+    virtual tars::Int32 configTransfer(const ConfigTransferReq & req, ConfigTransferRsp & rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * get module struct info
+    */
+    virtual tars::Int32 getModuleStruct(const ModuleStructReq & req,ModuleStructRsp & rsp,tars::TarsCurrentPtr current);
+
+    /*
+    * get router change(inlcude tarnsfer, expand and reduce)
+    */
+    virtual tars::Int32 getRouterChange(const RouterChangeReq & req,RouterChangeRsp & rsp,tars::TarsCurrentPtr current);
+
+    /*
+    * active-standby switch
+    */
+    virtual tars::Int32 switchServer(const SwitchReq & req, SwitchRsp & rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * get switch info
+    */
+    virtual tars::Int32 getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp & rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * stop transfer
+    */
+    virtual tars::Int32 stopTransfer(const StopTransferReq& req, StopTransferRsp &rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * restart transfer
+    */
+    virtual tars::Int32 restartTransfer(const RestartTransferReq& req, RestartTransferRsp &rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * delete transfer record
+    */
+    virtual tars::Int32 deleteTransfer(const DeleteTransferReq& req, DeleteTransferRsp& rsp,tars::TarsCurrentPtr current);
+
+    /*
+    * recover mirror status
+    */
+    virtual tars::Int32 recoverMirrorStatus(const RecoverMirrorReq& req, RecoverMirrorRsp & rsp, tars::TarsCurrentPtr current);
+
+    /*
+    * get cache server list
+    */
+    virtual tars::Int32 getCacheServerList(const CacheServerListReq& req, CacheServerListRsp& rsp, tars::TarsCurrentPtr current);
 
     /*
     * 配置中心操作接口
@@ -142,6 +203,8 @@ public:
     virtual tars::Int32 getServerNodeConfigItemList(const ServerConfigReq & configReq, ConfigRsp & configRsp, tars::TarsCurrentPtr current);
 
     virtual tars::Int32 getServerConfigItemList(const ServerConfigReq & configReq, ConfigRsp & configRsp, tars::TarsCurrentPtr current);
+
+    virtual tars::Int32 queryProperptyData(const DCache::QueryPropReq & req,vector<DCache::QueryResult> &rsp,tars::TarsCurrentPtr current);
 
 private:
 
@@ -189,6 +252,7 @@ private:
     * 保存服务对应关系
     */
     int insertRelationAppTable(const string & appName, const string &proxyServer,const string &routerServer,const DCache::RouterParam & stRouter, bool bReplace, string & errmsg);
+
     void insertProxyRouter(const string &sProxyName,  const string &sRouterName, const string &sDbName, const string &sIp, const string& sModuleNameList, bool bReplace, string & errmsg);
 
     /*
@@ -204,21 +268,20 @@ private:
     /**
     * 生成cache在router表的记录
     */
-    int insertCache2RouterDb(const string& sModuleName, const string &sRemark, const string& sRouterDbHost, const string& sRouterDbName, const string &sRouterDbPort, const string &DbUser, const string &DbPassword,const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg);
+    int insertCache2RouterDb(const string& sModuleName, const string &sRemark, const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg);
 
     /**
-    * 保存cache信息到taf db
+    * 保存cache信息到tars db
     */
-    //int insertCache2TarsDb(const string &sRouterDbName, const string& sRouterDbHost, const string &sRouterDbPort, const string &sRouterDbUser, const string &sRouterDbPwd, const vector<DCache::CacheHostParam> & vtCacheHost, const string &sCacheType, const string &sTarsVersion, std::string &errmsg);
-    int insertCache2TarsDb(const string &sRouterDbName, const string& sRouterDbHost, const string &sRouterDbPort, const string &sRouterDbUser, const string &sRouterDbPwd, const vector<DCache::CacheHostParam> & vtCacheHost,  DCacheType eCacheType, const string &sTarsVersion, bool bReplace, std::string &errmsg);
+    int insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, DCache::DCacheType eCacheType, const string &sTarsVersion, bool bReplace, std::string &errmsg);
 
     /**
-    * 保存cache信息到taf server 表
+    * 保存cache信息到tars server 表
     */
     int insertTarsServerTable(const string &sApp, const string &sServerName, const string &sIp, const string &sTemplateName, const string &sExePath,const std::string &sTarsVersion, const bool enableGroup, bool bReplace, string & errmsg);
 
     /**
-    * 保存cache信息到taf servant 表
+    * 保存cache信息到tars servant 表
     */
     int insertServantTable(const string &sApp, const string &sServerName, const string &sIp, const string &sServantName, const string &sEndpoint, const string &sThreadNum, bool bReplace, string & errmsg);
 
@@ -232,7 +295,8 @@ private:
     /**
     *应用名和模块名来确定level1的id
     */
-    int insertAppModTable(const string &appName, const string &moudleName, int &id, bool bReplace, string & errmsg);
+    int insertAppModTable(const string &appName, const string &moduleName, int &id, bool bReplace, string & errmsg);
+    int insertAppModTable(const string &appName, const string &moduleName, DCache::DCacheType eCacheType, int &id, bool bReplace, string & errmsg);
 
     /**
     *重载insertConfigFilesTable
@@ -275,43 +339,69 @@ private:
     // 重载路由信息
     bool reloadRouterByModule(const std::string & sApp, const std::string & sModuleName, const std::string & sRouterServerName, const set<string>& nodeIPset, std::string &errmsg);
 
-    int insertCacheRouter(const string &sCacheName, const string &sCacheIp, int memSize, const string &sRouterName,  const RouterDbInfo &routerDBInfo, const string& sModuleName, bool bReplace, string & errmsg);
+    int reloadRouterByModule(const std::string & app, const std::string & moduleName, const std::string & routerName, std::string &errmsg);
 
-    int getRouterDBFromAppTable(const string &appName, RouterDbInfo &routerDbInfo, vector<string> & sProxyName, string & sRouterName, string &errmsg);
+    int insertCacheRouter(const string &sCacheName, const string &sCacheIp, int memSize, const string &sRouterName, const TC_DBConf &routerDbInfo, const string& sModuleName, bool bReplace, string & errmsg);
 
     // 插入到t_server_conf 里面默认IDC分组
     int insertTarsServerTableWithIdcGroup(const string &sApp, const string& sServerName ,const ProxyAddr &stProxyAddr, const string &sIp, const string &sTemplateName, const string &sExePath, const std::string &sTarsVersion, const bool enableGroup, bool bReplace, string & errmsg);
 
     int expandCacheConf(const string &appName, const string &moduleName, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string & errmsg);
 
-    int getAppModConfigId(const string &appName, const string &moudleName, int &id, string & errmsg);
+    int getAppModConfigId(const string &appName, const string &moduleName, int &id, string & errmsg);
 
-    int expandCache2RouterDb(const string &sModuleName, const string& sRouterDbName, const string& sRouterDbHost, const string& sRouterDbPort, const string &sRouterDbUser, const string &sRouterDbPwd, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg);
+    int expandCache2RouterDb(const string &sModuleName, const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg);
 
-    int getRouterDBInfoAndObj(const string &sWhereName, RouterDbInfo &routerDbInfo, string &routerObj, string & errmsg, int type = 1);
+    int getRouterObj(const string &sWhereName, string &routerObj, string & errmsg, int type = 1);
 
-    int expandDCacheServer(const std::string & appName,const std::string & moduleName,const vector<DCache::CacheHostParam> & vtCacheHost,const std::string & sTarsVersion,DCache::DCacheType cacheType, bool bReplace,std::string &err);
+    int getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg);
+
+    int getRouterDBFromAppTable(const string &appName, TC_DBConf &routerDbInfo, vector<string> & sProxyName, string & sRouterName, string &errmsg);
+
+    int expandDCacheServer(const std::string & appName,const std::string & moduleName,const vector<DCache::CacheHostParam> & vtCacheHost,const std::string & sTarsVersion,DCache::DCacheType cacheType, bool bReplace,std::string &errmsg);
+
+    int insertTransferStatusRecord(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferExisted,std::string &errmsg);
+
+    int insertExpandReduceStatusRecord(const std::string& appName, const std::string& moduleName, TransferType type, const vector<string> & groupName, std::string& errmsg);
+
+    int insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string &module, const string &srcGroup, const string &destGroup, unsigned int fromPage, unsigned int toPage, string &ids, std::string& errmsg);
+
+    int insertTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferData,std::string &errmsg);
+
+    int insertExpandTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const vector<std::string> & dstGroupNames,std::string &errmsg);
+
+    int insertReduceTransfer2RouterDb(const std::string& appName, const std::string& moduleName, const std::vector<std::string> &srcGroupNames, std::string& errmsg);
+
+    int getCacheConfigFromDB(const string &serverName, const string &appName, const string &moduleName, const string &groupName, string &sEnableErase, string &sDBFlag, string &sMemSize, string & errmsg);
+
+    int stopTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg);
+
+    int stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
+
+    int restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
+
+    int deleteTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg);
+
+    int deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg);
+
+    int getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& groupName, long& groupPageNo, string& errmsg);
 
 private:
 
     TC_Config _tcConf;
 
     TC_Mysql _mysqlTarsDb;
-    TC_Mysql _mysqlRouterConfDb;
-    TC_Mysql _mysqlTransferExpandDb;
 
     CommunicatorPtr _communicator;
     AdminRegPrx     _adminproxy;
+
+    PropertyPrx     _propertyPrx;
 
     //dcache 关系变量
     map<string, string> _relationDBInfo;
     TC_Mysql _mysqlRelationDB;
 
-    //用于创建路由数据库的用户名密码
-    string _routerDbUser;
-    string _routerDbPwd;
+};
 
- };
-
- /////////////////////////////////////////////////////
- #endif
+/////////////////////////////////////////////////////
+#endif

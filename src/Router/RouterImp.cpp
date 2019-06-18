@@ -87,6 +87,11 @@ void RouterImp::initialize()
             TLOGERROR(FILE_FUN << "getIdcMap error:" << ret << endl);
         }
     }
+
+    std::string obj = ServerConfig::Application + "." + ServerConfig::ServerName + ".RouterObj";
+    std::string adapter = obj + "Adapter";
+    TC_Endpoint ep = Application::getEpollServer()->getBindAdapter(adapter)->getEndpoint();
+    _selfObj = obj + "@" + ep.toString();
 }
 
 tars::Int32 RouterImp::getRouterInfo(const string &moduleName,
@@ -611,6 +616,30 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                 }
             }
 
+            //向主机推送路由
+            string objName = packTable.serverList[curMasterServer].RouteClientServant;
+            RouterClientPrx masterRouterClientPrx =
+                Application::getCommunicator()->stringToProxy<RouterClientPrx>(objName);
+            masterRouterClientPrx->tars_timeout(100);
+            try
+            {
+                if (masterRouterClientPrx->setRouterInfoForSwitch(moduleName, packTable) != 0)
+                {
+                    errMsg =
+                        "[swicth_by_group_fail]The slave machine is in rebuild state, and it "
+                        "is not allowed to switch";
+                    FDLOG("switch") << FILE_FUN << errMsg << endl;
+                    switchResult = 3;
+                    break;
+                }
+            }
+            catch (const exception &ex)
+            {
+                errMsg =
+                    "[routerClientPrx->setRouterInfoForSwitch]  exception: " + string(ex.what());
+                FDLOG("switch") << FILE_FUN << errMsg << endl;
+            }
+
             //向备机推送路由
             string prxName = packTable.serverList[curSlaveServer].RouteClientServant;
             RouterClientPrx slaveRouterClientPrx =
@@ -841,6 +870,14 @@ tars::Int32 RouterImp::serviceRestartReport(const string &moduleName,
     return 0;
 }
 
+tars::Bool RouterImp::procAdminCommand(const string &command,
+                                       const string &params,
+                                       string &result,
+                                       tars::TarsCurrentPtr current)
+{
+    return g_app.procAdminCommand(command, params, result);
+}
+
 int RouterImp::sendHeartBeat(const string &serverName)
 {
     string ServerObj = serverName + ".RouterClientObj";
@@ -877,7 +914,7 @@ int RouterImp::updateMasterPrx()
 {
     std::string o = g_app.getMasterRouterObj();
     TLOGDEBUG(FILE_FUN << "master router obj = " << o << endl);
-    if (o == "")
+    if (o == "" || o == _selfObj)
     {
         // 全局对象中的RouterObj还未被设置
         TLOGERROR(FILE_FUN << "master router obj not set" << endl);

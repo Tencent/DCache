@@ -35,6 +35,9 @@ public:
     // 检查是否开启了ETCD
     virtual bool checkEnableEtcd() const;
 
+    // 检查是否开启自动Cache主备自动切换
+    virtual bool checkEnableSwitch() const;
+
     // 获取ETCD的HTTP请求的超时时间(单位:秒)
     virtual int getEtcdReqTimeout(int defaultTime) const;
 

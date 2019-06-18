@@ -7,9 +7,9 @@ change directory to `src/thirdParty`, issue commands: `chmod +x thirdparty.sh; .
 
 ## Compilation
 
-Issue command: `make release` in `src/` directory, then go to directory of each service, issue the following commands: 
+Issue command: `make release;make` in `src/` directory, then go to directory of each service, issue the following commands: 
 ```
-make; make tar
+make tar
 ```
 to generate a Tars release package for each service.
 

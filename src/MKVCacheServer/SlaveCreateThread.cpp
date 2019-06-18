@@ -49,6 +49,12 @@ int SlaveCreateThread::init(const string &mirrorPath, const vector<string> &binl
         FDLOG(_recoverDayLog) << "[SlaveCreateThread::init] SlaveCreateThread has started" << endl;
         return -1;
     }
+    if (recoverTime > TNOW)
+    {
+        FDLOG(_recoverDayLog) << "[SlaveCreateThread::init] input recoverTime is invalid. input:" << recoverTime
+                << "|" << TC_Common::tm2str(recoverTime, "%Y%m%d%H%M%S") << endl;
+        return -1;
+    }
     _config = sConf;
     _tcConf.parseFile(_config);
 
@@ -61,8 +67,7 @@ int SlaveCreateThread::init(const string &mirrorPath, const vector<string> &binl
 
     _isNormal = normal;
 
-    string tmpTime = TC_Common::tm2str(recoverTime, "%Y%m%d%H%M%S");
-    _recoverTime = TC_Common::strto<long>(tmpTime);
+    _recoverTime = recoverTime;
 
     return 0;
 }
@@ -498,13 +503,12 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
             }
             _nowBinlogIndex++;
 
-            string sTimeString;
-            MKBinLogEncode::GetTimeString(binLogLine, sTimeString);
-            time_t binlogTime = TC_Common::strto<long>(sTimeString);
+            time_t binlogTime = MKBinLogEncode::GetTime(binLogLine);
             if (binlogTime > _recoverTime)
             {
                 bRecoverEnd = true;
-                FDLOG(_recoverDayLog) << "[SlaveCreateThread::restoreFromBinLog] end binlogTime:" << binlogTime << " _recoverTime:" << _recoverTime << endl;
+                FDLOG(_recoverDayLog) << "[SlaveCreateThread::restoreFromBinLog] end binlogTime:" << TC_Common::tm2str(binlogTime, "%Y%m%d%H%M%S")
+                        << " _recoverTime:" << TC_Common::tm2str(_recoverTime, "%Y%m%d%H%M%S") << endl;
                 break;
             }
             returnBinLog = binLogLine;

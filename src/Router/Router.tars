@@ -14,9 +14,11 @@
 #include "RouterShare.tars"
 module DCache
 {
-    const int ROUTER_SUCC = 0;
-    const int ROUTER_INFO_ERR = -1;
-    const int ROUTER_SYS_ERR = -2;
+    const int ROUTER_SUCC      = 0;
+    const int ROUTER_INFO_ERR  = -1;
+    const int ROUTER_SYS_ERR   = -2;
+    const int ROUTER_IN_TRANSFER = 1;
+    const int ROUTER_NO_MASTER   = 2;
 
     //router server端接口
     interface Router
@@ -26,7 +28,6 @@ module DCache
         * 0 成功，其他失败
         */
         int getRouterInfo(string moduleName,out PackTable packTable);
-        
     
         /*
         * 获取路由表信息，返回压缩的路由表
@@ -67,38 +68,46 @@ module DCache
 
         /**
         *功能: 恢复镜像在Router,proxy中的状态到正常状态
-        *@param sModuleName:模块名
-        *@param sGroupName:组名
-        *@param sMirrorIdc:所在idc
+        *@param moduleName:模块名
+        *@param groupName:组名
+        *@param mirrorIdc:所在idc
         *@return int: 0时调用成功，非0则失败
         */
-        int recoverMirrorStat(string sModuleName, string sGroupName, string sMirrorIdc, out string err);
+        int recoverMirrorStat(string moduleName, string groupName, string mirrorIdc, out string err);
 
         /**
         *功能: 发起主备切换
-        *@param sModuleName:模块名
-        *@param sGroupName:组名
-        *@param bForceSwitch:是否强制切换: true强制切换，不考虑binlog差异，false如果binlog时间差异小于或等于iDifBinlogTime,可以切换
-        *@param iDifBinlogTime:binlog时间差异，当bForceSwitch为false时，表示当binlog的时间差异最大为该值
+        *@param moduleName:模块名
+        *@param groupName:组名
+        *@param forceSwitch:是否强制切换: true强制切换，不考虑binlog差异，false如果binlog时间差异小于或等于iDifBinlogTime,可以切换
+        *@param difBinlogTime:binlog时间差异，当bForceSwitch为false时，表示当binlog的时间差异最大为该值
         *@return int: 0时调用成功，非0则失败
         */
-        int switchByGroup(string sModuleName, string sGroupName, bool bForceSwitch, int iDifBinlogTime, out string err);
+        int switchByGroup(string moduleName, string groupName, bool forceSwitch, int difBinlogTime, out string err);
 
         /**
         *功能: 查询idc
-        *@param sModuleName:模块名
+        *@param moduleName:模块名
         *@param machineInfo:机器基本信息
         *@return int: 0时调用成功，非0则失败
         */
-        int getIdcInfo(string sModuleName, MachineInfo machineInfo, out IDCInfo idcInfo);
+        int getIdcInfo(string moduleName, MachineInfo machineInfo, out IDCInfo idcInfo);
 
         /**
         *功能: 主机重启上报
-        *@param sModuleName:模块名
-        *@param sGroupName:组名
+        *@param moduleName:模块名
+        *@param groupName:组名
         *@return int: 0时调用成功，非0则失败
         */
         int serviceRestartReport(string moduleName, string groupName);
+        
+//////////////////////////////////集群模式下master负责处理slave转发过来的管理命令的接口////////////////////////////////
+        
+        /**
+        *功能: 负责处理slave转发过来的管理命令
+        *@return bool
+        */
+        bool procAdminCommand(string command, string params, out string result);
     };
 
     /*迁移操作结果*/

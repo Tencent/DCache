@@ -21,7 +21,7 @@ void BinLogTimeThread::init(const string& sConf)
     _configFile = sConf;
     _tcConf.parseFile(_configFile);
 
-    _srp_binlogSynDiff = Application::getCommunicator()->getStatReport()->createPropertyReport("BinLogSyn", PropertyReport::avg());
+    _srp_binlogSynDiff = Application::getCommunicator()->getStatReport()->createPropertyReport("M/S_ReplicationLatency", PropertyReport::avg());
     if (_srp_binlogSynDiff == 0)
     {
         TLOGERROR("BinLogTimeThread::init createPropertyReport error" << endl);

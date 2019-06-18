@@ -16,7 +16,7 @@
 
 
 ## <a id = "1"></a> 1. 依赖环境
-DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
+DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以上）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
 
 ![Tars管理平台主页](images/tars_mainPage.png)
 
@@ -29,7 +29,7 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架开发，所以编
 
 ### 2.2 编译
 
-在`src/`目录下执行：`make release`，然后再分别进入以下目录：
+在`src/`目录下执行：`make release;make`，然后再分别进入以下目录：
 
 - src/OptServer/
 - src/ConfigServer/
@@ -41,9 +41,29 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架开发，所以编
 
 执行:
 ```
-make; make tar
+make tar
 ```
 即可生成各服务的发布包。
+
+### 2.3 创建模板
+
+在Tars的Web平台创建DCache.Cache模板，后续部署DCache模块时会用到该模板。
+
+![创建模板](images/tars_add_tmplate.png)
+
+新增模板DCache.Cache，父模板选择tars.default，模板内容填入：
+
+```xml
+<tars>
+    <application>
+        <client>
+            property=DCache.PropertyServer.PropertyObj
+        </client>
+    </application>
+</tars>
+```
+
+
 
 
 ## <a id = "3"></a> 3. 公共服务部署
@@ -88,7 +108,7 @@ make; make tar
 
 ![添加配置文件内容](images/add_opt_conf.png)
 
-其中文件名称填“DCacheOptServer.conf”，文件内容的填写请参考[DCache服务配置说明](optserver.md)。
+其中文件名称填“DCacheOptServer.conf”，文件内容的填写请参考[DCache服务配置说明](server_config_example.md)。
 
 **step5：** 重启OptServer。
 
@@ -124,7 +144,7 @@ make; make tar
 该步骤参考安装OptServer的**step5**即可。  
 
 
-  
+
 ### <a id = "3.3"></a> 3.3 安装PropertyServer
 
 安装PropertyServer的步骤和安装OptServer的步骤类似，除了不需要创建数据库外。
@@ -149,7 +169,7 @@ make; make tar
 
 ## <a id = "4"></a> 4. DCache管理平台安装
 
-DCache管理界面是以模块的形式加载到Tars管理平台，最终会和Tars管理平台使用同一个地址，具体的模块安装步骤请参考[DCache管理平台安装](https://github.com/TarsCloud/TarsWeb/tree/dcache-alpha)
+DCache管理界面是以模块的形式加载到Tars管理平台，最终会和Tars管理平台使用同一个地址，具体的模块安装步骤请参考[DCache管理平台安装](https://github.com/TarsCloud/TarsWeb)
 
 ## <a id = "5"></a> 5. 创建一个DCache应用
 
@@ -191,7 +211,7 @@ Cache发布包的上传和Proxy发布包上传步骤类似，只不过Cache有�
 
 ![安装DCache应用](images/install_dcache_app.png)
 
-根据上图，依次点击“DCache”和“运维管理”，其中“应用”和“管理员”必填，可自定义，然后点击“创建应用”，得到下图：
+根据上图，依次点击“服务创建”，自定义“应用”名称，然后点击“创建应用”，得到下图：
 
 ![创建proxy和router服务](images/create_proxy&router.png)
 
@@ -218,11 +238,19 @@ Cache发布包的上传和Proxy发布包上传步骤类似，只不过Cache有�
 
 **注意：** <font color=red>共享内存key必须是唯一的，不能在服务部署机器上已存在，否则会造成服务拉起失败，可使用**ipcs**命令确认。</font>  
 
-必要信息填写完毕，点击“下一步”进入“安装发布”步骤，如下图：
+Cache服务的模板默认会选择DCache.Cache，如果模板DCache.Cache不存在，可创建该模板或者选择其他可用的模板，模板中必须配置property，这样才能查看服务的特性监控数据。
 
-![安装发布](images/install_and_release_kv.png)
+```xml
+<tars>
+    <application>
+        <client>
+            property=DCache.PropertyServer.PropertyObj
+        </client>
+    </application>
+</tars>
+```
 
-再次确认信息填写无误，点击“安装发布”，等待服务发布完成。刷新管理平台主页，左侧目录树出现此模块信息，如下图：
+必要信息填写完毕，点击“下一步”进入“安装发布”步骤，等待服务发布完成。刷新管理平台主页，左侧目录树出现此模块信息，如下图：
 
 ![安装成功](images/install_kv_succ.png)
 
@@ -231,8 +259,8 @@ Cache发布包的上传和Proxy发布包上传步骤类似，只不过Cache有�
 步骤和[部署和发布KVCache](#5.3)类似，参考即可。
 
 ### <a id = "5.5"></a> 5.5 Cache配置管理
-  
-  
+
+
 ![Cache配置管理](images/cache_config.png)
 
 按照上图箭头依次点击，可添加配置项。
@@ -242,4 +270,5 @@ Cache发布包的上传和Proxy发布包上传步骤类似，只不过Cache有�
 
 ![模块配置管理](images/add_conf_for_module.png)
 
-按照上图箭头依次点击，可在该页面上修改和添加配置。该页面的配置管理分两种类型：针对模块所有节点的配置管理和针对模块特定节点的配置管理。
+按照上图箭头依次点击，可在该页面上修改和添加配置。该页面的配置管理分两种类型：针对模块所有节点的配置管理和针对模块特定节点的配置管理。如果节点配置和模块配置有重叠的配置项，那么节点配置将覆盖模块配置。
+**注意：** <font color=red>修改配置后，需要重启服务才能生效。</font>  
