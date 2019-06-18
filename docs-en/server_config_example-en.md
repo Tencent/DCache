@@ -283,7 +283,7 @@ This document describes and examples the configuration of each module of DCache.
         ProxyMaxSilentTime=1800
         # interval for clearing Proxies
         ClearProxyInterval=1800
-        # 轮询迁移数据库的时间
+        # interval for polling unstart transfer task in db
         TransferInterval=3
         # number of threads used for polling
         TimerThreadSize=20
@@ -305,7 +305,9 @@ This document describes and examples the configuration of each module of DCache.
         MaxTransferThreadEachGroup=8
     </Transfer>
     <Switch>
-        # 自动切换超时的检测间隔(秒)
+        # whether to enable auto switch
+        enable = N
+        # interval for checking whether need to switch (seconds)
         SwitchCheckInterval= 10
         # timeout for automatic switching (seconds)
         SwitchTimeOut=60
