@@ -92,7 +92,7 @@ void EtcdThread::recoverRouterType()
 
 void EtcdThread::run()
 {
-    enum RouterType lastType;
+    enum RouterType lastType = ROUTER_SLAVE;
 
     while (!_stop)
     {
