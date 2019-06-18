@@ -70,24 +70,23 @@ void RouterServer::initialize()
         _transfer->init(_dbHandle);
         _dbHandle->loadSwitchInfo();
 
-        TARS_ADD_ADMIN_CMD_NORMAL("router.reloadRouter", RouterServer::reloadRouter);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.reloadRouterByModule",
-                                  RouterServer::reloadRouterByModule);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.reloadConf", RouterServer::reloadConf);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.getVersions", RouterServer::getVersions);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.getRouterInfos", RouterServer::getRouterInfos);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.getTransferInfos", RouterServer::getTransferInfos);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.getTransferingInfos", RouterServer::getTransferingInfos);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.clearTransferInfos", RouterServer::clearTransferInfos);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.notifyCacheServers", RouterServer::notifyCacheServers);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.defragRouteRecords", RouterServer::defragRouteRecords);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.deleteAllProxy", RouterServer::deleteAllProxy);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.switchByGroup", RouterServer::switchByGroup);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.switchMirrorByGroup", RouterServer::switchMirrorByGroup);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.heartBeat", RouterServer::showHeartBeatInfo);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.resetServerStatus", RouterServer::resetServerStatus);
-        TARS_ADD_ADMIN_CMD_NORMAL("router.checkModule", RouterServer::checkModule);
-        TARS_ADD_ADMIN_CMD_NORMAL("help", RouterServer::help);
+        ADD_ADMIN_CMD_NORMAL("router.reloadRouter", RouterServer::reloadRouter);
+        ADD_ADMIN_CMD_NORMAL("router.reloadRouterByModule", RouterServer::reloadRouterByModule);
+        ADD_ADMIN_CMD_NORMAL("router.reloadConf", RouterServer::reloadConf);
+        ADD_ADMIN_CMD_NORMAL("router.getVersions", RouterServer::getVersions);
+        ADD_ADMIN_CMD_NORMAL("router.getRouterInfos", RouterServer::getRouterInfos);
+        ADD_ADMIN_CMD_NORMAL("router.getTransferInfos", RouterServer::getTransferInfos);
+        ADD_ADMIN_CMD_NORMAL("router.getTransferingInfos", RouterServer::getTransferingInfos);
+        ADD_ADMIN_CMD_NORMAL("router.clearTransferInfos", RouterServer::clearTransferInfos);
+        ADD_ADMIN_CMD_NORMAL("router.notifyCacheServers", RouterServer::notifyCacheServers);
+        ADD_ADMIN_CMD_NORMAL("router.defragRouteRecords", RouterServer::defragRouteRecords);
+        ADD_ADMIN_CMD_NORMAL("router.deleteAllProxy", RouterServer::deleteAllProxy);
+        ADD_ADMIN_CMD_NORMAL("router.switchByGroup", RouterServer::switchByGroup);
+        ADD_ADMIN_CMD_NORMAL("router.switchMirrorByGroup", RouterServer::switchMirrorByGroup);
+        ADD_ADMIN_CMD_NORMAL("router.heartBeat", RouterServer::showHeartBeatInfo);
+        ADD_ADMIN_CMD_NORMAL("router.resetServerStatus", RouterServer::resetServerStatus);
+        ADD_ADMIN_CMD_NORMAL("router.checkModule", RouterServer::checkModule);
+        ADD_ADMIN_CMD_NORMAL("help", RouterServer::help);
 
         //启动线程
         _timerThread.init(_conf, _dbHandle, _outerProxy);
@@ -131,30 +130,47 @@ bool RouterServer::reloadRouter(const string &command, const string &params, str
     ostringstream os;
     try
     {
-        int rc = _dbHandle->reloadRouter();
-        if (rc == 0)
+        if (getRouterType() != ROUTER_MASTER)
         {
-            os << "reload router ok!" << endl;
-            FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() now" << endl;
-            TC_ThreadLock::Lock lock(_moduleSwitchingLock);
-            if (_moduleSwitching.size() == 0)
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                _dbHandle->loadSwitchInfo();
-                FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() end" << endl;
+                os << "master still not set, reload router fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
             }
-            return 0;
-        }
-        else if (rc == 1)
-        {
-            os << "transfering or Switching, cant reload router!" << endl;
-            TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
         }
         else
         {
-            os << "reload router fail!" << endl;
-            TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            int rc = _dbHandle->reloadRouter();
+            if (rc == 0)
+            {
+                os << "reload router ok!" << endl;
+                FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() now" << endl;
+                TC_ThreadLock::Lock lock(_moduleSwitchingLock);
+                if (_moduleSwitching.size() == 0)
+                {
+                    _dbHandle->loadSwitchInfo();
+                    FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() end" << endl;
+                }
+            }
+            else if (rc == 1)
+            {
+                os << "transfering or Switching, cant reload router!" << endl;
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            }
+            else
+            {
+                os << "reload router fail!" << endl;
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            }
         }
-
         TLOGDEBUG(os.str() << endl);
         result = os.str();
         return true;
@@ -183,31 +199,48 @@ bool RouterServer::reloadRouterByModule(const string &command, const string &par
     ostringstream os;
     try
     {
-        TLOGDEBUG("RouterServer::reloadRouterByModule moduleName:" << params << endl);
-        int rc = _dbHandle->reloadRouter(params);
-        if (rc == 0)
+        if (getRouterType() != ROUTER_MASTER)
         {
-            os << "reload router ok!" << endl;
-            FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() now" << endl;
-            TC_ThreadLock::Lock lock(_moduleSwitchingLock);
-            if (_moduleSwitching.size() == 0)
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                _dbHandle->loadSwitchInfo(params);
-                FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() end" << endl;
+                os << "master still not set, reload router by module fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouterByModule|") + os.str());
             }
-            return 0;
-        }
-        else if (rc == 1)
-        {
-            os << "transfering or Switching, cant reload router!" << endl;
-            TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
         }
         else
         {
-            os << "reload router fail!" << endl;
-            TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            TLOGDEBUG("RouterServer::reloadRouterByModule moduleName:" << params << endl);
+            int rc = _dbHandle->reloadRouter(params);
+            if (rc == 0)
+            {
+                os << "reload router ok!" << endl;
+                FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() now" << endl;
+                TC_ThreadLock::Lock lock(_moduleSwitchingLock);
+                if (_moduleSwitching.size() == 0)
+                {
+                    _dbHandle->loadSwitchInfo(params);
+                    FDLOG("switch") << "RouterServer::reloadRouter doLoadSwitcInfo() end" << endl;
+                }
+            }
+            else if (rc == 1)
+            {
+                os << "transfering or Switching, cant reload router!" << endl;
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            }
+            else
+            {
+                os << "reload router fail!" << endl;
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
+            }
         }
-
         TLOGDEBUG(os.str() << endl);
         result = os.str();
         return true;
@@ -225,7 +258,7 @@ bool RouterServer::reloadRouterByModule(const string &command, const string &par
         os << "unkown error" << endl;
     }
 
-    TARS_NOTIFY_ERROR("RouterServer::reloadRouter|" + os.str());
+    TARS_NOTIFY_ERROR("RouterServer::reloadRouterByModule|" + os.str());
     TLOGDEBUG(os.str() << endl);
     result = os.str();
     return true;
@@ -237,26 +270,55 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
 
     try
     {
-        addConfig(ServerConfig::ServerName + ".conf");
-        _conf.init(ServerConfig::BasePath + "/" + ServerConfig::ServerName + ".conf");
+        if (getRouterType() != ROUTER_MASTER)
+        {
+            RouterPrx prx;
+            string masterRouterObj;
 
-        _outerProxy->reloadConf(_conf);
-        _dbHandle->reloadConf(_conf);
-        _transfer->reloadConf();
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, reload conf fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::reloadConf|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else
+        {
+            addConfig(ServerConfig::ServerName + ".conf");
+            _conf.init(ServerConfig::BasePath + "/" + ServerConfig::ServerName + ".conf");
 
-        //先停止线程
-        _timerThread.terminate();
-        _timerThread.getThreadControl().join();
+            _outerProxy->reloadConf(_conf);
+            _dbHandle->reloadConf(_conf);
+            _transfer->reloadConf();
 
-        //重启线程
-        TLOGDEBUG("restart timer thread ..." << endl);
-        _timerThread.init(_conf, _dbHandle, _outerProxy);
-        _timerThread.start();
+            //先停止定时线程
+            _timerThread.terminate();
+            _timerThread.getThreadControl().join();
 
+            //重启定时线程
+            TLOGDEBUG("restart timer thread ..." << endl);
+            _timerThread.init(_conf, _dbHandle, _outerProxy);
+            _timerThread.start();
+
+            //先停止切换线程
+            _switchThread.terminate();
+            _switchThread.getThreadControl().join();
+
+            //重启切换线程
+            TLOGDEBUG("restart switch thread ..." << endl);
+            _switchThread.init(createAdminRegProxyWrapper(), _dbHandle);
+            _switchThread.start();
+        }
         os << "reload config ok!" << endl;
 
         TARS_NOTIFY_NORMAL("RouterServer::reloadConf|Succ|");
-
         TLOGDEBUG(os.str() << endl);
         result = os.str();
         return true;
@@ -293,25 +355,45 @@ bool RouterServer::getVersions(const string &command, const string &params, stri
     ostringstream os;
     try
     {
-        vector<string> names = SEPSTR(params, " ");
-        vector<string>::const_iterator vit = find(names.begin(), names.end(), "all");
-        if (vit != names.end())
+        if (getRouterType() != ROUTER_MASTER)
         {
-            map<string, ModuleInfo> infos;
-            if (_dbHandle->getModuleInfos(infos) == 0)
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                map<string, ModuleInfo>::const_iterator it;
-                for (it = infos.begin(); it != infos.end(); it++)
-                {
-                    os << it->first << " version: " << (it->second).version << endl;
-                }
+                os << "master still not set, get versions fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::getVersions|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
             }
         }
         else
         {
-            for (vector<string>::const_iterator it = names.begin(); it != names.end(); ++it)
+            map<string, int> versions;
+            vector<string> names = SEPSTR(params, " ");
+            vector<string>::const_iterator vit = find(names.begin(), names.end(), "all");
+            if (vit != names.end())
             {
-                os << *it << " version: " << _dbHandle->getVersion(*it) << endl;
+                _dbHandle->getVersion(versions);
+            }
+            else
+            {
+                for (vector<string>::const_iterator it = names.begin(); it != names.end(); ++it)
+                {
+                    versions[*it] = _dbHandle->getVersion(*it);
+                }
+            }
+
+            for (map<string, int>::const_iterator it = versions.begin(); it != versions.end(); ++it)
+            {
+                os << it->first << " version: " << it->second << endl;
             }
         }
     }
@@ -336,46 +418,58 @@ bool RouterServer::getVersions(const string &command, const string &params, stri
 bool RouterServer::getRouterInfos(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    os << "list router infos are: " << endl;
     try
     {
-        vector<string> names = SEPSTR(params, " ");
-        vector<string>::const_iterator vit = find(names.begin(), names.end(), "all");
-        if (vit != names.end())
+        if (getRouterType() != ROUTER_MASTER)
         {
-            map<string, ModuleInfo> infos;
-            if (_dbHandle->getModuleInfos(infos) == 0)
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                map<string, ModuleInfo>::const_iterator it;
-                for (it = infos.begin(); it != infos.end(); it++)
-                {
-                    PackTable packTable;
-                    os << it->first << ": " << endl;
-                    if (_dbHandle->getPackTable(it->first, packTable) == 0)
-                    {
-                        packTable.display(os, 1);
-                    }
-                    else
-                    {
-                        os << "\tget router info error!" << endl;
-                    }
-                }
+                os << "master still not set, get router infos fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::getRouterInfos|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
             }
         }
         else
         {
-            for (vector<string>::const_iterator it = names.begin(); it != names.end(); ++it)
+            os << "list router infos are: " << endl;
+            map<string, PackTable> infos;
+
+            vector<string> names = SEPSTR(params, " ");
+            vector<string>::const_iterator vit = find(names.begin(), names.end(), "all");
+            if (vit != names.end())
             {
-                PackTable packTable;
-                os << *it << ": " << endl;
-                if (_dbHandle->getPackTable(*it, packTable) == 0)
+                _dbHandle->getRouterInfos(infos);
+            }
+            else
+            {
+                for (vector<string>::const_iterator it = names.begin(); it != names.end(); ++it)
                 {
-                    packTable.display(os, 1);
+                    PackTable packTable;
+                    if (_dbHandle->getPackTable(*it, packTable) == 0)
+                    {
+                        infos[*it] = packTable;
+                    }
+                    else
+                    {
+                        os << *it << "\tnot exist!" << endl;
+                    }
                 }
-                else
-                {
-                    os << "\tget router info error!" << endl;
-                }
+            }
+
+            for (map<string, PackTable>::const_iterator it = infos.begin(); it != infos.end(); ++it)
+            {
+                os << it->first << ": ";
+                it->second.display(os, 1);
             }
         }
     }
@@ -400,12 +494,34 @@ bool RouterServer::getRouterInfos(const string &command, const string &params, s
 bool RouterServer::getTransferInfos(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    os << "list transfer infos are: " << endl;
     try
     {
-        map<string, map<string, TransferInfo>> infos;
-        if (_dbHandle->getTransferInfos(infos) == 0)
+        if (getRouterType() != ROUTER_MASTER)
         {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, get transfer infos fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::getTransferInfos|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else
+        {
+            map<string, map<string, TransferInfo>> infos;
+
+            _dbHandle->getTransferInfos(infos);
+
+            os << "list transfer infos are: " << endl;
             map<string, map<string, TransferInfo>>::iterator it = infos.begin();
             for (; it != infos.end(); ++it)
             {
@@ -435,17 +551,40 @@ bool RouterServer::getTransferInfos(const string &command, const string &params,
     result = os.str();
     return true;
 }
+
 bool RouterServer::getTransferingInfos(const string &command, const string &params, string &result)
 {
-    TLOGDEBUG("Enter RouterServer::getTransferInfos" << endl);
+    TLOGDEBUG("Enter RouterServer::getTransferingInfos" << endl);
     string moduleName = params;
     ostringstream os;
-    os << " transfering : " << moduleName << endl;
     try
     {
-        ModuleTransferingInfo info;
-        if (_dbHandle->getTransferingInfos(moduleName, info) == 0)
+        if (getRouterType() != ROUTER_MASTER)
         {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, get transfering infos fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::getTransferingInfos|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else
+        {
+            ModuleTransferingInfo info;
+
+            _dbHandle->getTransferingInfos(moduleName, info);
+
+            os << " transfering : " << moduleName << endl;
             for (unsigned int i = 0; i < info.transferingInfoList.size(); ++i)
             {
                 info.transferingInfoList[i].displaySimple(os);
@@ -480,13 +619,33 @@ bool RouterServer::getTransferingInfos(const string &command, const string &para
 bool RouterServer::clearTransferInfos(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    os << "clear transfer infos return: ";
     try
     {
-        if (_dbHandle->clearTransferInfos())
-            os << "Succ" << endl;
+        if (getRouterType() != ROUTER_MASTER)
+        {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, clear transfer infos fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::clearTransferInfos|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
         else
-            os << "Fail" << endl;
+        {
+            _dbHandle->clearTransferInfos();
+ 
+            os << "clear transfer infos return: Succ" << endl;
+        }
     }
     catch (TarsException &e)
     {
@@ -511,24 +670,48 @@ bool RouterServer::notifyCacheServers(const string &command, const string &param
     ostringstream os;
     try
     {
-        map<string, vector<string>> succServers, failServers;
-        _transfer->notifyAllServer(params, succServers, failServers);
-        os << "notifyCacheServers status: " << endl;
-
-        map<string, vector<string>>::const_iterator it;
-        for (it = succServers.begin(); it != succServers.end(); it++)
+        if (getRouterType() != ROUTER_MASTER)
         {
-            os << it->first << ": " << endl;
-            os << "\tSucc: " << endl;
-            for (unsigned i = 0; i < it->second.size(); i++)
-            {
-                os << "\t\t" << it->second[i] << endl;
-            }
+            RouterPrx prx;
+            string masterRouterObj;
 
-            os << "\tFail: " << endl;
-            for (unsigned i = 0; i < failServers[it->first].size(); i++)
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                os << "\t\t" << failServers[it->first][i] << endl;
+                os << "master still not set, notify cache servers fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::notifyCacheServers|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else
+        {
+            map<string, vector<string>> succServers, failServers;
+
+            _transfer->notifyAllServer(params, succServers, failServers);
+
+            os << "notifyCacheServers status: " << endl;
+
+            map<string, vector<string>>::const_iterator it;
+            for (it = succServers.begin(); it != succServers.end(); ++it)
+            {
+                os << it->first << ": " << endl;
+                os << "\tSucc: " << endl;
+                for (unsigned i = 0; i < it->second.size(); ++i)
+                {
+                    os << "\t\t" << it->second[i] << endl;
+                }
+
+                os << "\tFail: " << endl;
+                for (unsigned i = 0; i < failServers[it->first].size(); ++i)
+                {
+                    os << "\t\t" << failServers[it->first][i] << endl;
+                }
             }
         }
     }
@@ -556,56 +739,79 @@ bool RouterServer::defragRouteRecords(const string &command, const string &param
     string modules = params;
     try
     {
-        map<string, vector<RecordInfo>> mOldRecord, mNewRecord;
-        int iRet = _dbHandle->defragDbRecord(modules, mOldRecord, mNewRecord);
-        if (iRet == 1)
+        if (getRouterType() != ROUTER_MASTER)
         {
-            os << "there are transfers processing, cant defrag." << endl;
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, defrag route records fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
         }
         else
         {
-            if (iRet == -1)
-            {
-                os << "defrag module failed: " << modules
-                   << ", "
-                      "please check the reason!"
-                   << endl;
+            map<string, vector<RecordInfo>> mOldRecord, mNewRecord;
 
-                TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
-            }
-            if (iRet == -2)
-            {
-                os << "defrag fininsh but reload failed, "
-                      "please check the reason!"
-                   << endl;
-                TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
-            }
+            int rc = _dbHandle->defragDbRecord(modules, mOldRecord, mNewRecord);
 
-            os << "following defrag succ: " << endl;
-            map<string, vector<RecordInfo>>::const_iterator it;
-            for (it = mOldRecord.begin(); it != mOldRecord.end(); it++)
+            if (rc == 1)
             {
-                os << it->first << ": " << endl;
-                os << "\tbefore defrag: " << endl;
-                for (unsigned i = 0; i < it->second.size(); i++)
+                os << "there are transfers processing, cant defrag." << endl;
+            }
+            else
+            {
+                if (rc == -1)
                 {
-                    os << "\t\t";
-                    it->second[i].displaySimple(os);
-                    os << endl;
+                    os << "defrag module failed: " << modules
+                        << ", please check the reason!"
+                        << endl;
+
+                    TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
                 }
-                os << "\tarster defrag: " << endl;
-                for (unsigned i = 0; i < mNewRecord[it->first].size(); i++)
+                if (rc == -2)
                 {
-                    os << "\t\t";
-                    mNewRecord[it->first][i].displaySimple(os);
-                    os << endl;
+                    os << "defrag fininsh but reload failed, "
+                        "please check the reason!"
+                        << endl;
+                    TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
+                }
+
+                os << "following defrag succ: " << endl;
+                map<string, vector<RecordInfo>>::const_iterator it;
+                for (it = mOldRecord.begin(); it != mOldRecord.end(); ++it)
+                {
+                    os << it->first << ": " << endl;
+                    os << "\tbefore defrag: " << endl;
+                    for (unsigned i = 0; i < it->second.size(); ++i)
+                    {
+                        os << "\t\t";
+                        it->second[i].displaySimple(os);
+                        os << endl;
+                    }
+                    os << "\tarster defrag: " << endl;
+                    for (unsigned i = 0; i < mNewRecord[it->first].size(); ++i)
+                    {
+                        os << "\t\t";
+                        mNewRecord[it->first][i].displaySimple(os);
+                        os << endl;
+                    }
                 }
             }
-        }
 
-        if (iRet == 0)
-        {
-            TARS_NOTIFY_NORMAL("RouterServer::defragRouteRecords|Succ|");
+            if (rc == 0)
+            {
+                TARS_NOTIFY_NORMAL("RouterServer::defragRouteRecords|Succ|");
+            }
         }
 
         TLOGDEBUG(os.str() << endl);
@@ -636,7 +842,29 @@ bool RouterServer::deleteAllProxy(const string &command, const string &params, s
     ostringstream os;
     try
     {
-        _outerProxy->deleteAllProxy();
+        if (getRouterType() != ROUTER_MASTER)
+        {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, delete all proxy fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::deleteAllProxy|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else
+        {
+            _outerProxy->deleteAllProxy();
+        }
         os << "delete all proxy succ!" << endl;
     }
     catch (TarsException &e)
@@ -660,9 +888,45 @@ bool RouterServer::deleteAllProxy(const string &command, const string &params, s
 bool RouterServer::switchByGroup(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    bool returnValue;
-    string curMasterServer;
-    string curSlaveServer;
+    if (getRouterType() != ROUTER_MASTER)
+    {
+        try
+        {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, switch by group fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::switchByGroup|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        catch (TarsException &e)
+        {
+            os << "Tars exception:" << e.what() << endl;
+        }
+        catch (exception &e)
+        {
+            os << "std exception:" << e.what() << endl;
+        }
+        catch (...)
+        {
+            os << "unkown error" << endl;
+        }
+
+        TLOGERROR(os.str() << endl);
+        result = os.str();
+        return false;
+    }
+    
     TLOGDEBUG("swicth start" << endl);
     vector<string> names = SEPSTR(params, " ");
     if (names.size() != 4)
@@ -672,7 +936,14 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
     }
 
     TLOGDEBUG("get command [switchByGroup]|" << names[0] << "|" << names[1] << "|" << names[2]
-                                             << "|" << names[3] << endl);
+    << "|" << names[3] << endl);
+
+    bool forceSwitch = (TC_Common::lower(names[2]) == "true") ? true : false;
+    int maxDifTime   = TC_Common::strto<int>(names[3]);
+    bool returnValue;
+    
+    string curMasterServer;
+    string curSlaveServer;
 
     //切换前，先向数据库插入一条切换记录
     long switchRecordID = -1;
@@ -850,7 +1121,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             ++packTable.info.version;
             //生成临时路由表完成
             //验证备机差异
-            if (names[3] != "true" && names[3] != "TRUE")
+            if (!forceSwitch)
             {
                 ServerInfo &serverInfo = packTable.serverList[curSlaveServer];
                 string sStringProxy = serverInfo.RouteClientServant;
@@ -874,7 +1145,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                     }
                     else
                     {
-                        if (difBinlogTime > TC_Common::strto<int>(names[2]))
+                        if (difBinlogTime > maxDifTime)
                         {
                             os << "[swicth_by_group_fail]备机的binlog差异为" << difBinlogTime
                                << endl;
@@ -1047,12 +1318,49 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
     _dbHandle->updateSwitchInfo(switchRecordID, 3, os.str());
     return false;
 }
+
 bool RouterServer::switchMirrorByGroup(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    bool returnValue;
-    string masterImage;
-    string slaveImage;
+    if (getRouterType() != ROUTER_MASTER)
+    {
+        try
+        {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, switch mirror by group fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::switchMirrorByGroup|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        catch (TarsException &e)
+        {
+            os << "Tars exception:" << e.what() << endl;
+        }
+        catch (exception &e)
+        {
+            os << "std exception:" << e.what() << endl;
+        }
+        catch (...)
+        {
+            os << "unkown error" << endl;
+        }
+
+        TLOGERROR(os.str() << endl);
+        result = os.str();
+        return false;
+    }
+
     TLOGDEBUG("swicthMirror start" << endl);
     vector<string> names = SEPSTR(params, " ");
     if (names.size() != 3)
@@ -1060,6 +1368,11 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
         result = "[swicth_by_group_fail]params num != 5";
         return false;
     }
+
+    bool returnValue;
+    string masterImage;
+    string slaveImage;
+    
 
     //切换前，先向数据库插入一条切换记录
     long switchRecordID = -1;
@@ -1236,32 +1549,73 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
 bool RouterServer::showHeartBeatInfo(const string &command, const string &params, string &result)
 {
     ostringstream os;
-    os << "当前时间:" << TC_TimeProvider::getInstance()->getNow() << endl;
-    TC_ThreadLock::Lock lock(_heartbeatInfoLock);
-    map<string, map<string, GroupHeartBeatInfo>>::iterator itr = _heartbeatInfo.begin();
-    while (itr != _heartbeatInfo.end())
+    HeartbeatInfo info;
+    try
     {
-        os << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
-        os << "模块名:" << itr->first << endl;
-        map<string, GroupHeartBeatInfo>::iterator itrGroupInfo = itr->second.begin();
-        while (itrGroupInfo != itr->second.end())
+        if (getRouterType() != ROUTER_MASTER)
         {
-            os << "服务组:" << itrGroupInfo->first << endl;
-            os << "主机:" << itrGroupInfo->second.masterServer << " "
-               << itrGroupInfo->second.masterLastReportTime << endl;
-            os << "备机:" << itrGroupInfo->second.slaveServer << " "
-               << itrGroupInfo->second.slaveLastReportTime << endl;
-            os << "镜像心跳:" << endl;
-            map<string, time_t>::iterator mirroItr = itrGroupInfo->second.mirrorInfo.begin();
-            while (mirroItr != itrGroupInfo->second.mirrorInfo.end())
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
             {
-                os << mirroItr->first << " " << mirroItr->second << endl;
-                ++mirroItr;
+                os << "master still not set, show heart beat info fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::showHeartBeatInfo|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
             }
-            ++itrGroupInfo;
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
         }
-        ++itr;
+        else    
+        {
+            TC_ThreadLock::Lock lock(_heartbeatInfoLock);
+            info = _heartbeatInfo;
+        }
+
+        os << "当前时间:" << TC_TimeProvider::getInstance()->getNow() << endl;
+        HeartbeatInfo::iterator itr = info.begin();
+        while (itr != info.end())
+        {
+            os << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
+            os << "模块名:" << itr->first << endl;
+            map<string, GroupHeartBeatInfo>::iterator itrGroupInfo = itr->second.begin();
+            while (itrGroupInfo != itr->second.end())
+            {
+                os << "服务组:" << itrGroupInfo->first << endl;
+                os << "主机:" << itrGroupInfo->second.masterServer << " "
+                   << itrGroupInfo->second.masterLastReportTime << endl;
+                os << "备机:" << itrGroupInfo->second.slaveServer << " "
+                   << itrGroupInfo->second.slaveLastReportTime << endl;
+                os << "镜像心跳:" << endl;
+                map<string, time_t>::iterator mirroItr = itrGroupInfo->second.mirrorInfo.begin();
+                while (mirroItr != itrGroupInfo->second.mirrorInfo.end())
+                {
+                    os << mirroItr->first << " " << mirroItr->second << endl;
+                    ++mirroItr;
+                }
+                ++itrGroupInfo;
+            }
+            ++itr;
+        }
     }
+    catch (TarsException &e)
+    {
+        os << "Tars exception:" << e.what() << endl;
+    }
+    catch (exception &e)
+    {
+        os << "std exception:" << e.what() << endl;
+    }
+    catch (...)
+    {
+        os << "unkown error" << endl;
+    }
+
     TLOGDEBUG(os.str() << endl);
     result = os.str();
     return true;
@@ -1269,49 +1623,141 @@ bool RouterServer::showHeartBeatInfo(const string &command, const string &params
 
 bool RouterServer::resetServerStatus(const string &command, const string &params, string &result)
 {
-    vector<string> names = SEPSTR(params, " ");
-    if (names.size() < 3)
+    ostringstream os;
+    try
     {
-        result = "[swicth_by_group_fail]params num != 5";
-        return false;
-    }
-
-    _dbHandle->setServerstatus(names[0], names[1], names[2], 0);
-
-    TC_ThreadLock::Lock lock(_heartbeatInfoLock);
-    map<string, map<string, GroupHeartBeatInfo>>::iterator itr = _heartbeatInfo.find(names[0]);
-    if (itr != _heartbeatInfo.end())
-    {
-        map<string, GroupHeartBeatInfo>::iterator itrGroupInfo = itr->second.find(names[1]);
-        if (itrGroupInfo != itr->second.end())
+        if (getRouterType() != ROUTER_MASTER)
         {
-            itrGroupInfo->second.serverStatus[names[2]] = 0;
-            itrGroupInfo->second.mirrorInfo[names[2]] = 0;
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, reset server status fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::resetServerStatus|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else    
+        {
+            vector<string> names = SEPSTR(params, " ");
+            if (names.size() < 3)
+            {
+                result = "[reset_server_status]params num != 3";
+                return false;
+            }
+
+            int rc = _dbHandle->setServerstatus(names[0], names[1], names[2], 0);
+
+            TC_ThreadLock::Lock lock(_heartbeatInfoLock);
+            map<string, map<string, GroupHeartBeatInfo>>::iterator itr = _heartbeatInfo.find(names[0]);
+            if (itr != _heartbeatInfo.end())
+            {
+                map<string, GroupHeartBeatInfo>::iterator itrGroupInfo = itr->second.find(names[1]);
+                if (itrGroupInfo != itr->second.end())
+                {
+                    itrGroupInfo->second.serverStatus[names[2]] = 0;
+                    itrGroupInfo->second.mirrorInfo[names[2]] = 0;
+                }
+            }
+
+            os << "reset " << params << " status result: " << (rc == 0 ? "Succ" : "Fail");
         }
     }
+    catch (TarsException &e)
+    {
+        os << "Tars exception:" << e.what() << endl;
+    }
+    catch (exception &e)
+    {
+        os << "std exception:" << e.what() << endl;
+    }
+    catch (...)
+    {
+        os << "unkown error" << endl;
+    }
+
+    TLOGDEBUG(os.str() << endl);
+    result = os.str();
     return true;
 }
 
 bool RouterServer::checkModule(const string &command, const string &params, string &result)
 {
-    if (params.empty())
+    ostringstream os;
+    try
     {
-        result = "useage: module modulename\n";
-        result += "example: module TestModule";
-        return true;
+        if (getRouterType() != ROUTER_MASTER)
+        {
+            RouterPrx prx;
+            string masterRouterObj;
+
+            if ((command == "reproxy") || (getMasterRouterPrx(prx, masterRouterObj) != 0))
+            {
+                os << "master still not set, check module fail!";
+                TARS_NOTIFY_ERROR(string("RouterServer::checkModule|") + os.str());
+                TLOGDEBUG(os.str() << endl);
+                result = os.str();
+                return true;
+            }
+            else
+            {
+                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                return prx->procAdminCommand(command, params, result);
+            }
+        }
+        else    
+        {
+            if (params.empty())
+            {
+                result = "useage: module modulename\n";
+                result += "example: module TestModule";
+                return true;
+            }
+
+            bool exist = _dbHandle->checkModule(params);
+            os << (exist ? "support " : "not support ") << params;
+        }
+    }
+    catch (TarsException &e)
+    {
+        os << "Tars exception:" << e.what() << endl;
+    }
+    catch (exception &e)
+    {
+        os << "std exception:" << e.what() << endl;
+    }
+    catch (...)
+    {
+        os << "unkown error" << endl;
     }
 
-    PackTable packTable;
-    if (_dbHandle->getPackTable(params, packTable) == 0)
-    {
-        result = "support " + params;
-    }
-    else
-    {
-        result = "not support " + params;
-    }
-
+    TLOGDEBUG(os.str() << endl);
+    result = os.str();
     return true;
+}
+
+bool RouterServer::procAdminCommand(const string &command, const string &params, string &result)
+{
+    map<string, TAdminFunc>::iterator it;
+
+    it =  _procAdminCommandFunctors.find(command);
+
+    if (it != _procAdminCommandFunctors.end())
+    {
+        return (it->second)("reproxy", params, result);
+    }
+
+    assert(false);
+
+    return false;
 }
 
 bool RouterServer::help(const string &command, const string &params, string &result)
@@ -1359,7 +1805,7 @@ void RouterServer::destroyApp()
 {
     _etcdThread.terminate();
 
-	_timerThread.terminate();
+    _timerThread.terminate();
 
     _switchThread.terminate();
 
@@ -1368,7 +1814,7 @@ void RouterServer::destroyApp()
         usleep(1000);
     }
 
-	if (_etcdHandle)
+    if (_etcdHandle)
     {
         _etcdHandle->destroy();
     }
@@ -1663,11 +2109,12 @@ void RouterServer::resetSwitchTimes()
     }
 }
 
-void RouterServer::loadSwitchInfo(std::map<string, PackTable> *packTables)
+void RouterServer::loadSwitchInfo(std::map<string, PackTable> *packTables, const bool isUpgrade)
 {
     _heartbeatInfo.clear();
-    //上报心跳时间在刚开始加载的时候 设置为0 而不设置为当前时间 防止升级过程中的误切换
-    time_t nowTime = 0;
+    //上报心跳时间在刚开始加载的时候, 设置为0而不设置为当前时间，防止重启过程中的误切换，但如果是从SLAVE状态升级为MASTER时的重新加载，
+    //则设置为当前时间，防止不切换
+    time_t nowTime = (isUpgrade ? TNOW : 0);
     map<string, PackTable>::iterator it = packTables->begin();
     TC_ThreadLock::Lock lock(_heartbeatInfoLock);
     while (it != packTables->end())
@@ -1964,4 +2411,58 @@ void RouterServer::downgrade()
     terminateSwitchThreads();
     clearSwitchThreads();
     _dbHandle->downgrade();
+}
+
+void RouterServer::upgrade()
+{
+    assert(getRouterType() == ROUTER_SLAVE);
+
+    ostringstream os;
+    try
+    {
+        _dbHandle->upgrade();
+        
+        _dbHandle->loadSwitchInfo(true);
+
+        return;
+    }
+    catch (TarsException &e)
+    {
+        os << "Tars exception:" << e.what() << endl;
+    }
+    catch (exception &e)
+    {
+        os << "std exception:" << e.what() << endl;
+    }
+    catch (...)
+    {
+        os << "unkown error" << endl;
+    }
+
+    TLOGERROR(os.str() << endl);
+
+    TARS_NOTIFY_ERROR("RouterServer::upgrade|" + os.str());
+
+    assert(false);
+}
+
+int RouterServer::getMasterRouterPrx(RouterPrx &prx, string &masterRouterObj) const
+{
+    masterRouterObj = getMasterRouterObj();
+
+    if (masterRouterObj == "")
+    {
+        // 全局对象中的RouterObj还未被设置
+        TLOGERROR(FILE_FUN << "master router obj not set" << endl);
+        return -1;
+    }
+
+    prx = Application::getCommunicator()->stringToProxy<RouterPrx>(masterRouterObj);
+
+    return 0;
+}
+
+void RouterServer::addAdminCommand(const string& command, TAdminFunc func)
+{
+    _procAdminCommandFunctors.insert(std::make_pair(command, func));
 }

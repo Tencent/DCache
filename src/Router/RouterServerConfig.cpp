@@ -32,6 +32,12 @@ bool RouterServerConfig::checkEnableEtcd() const
     return (s == "Y" || s == "y");
 }
 
+bool RouterServerConfig::checkEnableSwitch() const
+{
+    string s = _conf.get("/Main/Switch<enable>", "N");
+	return (s == "Y" || s == "y");
+}
+
 int RouterServerConfig::getEtcdReqTimeout(int defaultTime) const
 {
     return getConfig("/Main/ETCD<RequestTimeout>", defaultTime);

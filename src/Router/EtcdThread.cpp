@@ -32,7 +32,9 @@ void EtcdThread::init(const RouterServerConfig &conf, std::shared_ptr<EtcdHandle
 {
     try
     {
+        _recovered = false;
         _stop = false;
+        _lastHeartbeat = 0;
         _heartbeatTTL = conf.getETcdHeartBeatTTL(60);
         _refreshHeartbeatInterval = conf.getETcdHeartBeatTTL(60) / 6;
 
@@ -66,7 +68,7 @@ void EtcdThread::init(const RouterServerConfig &conf, std::shared_ptr<EtcdHandle
     TLOGDEBUG("init EtcdThread succ!" << endl);
 }
 
-void EtcdThread::recoverRouterType() const
+void EtcdThread::recoverRouterType() 
 {
     // 服务启动时，通过ETCD来判断服务当前的状态。对于备机，要立刻进行一次抢主尝试。
     // 但是如果是主机挂掉后马上重启，此时key没有超时依然存活，就要恢复主机的状态。
@@ -74,61 +76,72 @@ void EtcdThread::recoverRouterType() const
     {
         g_app.setRouterType(ROUTER_SLAVE);
         (void)registerMaster();
+        _recovered = true;
     }
     else
     {
         // 当发现自己是主机后，要马上为key保活。但可能在这个间隙被其他备机抢主成功而导致保活失败
-        if (refreshHeartBeat() == 0)
+        if (refreshHeartBeat(true) == 0)
         {
             g_app.setRouterType(ROUTER_MASTER);
-        }
-        else
-        {
-            g_app.setRouterType(ROUTER_SLAVE);
+            _lastHeartbeat = TNOW;
+            _recovered = true;
         }
     }
 }
 
 void EtcdThread::run()
 {
-    recoverRouterType();
+    enum RouterType lastType;
 
-    enum RouterType lastType = g_app.getRouterType();
-    int64_t lastHeartBeat = 0;
     while (!_stop)
     {
-        if (g_app.getRouterType() == ROUTER_SLAVE)
+        if (!_recovered)
         {
-            TLOGDEBUG(FILE_FUN << "I am a slave, waiting master down" << endl);
-            if (lastType == ROUTER_MASTER)
-            {
-                TLOGDEBUG(FILE_FUN << "downgrad from master to slave");
-                g_app.downgrade();
-            }
-            lastType = ROUTER_SLAVE;
-            // 阻塞调用，等待主机挂掉。
-            watchMasterDown();
-            (void)registerMaster();
-            continue;
+            recoverRouterType();
+            lastType = g_app.getRouterType();
         }
-
-        assert(g_app.getRouterType() == ROUTER_MASTER);
-
-        lastType = ROUTER_MASTER;
-        TLOGDEBUG(FILE_FUN << "I am the master, refresh master key" << endl);
-
-        time_t now = TNOW;
-        if (now - lastHeartBeat >= _refreshHeartbeatInterval)
+        else
         {
-            if (refreshHeartBeat() == 0)
+            if (g_app.getRouterType() == ROUTER_SLAVE)
             {
-                lastHeartBeat = now;
+                TLOGDEBUG(FILE_FUN << "I am a slave, waiting master down" << endl);
+                if (lastType == ROUTER_MASTER)
+                {
+                    TLOGDEBUG(FILE_FUN << "downgrad from master to slave");
+                    g_app.downgrade();
+                }
+                lastType = ROUTER_SLAVE;
+                // 阻塞调用，等待主机挂掉。
+                watchMasterDown();
+                (void)registerMaster();
+                continue;
+            }
+
+            assert(g_app.getRouterType() == ROUTER_MASTER);
+
+            lastType = ROUTER_MASTER;
+
+            int64_t lastHeartbeat = __sync_fetch_and_add(&_lastHeartbeat, 0);
+            if (TNOW - lastHeartbeat >= _heartbeatTTL - _refreshHeartbeatInterval)
+            {
+                TLOGERROR(FILE_FUN << "refresh heartbeat timeout[" << lastHeartbeat
+                    << "], downgrade from my own initiative" << endl);
+                g_app.setRouterType(ROUTER_SLAVE);
+            }
+            else
+            {
+                if (TNOW - lastHeartbeat >= _refreshHeartbeatInterval)
+                {
+                    TLOGDEBUG(FILE_FUN << "I am the master, refresh master key" << endl);
+                    refreshHeartBeat();
+                }
             }
         }
 
         {
             TC_ThreadLock::Lock lock(*this);
-            timedWait(5000);
+            timedWait(1000);
         }
     }
 }
@@ -138,6 +151,11 @@ void EtcdThread::terminate()
     tars::TC_ThreadLock::Lock sync(*this);
     _stop = true;
     notifyAll();
+}
+
+void EtcdThread::updateLastHeartbeat(const int64_t lastHeartbeat)
+{
+    __sync_lock_test_and_set(&_lastHeartbeat, lastHeartbeat);
 }
 
 void EtcdThread::watchMasterDown() const
@@ -168,13 +186,16 @@ bool EtcdThread::isRouterMaster() const
     return false;
 }
 
-int EtcdThread::registerMaster() const
+int EtcdThread::registerMaster()
 {
+    int64_t now = TNOW;
     // 抢主就是每个机器都尝试去创建同一个etcd key(该Key带有TTL)，创建成功的那个成为主机。
     if (_etcdHandle->createCAS(_heartbeatTTL, _selfObj) == 0)
     {
+        updateLastHeartbeat(now);
+        g_app.upgrade();
         g_app.setRouterType(ROUTER_MASTER);
-        TLOGDEBUG(FILE_FUN << "createCAS succ，I become the master" << endl);
+        TLOGDEBUG(FILE_FUN << "createCAS succ, I become the master" << endl);
     }
 
     // 不管抢主是否成功，都要去更新masterRouterObj，用于备机向主机通信。
@@ -191,12 +212,12 @@ int EtcdThread::registerMaster() const
     }
 }
 
-int EtcdThread::refreshHeartBeat() const
+int EtcdThread::refreshHeartBeat(const bool sync) const
 {
     // 为主机的etcd key续命
     try
     {
-        if (_etcdHandle->refreshCAS(_heartbeatTTL, _selfObj) == 0)
+        if (_etcdHandle->refreshCAS(_heartbeatTTL, _selfObj, sync) == 0)
         {
             TLOGDEBUG(FILE_FUN << "refreshCAS succ" << endl);
             return 0;

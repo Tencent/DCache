@@ -87,6 +87,11 @@ void RouterImp::initialize()
             TLOGERROR(FILE_FUN << "getIdcMap error:" << ret << endl);
         }
     }
+
+    std::string obj = ServerConfig::Application + "." + ServerConfig::ServerName + ".RouterObj";
+    std::string adapter = obj + "Adapter";
+    TC_Endpoint ep = Application::getEpollServer()->getBindAdapter(adapter)->getEndpoint();
+    _selfObj = obj + "@" + ep.toString();
 }
 
 tars::Int32 RouterImp::getRouterInfo(const string &moduleName,
@@ -865,6 +870,14 @@ tars::Int32 RouterImp::serviceRestartReport(const string &moduleName,
     return 0;
 }
 
+tars::Bool RouterImp::procAdminCommand(const string &command,
+                                       const string &params,
+                                       string &result,
+                                       tars::TarsCurrentPtr current)
+{
+    return g_app.procAdminCommand(command, params, result);
+}
+
 int RouterImp::sendHeartBeat(const string &serverName)
 {
     string ServerObj = serverName + ".RouterClientObj";
@@ -901,7 +914,7 @@ int RouterImp::updateMasterPrx()
 {
     std::string o = g_app.getMasterRouterObj();
     TLOGDEBUG(FILE_FUN << "master router obj = " << o << endl);
-    if (o == "")
+    if (o == "" || o == _selfObj)
     {
         // 全局对象中的RouterObj还未被设置
         TLOGERROR(FILE_FUN << "master router obj not set" << endl);

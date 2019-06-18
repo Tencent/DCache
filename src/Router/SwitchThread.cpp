@@ -297,6 +297,7 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
 
 SwitchThread::SwitchThread()
 {
+    _enable    = false;
     _terminate = false;
     _lastNotifyTime = 0;
 }
@@ -325,6 +326,8 @@ void SwitchThread::init(AdminProxyWrapperPtr adminProxy, std::shared_ptr<DbHandl
 {
     try
     {
+        _terminate = false;
+        _enable = g_app.getGlobalConfig().checkEnableSwitch();
         _switchCheckInterval = g_app.getGlobalConfig().getSwitchCheckInterval(10);
         _switchTimeout = g_app.getGlobalConfig().getSwitchTimeOut(300);
         _slaveTimeout = g_app.getGlobalConfig().getSlaveTimeOut(60);
@@ -367,8 +370,15 @@ void SwitchThread::run()
     }
 
     enum RouterType lastType = g_app.getRouterType();
-    while (!_terminate)
+    while (!_terminate && _enable)
     {
+        if (!_enable)
+        {
+            TC_ThreadLock::Lock sync(*this);
+            timedWait(1000);
+            continue;
+        }
+
         if (g_app.isEnableEtcd() && g_app.getRouterType() == ROUTER_SLAVE)
         {
             if (lastType == ROUTER_MASTER)
