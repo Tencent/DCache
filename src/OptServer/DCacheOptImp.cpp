@@ -2277,7 +2277,8 @@ tars::Int32 DCacheOptImp::queryProperptyData(const DCache::QueryPropReq & req,ve
         int iRet = _propertyPrx->queryPropData(cond, data);
         if (iRet == 0)
         {
-            rsp = reinterpret_cast<vector<DCache::QueryResult> &>(data);
+            char* pData = (char *)&data;
+            rsp = *(reinterpret_cast<vector<DCache::QueryResult> *>(pData));
 
             return 0;
         }
