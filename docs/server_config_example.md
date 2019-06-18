@@ -322,6 +322,8 @@
         MaxTransferThreadEachGroup=8
     </Transfer>
     <Switch>
+        # 是否开启Cache主备自动切换
+        enable = N
         # 自动切换超时的检测间隔(秒)
         SwitchCheckInterval= 10
         # 自动切换的超时时间(秒)
