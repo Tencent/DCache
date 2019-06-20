@@ -161,7 +161,7 @@ make tar
 
 **step3：** 添加配置文件。
 
-该步骤参考安装OptServer的**step4**即可。其中配置文件的名称填“PropertyServer.conf”，文件内容的填写请参考[DCache服务配置说明](server_config_example.md)。
+该步骤参考安装OptServer的**step4**即可。其中配置文件的名称填“PropertyServer.conf”，文件内容的填写请参考[DCache服务配置说明](server_config_example.md)。PropertyServer需要将特性监控数据存储到db中，请自行创建db_dcache_property，并将db信息填入配置文件。
 
 **step4：** 重启PropertyServer。
 
