@@ -82,6 +82,7 @@ CREATE TABLE `t_config_appMod` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `appName` varchar(128) DEFAULT NULL,
   `moduleName` varchar(128) DEFAULT NULL,
+  `cacheType` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `app_module` (`appName`,`moduleName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=42270 DEFAULT CHARSET=utf8;
