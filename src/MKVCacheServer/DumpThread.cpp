@@ -34,14 +34,28 @@ int DumpThread::init(const string &dumpPath, const string &mirrorName, const str
     _config = sConf;
     _tcConf.parseFile(_config);
 
+    _dumpDayLog = _tcConf.get("/Main/<BackupDayLog>", "dumpAndRecover");
+
     if (!TC_File::isAbsolute(dumpPath))
     {
         _dumpPath = "/data/dcache/dump_binlog/"; //使用默认dump路径
         FDLOG(_dumpDayLog) << "[DumpThread::init] dumpPath:" << dumpPath << " is not absolute path, use default path: /data/dcache/dump_binlog/" << endl;
     }
+    else
+    {
+        _dumpPath = dumpPath;
+    }
 
-    _dumpPath = dumpPath;
-    _mirrorName = mirrorName;
+    if (mirrorName.empty())
+    {
+        // using default mirror name
+        _mirrorName = g_app.gstat()->groupName() + string("_dump_binlog_") + TC_Common::now2str() + string(".log.gz");
+        FDLOG(_dumpDayLog) << "[DumpThread::init] mirrorName is empty, use default mirror name: groupname_dump_binlog_nowtime.log.gz" << endl;
+    }
+    else
+    {
+        _mirrorName = mirrorName;
+    }
 
     FDLOG(_dumpDayLog) << "[DumpThread::init] finish" << endl;
 

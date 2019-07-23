@@ -34,6 +34,7 @@ tars::Int32 BackUpImp::dump(const std::string &dumpPath, const std::string &mirr
             return 0;
         }
         g_app.dumpThread()->start();
+        return 0;
     }
     catch (const TarsException & ex)
     {
