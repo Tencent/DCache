@@ -17,8 +17,8 @@ interface BackUp
 {
     /*
     * dump内存数据到指定路径文件
-    * dumpPath: 存放镜像文件的绝对路径，如果为空则dump到默认路径
-    * mirrorName: 镜像名
+    * dumpPath: 存放镜像文件的绝对路径，如果为空则dump到默认路径:/data/dcache/dump_binlog/
+    * mirrorName: 镜像文件名, 如果为空则使用组名和当前时间生成文件名，例如:TestModuleKVGroup1_dump_binlog_20190701120101.log.gz
     */
     int dump(string dumpPath, string mirrorName, out string errmsg);
 
