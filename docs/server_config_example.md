@@ -322,6 +322,8 @@
         MaxTransferThreadEachGroup=8
     </Transfer>
     <Switch>
+        # 是否开启Cache主备自动切换
+        enable = N
         # 自动切换超时的检测间隔(秒)
         SwitchCheckInterval= 10
         # 自动切换的超时时间(秒)
@@ -362,17 +364,20 @@
 ```
 <Main>
     <DB>
-            Sql=CREATE TABLE `${TABLE}` (`stattime` timestamp NOT NULL default  CURRENT_TIMESTAMP,`f_date` date NOT NULL default '1970-01-01',`f_tflag` varchar(8) NOT NULL default '',`app_name` varchar(20) default NULL,`module_name` varchar(50) default NULL,`group_name` varchar(100) default NULL,`idc_area` varchar(10) default NULL,`server_status` varchar(10) default NULL,`master_name` varchar(128) NOT NULL default '',`master_ip` varchar(16) default NULL,`set_name` varchar(15) NOT NULL default '',`set_area` varchar(15) NOT NULL default '',`set_id` varchar(15) NOT NULL default  '',`value1` varchar(255) default NULL,`value2` varchar(255) default NULL,`value3` varchar(255) default NULL,`value4` varchar(255) default NULL,`value5` varchar(255) default NULL,`value6` varchar(255) default NULL,`value7` varchar(255) default NULL,`value8` varchar(255) default NULL,`value9` varchar(255) default NULL,`value10` varchar(255) default NULL,`value11` varchar(255) default NULL,`value12` varchar(255) default NULL,`value13` varchar(255) default NULL,`value14` varchar(255) default NULL,`value15` varchar(255) default NULL,`value16` varchar(255) default NULL,`value17` varchar(255) default NULL,`value18` varchar(255) default NULL,`value19` varchar(255) default NULL,`value20` varchar(255) default NULL,`value21` varchar(255) default NULL,`value22` varchar(255) default NULL,`value23` varchar(255) default NULL,`value24` varchar(255) default NULL,`value25` varchar(255) default NULL,`value26` varchar(255) default NULL,`value27` varchar(255) default NULL,`value28` varchar(255) default NULL,`value29` varchar(255) default NULL,`value30` varchar(255) default NULL,`value31` varchar(255) default NULL,`value32` varchar(255) default NULL,`value33` varchar(255) default NULL,`value34` varchar(255) default NULL,`value35` varchar(255) default NULL,KEY(`f_date`,`f_tflag`,`master_name`,`master_ip`),KEY `IDX_MASTER_NAME` (`master_name`),KEY `IDX_MASTER_IP` (`master_ip`),KEY `IDX_TIME` (`stattime`),KEY `IDX_F_DATE` (`f_date`))ENGINE\=MyISAM
-            TbNamePre=t_property_realtime
-            AppName=dcache_idc5min_147
+        #可监控属性数量的最大值
+        PropertyFieldNum=48
+        TbNamePre=t_property_realtime
+        AppName=dcache_idc5min_147
+        #特性监控数据库信息
         <property>
             dbhost=
-            dbname=taf_property_147
+            dbname=db_dcache_property
             dbuser=
             dbpass=
             dbport=
             charset=gbk
         </property>
+        #db_dcache_relation的数据库信息
         <relation>
             charset=gbk
             dbname=db_dcache_relation
@@ -383,47 +388,62 @@
         </relation>
     </DB>
     <HashMap>
-        InsertInterval=1
+        #数据入库的时间间隔，单位分钟
+        InsertInterval=5
     </HashMap>
     <NameMap>
-        BakCenterError = property1
-        BinLogErr = property2
-        BinLogSyn = property3
-        CacheError = property4
-        Chunks/OnceElement = property5
-        BackUpObjAdapter.connectRate = property6
-        BackUpObjAdapter.queue = property7
-        BinLogObjAdapter.connectRate = property8
-        BinLogObjAdapter.queue = property9
-        CacheObjAdapter.connectRate = property10
-        CacheObjAdapter.queue = property11
-        RouterClientObjAdapter.connectRate = property12
-        RouterClientObjAdapter.queue = property13
-        WCacheObjAdapter.connectRate = property14
-        WCacheObjAdapter.queue = property15
-        asyncqueue = property16
-        memsize = property17
-        DataMemUsedRatio = property18
-        DbError = property19
-        DbException = property20
-        DirtyNum = property21
-        DirtyRatio = property22
-        ElementCount = property23
-        Exception = property24
-        HitCount = property25
-        MemSize = property26
-        getBatchCount = property27
-        setBatchCount = property28
-        MKMemUsedRatio = property29
-        eraseCount = property30
-        eraseCountUnexpire = property31
-        asyncqueue0 = property32
-        Jmem0DataUsedRatio = property33
-        Jmem1DataUsedRatio = property34
-        ColdDataRatio = property35
-        expireCount = property36
-        OnlyKeyCount = property37
-        BigChunk = property38
+        # value1 to value20 for obj and tars server fixed property
+        CacheObjAdapter.queue = value1
+        WCacheObjAdapter.queue = value2
+        BinLogObjAdapter.queue = value3
+        RouterClientObjAdapter.queue = value4
+        ControlAckObjAdapter.queue = value5
+        BackUpObjAdapter.queue = value6
+        sendrspqueue = value7
+        asyncqueue = value8
+        memsize = value9
+        reservedPro10 = value10
+        reservedPro11 = value11
+        reservedPro12 = value12
+        reservedPro13 = value13
+        reservedPro14 = value14
+        reservedPro15 = value15
+        reservedPro16 = value16
+        reservedPro17 = value17
+        reservedPro18 = value18
+        reservedPro19 = value19
+        reservedPro20 = value20
+
+        # value21 for dcache property
+        CacheMemSize_MB = value21
+        DataMemUsage = value22
+        CacheHitRatio = value23
+
+        TotalCountOfRecords = value24
+        ProportionOfDirtyRecords = value25
+        CountOfDirtyRecords = value26
+        CountOfOnlyKey = value27
+
+        M/S_ReplicationErr = value28
+        M/S_ReplicationLatency = value29
+        CacheError = value30
+        ProgramException = value31
+
+        ReadRecordCount = value32
+        WriteRecordCount = value33
+        evictedRecordCount = value34
+        evictedCountOfUnexpiredRecord = value35
+        expiredRecordCount = value36
+
+        ChunkUsedPerRecord = value37
+        MaxMemUsageOfJmem = value38
+        ProportionOfColdData = value39
+
+        DbError = value40
+        DbException = value41
+        BackupError = value42
+
+        MKV_MainkeyMemUsage = value43
     </NameMap>
 </Main>
 
@@ -468,11 +488,6 @@
             dbpass  = 
         </relation>
     </DB>
-    # 创建路由数据库的用户名和密码
-    <CreateRouterDb>
-        dbuser = 
-        dbpass = 
-    </CreateRouterDb>
     <Release>
         # 发布服务线程数
         ThreadCount = 5

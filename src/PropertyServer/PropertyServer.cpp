@@ -38,6 +38,19 @@ void PropertyServer::initialize()
         }
 
         _propertyNameMap = _conf.getDomainMap("/Main/NameMap");
+        auto it = _propertyNameMap.begin();
+        while (it != _propertyNameMap.end())
+        {
+            size_t pos = it->first.find("reservedPro");
+            if (pos != string::npos && pos == 0)
+            {
+                it = _propertyNameMap.erase(it);
+                if (it == _propertyNameMap.end())
+                    break;
+            }
+            else
+                ++it;
+        }
 
         CacheInfoManager::getInstance()->init(_conf);
         PropertyDbManager::getInstance()->init(_conf);

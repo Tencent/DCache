@@ -216,6 +216,8 @@ string getRandString()
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
+
+    srand(time(0));
     
     string randString = "";
     size_t randLen = rand() % 100;

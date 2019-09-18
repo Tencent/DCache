@@ -28,7 +28,7 @@ using namespace DCache;
 extern UnpackTable g_route_table;
 
 typedef HashMapMallocDCache<SemLockPolicyDCache, ShmStorePolicyDCache> SHashMap;
-#define CACHE_VER  "Shm_TCache_1.0.0_Malloc"
+#define CACHE_VER  "Shm_KVCache_1.0.0"
 
 extern SHashMap g_sHashMap;
 

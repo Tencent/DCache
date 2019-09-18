@@ -197,11 +197,17 @@ public:
     /*获取版本信息*/
     virtual int getVersion(const string &sModuleName);
 
+    /*获取所有业务模块的版本信息*/
+    virtual int getVersion(map<string, int> &version);
+
     /*获取自动切换类型*/
     virtual int getSwitchType(const string &sModuleName);
 
     /*获取路由信息*/
     virtual int getPackTable(const string &sModuleName, PackTable &packTable);
+
+    /*查看模块是否存在*/
+    virtual bool checkModule(const string &sModuleName);
 
     /*获取idc 映射信息*/
     virtual int getIdcMap(map<string, string> &idcMap);
@@ -220,6 +226,9 @@ public:
 
     /*获取所有业务模块信息*/
     virtual int getModuleInfos(map<string, ModuleInfo> &info);
+
+    /*获取所有业务模块路由信息*/
+    virtual int getRouterInfos(map<string, PackTable> &info);
 
     /*获取所有业务模块信息*/
     virtual int getModuleList(vector<string> &moduleList);
@@ -336,7 +345,7 @@ public:
                                             string &masterImage,
                                             string &slaveImage);
 
-    virtual int loadSwitchInfo();
+    virtual int loadSwitchInfo(const bool isUpgrade = false);
 
     //只加载特定模块的切换信息
     virtual int loadSwitchInfo(const string &moduleName);
@@ -438,6 +447,9 @@ public:
 
     /* Router主机从MASTER降级到SLAVE时调用，用来清理数据 */
     virtual void downgrade();
+
+    /* Router从SLAVE升级为MASTER时调用，用来重新加载路由信息*/
+    virtual void upgrade();
 
 private:
     map<string, PackTable> *_mapPackTables;  // 业务模块名，打包的路由信息

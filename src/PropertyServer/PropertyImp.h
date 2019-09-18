@@ -57,7 +57,9 @@ public:
     */
     virtual int reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPropMsgBody> &propMsg, tars::TarsCurrentPtr current);
 
-private:
+    virtual int queryPropData(const DCache::QueryPropCond &req, vector<DCache::QueriedResult> &rsp, tars::TarsCurrentPtr current);
+
+  private:
 
     void dump2file();
 };

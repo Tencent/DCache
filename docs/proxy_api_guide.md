@@ -579,7 +579,7 @@ int getMKV(const GetMKVReq &req, GetMKVRsp &rsp)
 struct GetMKVReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require vector<Condition> cond;  //查询条件集合，除主Key外的其他字段，多个条件直间为And关系
   5 require bool retEntryCnt = false;  //是否返回主key下的总记录条数
@@ -613,7 +613,7 @@ struct GetMKVRsp
 int getMainKeyCount(const MainKeyReq &req)
 ```
 
-**功能：** 获取主键下数据记录总数
+**功能：** 获取主key下数据记录总数
 
 
 **参数：**  
@@ -622,7 +622,7 @@ int getMainKeyCount(const MainKeyReq &req)
 struct MainKeyReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string idcSpecified = "";  //idc区域
 };
 ```
@@ -636,7 +636,7 @@ struct MainKeyReq
  ET_KEY_INVALID	| mainKey无效
  ET_INPUT_PARAM_ERROR | mainKey为空
  ET_SYS_ERR	| 系统异常
- 其他值(大于等于0)|主键下的记录总数
+ 其他值(大于等于0)|主key下的记录总数
  
  
 # <a id="14"></a> getMKVBatch
@@ -653,7 +653,7 @@ int getMKVBatch(const MKVBatchReq &req, MKVBatchRsp &rsp)
 struct MKVBatchReq
 {
   1 require string moduleName; //模块名
-  2 require vector<string> mainKeys;  //主键集合
+  2 require vector<string> mainKeys;  //主key集合
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require vector<Condition> cond;  //查询条件集合，除主Key外的其他字段，多个条件直间为And关系
   5 require string idcSpecified = "";  //idc区域
@@ -673,8 +673,8 @@ struct MKVBatchRsp
 
 struct MainKeyValue
 {
-  1 require string mainKey;  //主键
-  2 require vector<map<string, string> > value;  //在该主键下查询到的记录的集合
+  1 require string mainKey;  //主key
+  2 require vector<map<string, string> > value;  //在该主key下查询到的记录的集合
   3 require int ret; //ret>=0 成功，其他 失败
 };
 ```
@@ -685,8 +685,8 @@ struct MainKeyValue
 ------------------ | ----------------
  ET_MODULE_NAME_INVALID | 模块名错误
  ET_KEY_AREA_ERR	| 当前key不属于本机服务，需要更新路由表重新访问
- ET_KEY_INVALID | 主键集合中存在mainKey无效的元素
- ET_INPUT_PARAM_ERROR | 主键集合中存在mainKey为空的元素或者主键集合大小超过限制
+ ET_KEY_INVALID | 主key集合中存在mainKey无效的元素
+ ET_INPUT_PARAM_ERROR | 主key集合中存在mainKey为空的元素或者主key集合大小超过限制
  ET_PARAM_LIMIT_VALUE_ERR	| 查询条件集合的某个元素的limit属性值填写错误
  ET_PARAM_NOT_EXIST	| 查询条件集合字段填写错误，无效字段
  ET_PARAM_REDUNDANT	| 查询条件集合有重复字段或无效字段
@@ -714,7 +714,7 @@ struct MKVBatchExReq
 
 struct MainKeyCondition
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   3 require vector<vector<Condition> > cond;  //查询条件集合，内层为'and'关系，外层为'or'关系
   4 require Condition limit;  //查询起始和count限制，op = DCache::LIMIT, value = "startIndex:countLimit"
@@ -728,8 +728,8 @@ struct MKVBatchExRsp
 
 struct MainKeyValue
 {
-  1 require string mainKey;  //主键
-  2 require vector<map<string, string> > value;  //在该主键下查询到的记录的集合
+  1 require string mainKey;  //主key
+  2 require vector<map<string, string> > value;  //在该主key下查询到的记录的集合
   3 require int ret; //ret>=0 成功，其他 失败
 };
 ```
@@ -741,7 +741,7 @@ struct MainKeyValue
  ET_MODULE_NAME_INVALID | 模块名错误
  ET_KEY_AREA_ERR	| 当前key不属于本机服务，需要更新路由表重新访问
  ET_KEY_INVALID | 查询条件中存在mainKey无效的元素
- ET_INPUT_PARAM_ERROR | 查询条件中存在mainKey为空的元素或者主键数量超过限制
+ ET_INPUT_PARAM_ERROR | 查询条件中存在mainKey为空的元素或者主key数量超过限制
  ET_PARAM_LIMIT_VALUE_ERR	| 查询条件集合的某个元素的limit属性值填写错误
  ET_PARAM_NOT_EXIST	| 查询条件集合字段填写错误，无效字段
  ET_PARAM_REDUNDANT	| 查询条件集合有重复字段或无效字段
@@ -763,7 +763,7 @@ int getMUKBatch(const MUKBatchReq &req, MUKBatchRsp &rsp)
 struct MUKBatchReq
 {
   1 require string moduleName;  //模块名
-  2 require vector<Record> primaryKeys;  //主键集合
+  2 require vector<Record> primaryKeys;  //主key集合
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require string idcSpecified = "";  //idc区域
 };
@@ -775,7 +775,7 @@ struct MUKBatchRsp
 
 struct Record
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, string> mpRecord; // 在请求结构体中，表示查询条件，必须包含所有联合key，因此可以唯一确定一条记录；在响应结构体中表示查询到的数据
   3 require int ret;  //在请求结构体中，可忽略不填；在响应结构体中，ret>=0 成功，其他 失败
 };
@@ -787,8 +787,8 @@ struct Record
 ------------------ | ----------------
  ET_MODULE_NAME_INVALID | 模块名错误
  ET_KEY_AREA_ERR	| 当前key不属于本机服务，需要更新路由表重新访问
- ET_KEY_INVALID | 主键集合中存在mainKey无效的元素
- ET_INPUT_PARAM_ERROR | 主键集合中存在mainKey为空的元素或者主键集合大小超过限制
+ ET_KEY_INVALID | 主key集合中存在mainKey无效的元素
+ ET_INPUT_PARAM_ERROR | 主key集合中存在mainKey为空的元素或者主key集合大小超过限制
  ET_PARAM_MISSING	| 查询条件未包含所有联合key
  ET_SYS_ERR	| 系统异常
  ET_SUCC | 批量读取成功
@@ -813,8 +813,8 @@ struct InsertMKVReq
 
 struct InsertKeyValue
 {
-  1 require string mainKey;  //主键
-  2 require map<string, UpdateValue> mpValue;  //除主键外的其他字段数据
+  1 require string mainKey;  //主key
+  2 require map<string, UpdateValue> mpValue;  //除主key外的其他字段数据
   3 require byte ver = 0;  //版本号
   4 require bool dirty = true;  //是否设置为脏数据
   5 require bool replace = false;  //如果记录已存在且replace为true时则覆盖旧记录
@@ -857,7 +857,7 @@ int updateMKV(const UpdateMKVReq &req)
 struct UpdateMKVReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require map<string, UpdateValue> value;  //需要更新的字段和对应的值，不能填联合key字段
   4 require vector<Condition> cond;  //数据更新的条件
   5 require byte ver = 0;  //版本号
@@ -901,7 +901,7 @@ int updateMKVAtom(const UpdateMKVAtomReq &req)
 struct UpdateMKVAtomReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require map<string, UpdateValue> value;  //需要更新的字段和对应的值，不能填联合key字段，op支持SET、ADD、SUB操作。OP为ADD和SUB时要求更新的字段为数值类型
   4 require vector<Condition> cond;  //数据更新的条件
   5 require bool dirty = true;  //是否设置为脏数据
@@ -943,7 +943,7 @@ int eraseMKV(const MainKeyReq &req)
 struct MainKeyReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string idcSpecified = "";  //idc区域，
 };
 ```
@@ -976,7 +976,7 @@ int delMKV(const DelMKVReq &req)
 struct DelMKVReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<Condition> cond;  //条件集合
 };
 
@@ -1023,7 +1023,7 @@ struct InsertMKVBatchReq
 
 struct InsertKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> mpValue;  //其他字段值
   3 require byte ver = 0;  //版本号
   4 require bool dirty = true;  //是否设置为脏数据
@@ -1043,7 +1043,7 @@ struct MKVBatchWriteRsp
 返回值 | 含义
 ------------------ | ----------------
 ET_MODULE_NAME_INVALID	| 模块名错误
-ET_INPUT_PARAM_ERROR | 待写入数据集合中存在mainKey为空的元素或者主键数量超过限制
+ET_INPUT_PARAM_ERROR | 待写入数据集合中存在mainKey为空的元素或者主key数量超过限制
 ET_KEY_INVALID | mainKey无效
 ET_SYS_ERR	| 系统异常
 ET_SUCC	 | 批量写操作完成
@@ -1068,7 +1068,7 @@ struct UpdateMKVBatchReq
 
 struct UpdateKeyValue
 {
-  1 require  string mainKey;  //主键
+  1 require  string mainKey;  //主key
   2 require  map<string, UpdateFieldInfo> mpValue;  //更新数据
   3 require  byte ver = 0;  //数据版本号
   4 require  bool dirty = true;  //是否设置为脏数据
@@ -1088,7 +1088,7 @@ struct MKVBatchWriteRsp
 返回值 | 含义
 ------------------ | ----------------
 ET_MODULE_NAME_INVALID	| 模块名错误
-ET_INPUT_PARAM_ERROR | 更新数据集合中存在mainKey为空的元素或者主键数量超过限制
+ET_INPUT_PARAM_ERROR | 更新数据集合中存在mainKey为空的元素或者主key数量超过限制
 ET_KEY_INVALID | mainKey无效
 ET_SYS_ERR	| 系统异常
 ET_SUCC	 | 批量更新操作完成
@@ -1113,7 +1113,7 @@ struct DelMKVBatchReq
 
 struct DelCondition
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require vector<Condition> cond;  //删除条件集合
   3 require byte ver = 0; //数据版本号
 };
@@ -1130,7 +1130,7 @@ struct MKVBatchWriteRsp
 返回值 | 含义
 ------------------ | ----------------
 ET_MODULE_NAME_INVALID	| 模块名错误
-ET_INPUT_PARAM_ERROR | 待删除数据集合中存在mainKey为空的元素或者主键数量超过限制
+ET_INPUT_PARAM_ERROR | 待删除数据集合中存在mainKey为空的元素或者主key数量超过限制
 ET_KEY_INVALID | mainKey无效
 ET_SYS_ERR	| 系统异常
 ET_SUCC	 | 批量删除操作完成
@@ -1142,7 +1142,7 @@ ET_SUCC	 | 批量删除操作完成
 int getList(const GetListReq &req, GetListRsp &rsp)
 ```
 
-**功能：** 根据指定的主键和索引查询数据
+**功能：** 根据指定的主key和索引查询数据
 
 **参数：**
 
@@ -1150,7 +1150,7 @@ int getList(const GetListReq &req, GetListRsp &rsp)
 struct GetListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require long index;  //索引
   5 require string idcSpecified = "";  //idc区域
@@ -1185,7 +1185,7 @@ struct Entry
 int getRangeList(const GetRangeListReq &req, BatchEntry &rsp)
 ```
 
-**功能：** 根据指定的主键查找索引值在区间[startIndex, endIndex]的数据
+**功能：** 根据指定的主key查找索引值在区间[startIndex, endIndex]的数据
 
 **参数：**
 
@@ -1193,7 +1193,7 @@ int getRangeList(const GetRangeListReq &req, BatchEntry &rsp)
 struct GetRangeListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require long startIndex;  //开始索引
   5 require long endIndex;  //结束索引
@@ -1232,14 +1232,14 @@ int pushList(const PushListReq &req)
 struct PushListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<InsertKeyValue> data;  //待插入数据
   4 require bool atHead = true;   //true表示插入到list头部，false表示插入尾部
 };
 
 struct InsertKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> mpValue;  //其他字段数据
   3 require byte ver = 0;  //数据版本号
   4 require bool dirty = true;  //是否设置为脏数据
@@ -1280,7 +1280,7 @@ int popList(const PopListReq &req, PopListRsp &rsp)
 struct PopListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require bool atHead = true;   //true表示从list头部删除，false表示尾部删除
 };
 
@@ -1314,7 +1314,7 @@ struct Entry
 int replaceList(const ReplaceListReq &req)
 ```
 
-**功能：** 根据指定主键更新list上指定索引的数据
+**功能：** 根据指定主key更新list上指定索引的数据
 
 **参数：**
 
@@ -1322,7 +1322,7 @@ int replaceList(const ReplaceListReq &req)
 struct ReplaceListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require map<string, UpdateValue> data;  //新数据
   4 require long index;  //待替换数据在列表中的索引
   5 require int expireTime;  //过期时间
@@ -1367,7 +1367,7 @@ int trimList(const TrimListReq &req)
 struct TrimListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require long startIndex;  //开始索引
   4 require long endIndex;  //结束索引
 };
@@ -1401,7 +1401,7 @@ int remList(const RemListReq &req)
 struct RemListReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require bool atHead = true;   //true表示从list头部删除，false表示从尾部删除
   4 require long count;  //指定删除数据条数
 };
@@ -1435,7 +1435,7 @@ int getSet(const GetSetReq &req, BatchEntry &rsp)
 struct GetSetReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require string idcSpecified = "";  //idc区域
 };
@@ -1476,7 +1476,7 @@ struct AddSetReq
 
 struct AddSetKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> data;  //其他字段数据
   3 require int expireTime;  //过期时间
   4 require bool dirty = true;  //是否设置为脏数据
@@ -1515,7 +1515,7 @@ int delSet(const DelSetReq &req)
 struct DelSetReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<Condition> cond;  //条件集合
 };
 
@@ -1558,7 +1558,7 @@ int getZSetScore(const GetZsetScoreReq &req, double &score)
 struct GetZsetScoreReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<Condition> cond;  //条件集合
   4 require string idcSpecified = "";  //idc区域
 };
@@ -1604,7 +1604,7 @@ int getZSetPos(const GetZsetPosReq &req, long &pos)
 struct GetZsetPosReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<Condition> cond;  //条件集合
   4 require bool positiveOrder = true;  //true表示按正序查找，false表示逆序查找
   5 require string idcSpecified = "";  //idc区域
@@ -1644,7 +1644,7 @@ int getZSetByPos(const GetZsetByPosReq &req, BatchEntry &rsp)
 struct GetZsetByPosReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require long start;  //开始索引
   5 require long end;  //结束索引
@@ -1686,7 +1686,7 @@ int getZSetByScore(const GetZsetByScoreReq &req, BatchEntry &rsp)
 struct GetZsetByScoreReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require string field;  //需要查询的字段集，多个字段用','分隔如 "a,b", "*"表示所有
   4 require double minScore;  //最小分值
   5 require double maxScore;  //最大分值
@@ -1732,7 +1732,7 @@ AddZSetReq
 
 struct AddSetKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> data; //其他字段数据
   3 require int expireTime;  //数据过期时间
   4 require bool dirty = true;  //是否设置为脏数据
@@ -1778,7 +1778,7 @@ struct IncZSetScoreReq
 
 struct AddSetKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> data;  //指定数据，可作为条件查找记录或者新数据
   3 require int expireTime;  //数据过期时间
   4 require bool dirty = true;  //是否设置为脏数据
@@ -1818,7 +1818,7 @@ int delZSet(const DelZSetReq &req)
 struct DelZSetReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require vector<Condition> cond;  //条件集合，用来确定唯一一条数据
 };
 
@@ -1862,7 +1862,7 @@ int delZSetByScore(const DelZSetByScoreReq &req)
 struct DelZSetByScoreReq
 {
   1 require string moduleName;  //模块名
-  2 require string mainKey;  //主键
+  2 require string mainKey;  //主key
   3 require double minScore;  //最小分值
   4 require double maxScore;  //最大分值
 };
@@ -1903,7 +1903,7 @@ struct UpdateZSetReq
 
 struct AddSetKeyValue
 {
-  1 require string mainKey;  //主键
+  1 require string mainKey;  //主key
   2 require map<string, UpdateValue> data;  //新数据
   3 require int expireTime;  //数据过期时间
   4 require bool dirty = true;  //是否设置为脏数据

@@ -122,8 +122,7 @@ protected:
     PropertyReportPtr _srp_chunksOnceEle;	//上报已使用chunk与总元素比率
     PropertyReportPtr _srp_elementCount;	//上报元素总数
     PropertyReportPtr _srp_onlykeyCount;   //上报onlykey个数
-    PropertyReportPtr _srp_bigChunk;       //上报最大chunk的使用率
-    PropertyReportPtr _srp_missCount;      //上报空查询次数
+    PropertyReportPtr _srp_maxJmemUsage;       //上报Jmem中最大的内存使用率
 
     int _downgradeTimeout;	//主机自动降级
 };

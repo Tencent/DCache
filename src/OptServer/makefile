@@ -14,7 +14,7 @@ APP_DIR := /home/tarsproto/$(APP)
 #----------------------------------------------------------------------
 include  $(APP_DIR)/ProxyServer/ProxyServer.mk
 include  $(APP_DIR)/RouterServer/RouterServer.mk
-
+include  $(APP_DIR)/PropertyServer/PropertyServer.mk
 #-----------------------------------------------------------------------
 
 include /usr/local/tars/cpp/makefile/makefile.tars

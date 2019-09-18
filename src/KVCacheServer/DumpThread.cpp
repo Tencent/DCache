@@ -40,6 +40,23 @@ int DumpThread::init(const string &dumpPath, const string &mirrorName, const str
         _dumpPath = "/data/dcache/dump_binlog/"; //使用默认dump路径
         FDLOG(_dumpDayLog) << "[DumpThread::init] dumpPath:" << dumpPath << " is not absolute path, use default path: /data/dcache/dump_binlog/" << endl;
     }
+    else
+    {
+        _dumpPath = dumpPath;
+    }
+
+    if (mirrorName.empty())
+    {
+        // using default mirror name
+        _mirrorName = g_app.gstat()->groupName() + string("_dump_binlog_") + TC_Common::now2str() + string(".log.gz");
+        FDLOG(_dumpDayLog) << "[DumpThread::init] mirrorName is empty, use default mirror name: groupname_dump_binlog_nowtime.log.gz" << endl;
+    }
+    else
+    {
+        _mirrorName = mirrorName;
+    }
+
+    FDLOG(_dumpDayLog) << "[DumpThread::init] finish" << endl;
 
     return 0;
 }

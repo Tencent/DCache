@@ -112,13 +112,13 @@ void UninstallRequestQueueManager::addUninstallRecord(const string &sRequestId)
     }
 
     UninstallStatus currentStatus;
-    currentStatus.sPercent = "0";
+    currentStatus.percent = 0;
     currentStatus.status = UNINSTALLING;
-    currentStatus.sError = "";
+    currentStatus.errmsg = "";
     _uninstallingProgress[sRequestId] = currentStatus;
 }
 
-void UninstallRequestQueueManager::setUninstallRecord(const string &sRequestId, const string &sPercent, UnStatus status, const string &sError)
+void UninstallRequestQueueManager::setUninstallRecord(const string &sRequestId, int percent, UnStatus status, const string &errmsg)
 {
     TC_ThreadLock::Lock lock(_progressMutex);
 
@@ -129,9 +129,9 @@ void UninstallRequestQueueManager::setUninstallRecord(const string &sRequestId, 
         return;
     }
 
-    it->second.sPercent = sPercent;
+    it->second.percent = percent;
     it->second.status = status;
-    it->second.sError = sError;
+    it->second.errmsg = errmsg;
 }
 
 UninstallStatus UninstallRequestQueueManager::getUninstallRecord(const string & sRequestId)
@@ -222,7 +222,7 @@ void UninstallThread::run()
 
 void UninstallThread::terminate()
 {
-    _shutDown = false;
+    _shutDown = true;
 }
 
 void UninstallThread::setTarsDbMysql(TC_DBConf &dbConf)
@@ -244,14 +244,26 @@ void UninstallThread::setCacheBackupPath(const string & sCacheBakPath)
 
 void UninstallThread::doUninstallRequest(UninstallRequest & request)
 {
-    TLOGDEBUG(FUN_LOG << "request id:" << request.requestId << "|request type:" << request.info.unType<< endl);
-    string sError("");
+    TLOGDEBUG(FUN_LOG << "request id:" << request.requestId << "|request type:" << request.info.unType << endl);
+    string errmsg("");
     try
     {
-        UninstallInfo & uninstallInfo = request.info;
+        UninstallReq & uninstallInfo = request.info;
 
-        TC_Mysql mysqlRouterDb(uninstallInfo.routerDb.ip, uninstallInfo.routerDb.user, uninstallInfo.routerDb.pwd, uninstallInfo.routerDb.dbName, uninstallInfo.routerDb.charset, TC_Common::strto<int>(uninstallInfo.routerDb.port));
-        if (DCache::MODULE == uninstallInfo.unType || DCache::GROUP ==  uninstallInfo.unType)
+        // 根据 appName 获取 router DB info
+        TC_DBConf routerDbInfo;
+        if (getRouterDBInfo(uninstallInfo.appName, routerDbInfo, errmsg) != 0)
+        {
+            _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
+
+            errmsg = string("get router db info failed, errmsg:") + errmsg;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+
+            return;
+        }
+
+        TC_Mysql mysqlRouterDb(routerDbInfo);
+        if (DCache::MODULE == uninstallInfo.unType || DCache::GROUP == uninstallInfo.unType)
         {
             TC_Mysql::MysqlData cacheData;
             string sQuerySql;
@@ -259,7 +271,12 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             if (DCache::MODULE == uninstallInfo.unType)
             {
                 //按模块
+                // 先删除 t_router_module 和 t_router_record 的记录
                 string sWhere = "where module_name='" + uninstallInfo.moduleName + "'";
+                mysqlRouterDb.deleteRecord("t_router_module", sWhere);
+                mysqlRouterDb.deleteRecord("t_router_record", sWhere);
+
+                sWhere = "where module_name='" + uninstallInfo.moduleName + "'";
                 sQuerySql = "select server_name from t_router_group " + sWhere;
             }
             else
@@ -276,7 +293,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             }
             else
             {
-                _queueManager->setUninstallRecord(request.requestId, "100%", FINISH);
+                _queueManager->setUninstallRecord(request.requestId, 100, UNINSTALL_FINISH);
             }
 
             int iPercent = 0;
@@ -287,11 +304,11 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
                 iPercent += iUnit;
                 if (i == (cacheData.size() - 1))
                 {
-                    _queueManager->setUninstallRecord(request.requestId, "100%", FINISH);
+                    _queueManager->setUninstallRecord(request.requestId, 100, UNINSTALL_FINISH);
                     break;
                 }
 
-                _queueManager->setUninstallRecord(request.requestId, TC_Common::tostr(iPercent) + "%", UNINSTALLING);
+                _queueManager->setUninstallRecord(request.requestId, iPercent, UNINSTALLING);
             }
         }
         else if (DCache::SERVER == uninstallInfo.unType)
@@ -302,17 +319,17 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             int ret = getRouterInfo(_mysqlRelationDb, uninstallInfo.serverName, moduleName, routerObj);
             if (ret < 0)
             {
-                sError = "get router info error|cache server name:" + uninstallInfo.serverName;
-                TLOGERROR(FUN_LOG << sError<< endl);
+                errmsg = "get router info failed|cache server name:" + uninstallInfo.serverName;
+                TLOGERROR(FUN_LOG << errmsg<< endl);
 
-                _queueManager->deleteUninstallRecord(request.requestId);
+                _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
                 return;
             }
 
             //调用tarsnode下线服务
             Tool::UninstallCacheServer(mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, uninstallInfo.serverName, _cacheBakPath);
 
-            _queueManager->setUninstallRecord(request.requestId, "100%", FINISH);
+            _queueManager->setUninstallRecord(request.requestId, 100, UNINSTALL_FINISH);
             reloadRouterConfByModuleFromDB(moduleName, routerObj);
         }
 
@@ -320,19 +337,19 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
     }
     catch(exception &ex)
     {
-        sError = string("catch exception|request id:") + request.requestId + "|exception:" + ex.what();
-        TLOGERROR(FUN_LOG << sError << endl);
-        _queueManager->deleteUninstallRecord(request.requestId);
+        errmsg = string("do uninstall request catch exception:") + ex.what() + "|request id:" + request.requestId;
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
     catch(...)
     {
-        sError = string("catch unknown exception|request id:") + request.requestId;
-        TLOGERROR(FUN_LOG << sError << endl);
-        _queueManager->deleteUninstallRecord(request.requestId);
+        errmsg = string("do uninstall request catch unknown exception|request id:") + request.requestId;
+        TLOGERROR(FUN_LOG << errmsg << endl);
     }
+
+    _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
 }
 
-int UninstallThread::getRouterInfo(TC_Mysql &mysqlRelationDb,const string &sFullCacheServer, string &moduleName, string &routerObj)
+int UninstallThread::getRouterInfo(TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, string &moduleName, string &routerObj)
 {
     try
     {
@@ -387,5 +404,44 @@ void UninstallThread::reloadRouterConfByModuleFromDB(const string &moduleName, c
     {
         TLOGERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
     }
+}
+
+int UninstallThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo, string& errmsg)
+{
+    try
+    {
+        string sSql("");
+        sSql = "select * from t_cache_router where app_name='" + appName + "'";
+
+        TC_Mysql::MysqlData data = _mysqlRelationDb.queryRecord(sSql);
+        if (data.size() > 0)
+        {
+            routerDbInfo._host      = data[0]["db_ip"];
+            routerDbInfo._database  = data[0]["db_name"];
+            routerDbInfo._port      = TC_Common::strto<int>(data[0]["db_port"]);
+            routerDbInfo._user      = data[0]["db_user"];
+            routerDbInfo._password  = data[0]["db_pwd"];
+            routerDbInfo._charset   = data[0]["db_charset"];
+
+            return 0;
+        }
+        else
+        {
+            errmsg = string("not find router db config in relation db table t_cache_router|app name:") + appName;
+            TLOGERROR(FUN_LOG << errmsg << endl);
+        }
+    }
+    catch(exception &ex)
+    {
+        errmsg = string("get router db info from relation db t_cache_router table catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+    catch (...)
+    {
+        errmsg = "get router db info from relation db t_cache_router table catch unknown exception";
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
 }
 

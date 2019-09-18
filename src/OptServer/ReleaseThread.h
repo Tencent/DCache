@@ -31,21 +31,21 @@ class ReleaseThread;
 struct ReleaseRequest
 {
     int requestId;
-    vector<ReleaseInfo> info;
+    vector<ReleaseInfo> releaseInfo;
 };
 
 enum ReStatus
 {
     RELEASING,
-    REFINISH,
-    REERROR
+    RELEASE_FINISH,
+    RELEASE_FAILED
 };
 
 struct ReleaseStatus
 {
-    string percent;
+    int percent;
     ReStatus status;
-    string error;
+    string errmsg;
 };
 
 struct ReleaseProgress
@@ -59,7 +59,7 @@ class ReleaseRequestQueueManager :  public TC_ThreadLock
 public:
 
     /**
-    * 构造函�?
+    * 构造函数
     */
     ReleaseRequestQueueManager();
 
@@ -98,12 +98,12 @@ public:
     /**
     * 设置release进度记录
     */
-    void setProgressRecord(int requestId, const string &sPercent, ReStatus status, const string &sError="");
+    void setProgressRecord(int requestId, int percent, ReStatus status, const string &errmsg="");
 
    /**
     * 获取release极度
     */
-    ReleaseStatus getProgressRecord(int requestId, vector<ReleaseInfo> & info);
+    ReleaseStatus getProgressRecord(int requestId, vector<ReleaseInfo> & releaseInfo);
 
     /**
     * 删除release进度记录
@@ -143,7 +143,7 @@ protected:
 
     void doReleaseRequest(ReleaseRequest * request);
 
-    int releaseServer(ReleaseInfo serverInfo, string & sError);
+    int releaseServer(ReleaseInfo serverInfo, string & errmsg);
 
 private:
 
@@ -151,7 +151,6 @@ private:
 
     bool _shutDown;
 
-    //上线服务通知router重新加载路由�?
     CommunicatorPtr _communicator;
 
     AdminRegPrx     _adminproxy;

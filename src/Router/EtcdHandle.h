@@ -60,7 +60,7 @@ public:
     int createCAS(int ttl, const std::string &keyvalue) const;
 
     // 原子地为一个键保活
-    int refreshCAS(int ttl, const std::string &prevValue);
+    int refreshCAS(int ttl, const std::string &prevValue, const bool sync);
 
     // 监听Router主机
     int watchRouterMaster() const;

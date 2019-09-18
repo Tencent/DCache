@@ -46,7 +46,7 @@ void RspHandler::run()
         try
         {
             std::shared_ptr<EtcdRspItem> item = nullptr;
-            bool found = false;
+            bool found = true;
 
             {
                 TC_ThreadLock::Lock lock(_queue_lock);
@@ -98,6 +98,7 @@ void RspHandler::handleEtcdRsp(const std::shared_ptr<EtcdRspItem> &item) const
             {
                 case ETCD_CAS_REFRESH:
                     handleCommon(item->respContent);
+                    g_app.updateLastHeartbeat(item->reqInfo.startTimeMs / 1000);
                     break;
                 default:
                     break;
@@ -324,7 +325,7 @@ int EtcdHandle::createCAS(int ttl, const std::string &keyvalue) const
     return -1;
 }
 
-int EtcdHandle::refreshCAS(int ttl, const std::string &prevValue)
+int EtcdHandle::refreshCAS(int ttl, const std::string &prevValue, const bool sync)
 {
     std::string etcdUrl = _etcdHost->getRouterHost();
 
@@ -335,33 +336,69 @@ int EtcdHandle::refreshCAS(int ttl, const std::string &prevValue)
     httpReq->setPrevExist(true);
     httpReq->setPrevValue(prevValue);
 
-    EtcdRequestInfo etcdReqInfo;
-    etcdReqInfo.startTimeMs = TNOWMS;
-    etcdReqInfo.action = ETCD_CAS_REFRESH;
-    etcdReqInfo.current = NULL;
-
-    httpReq->getHostPort(etcdReqInfo.etcdHost, etcdReqInfo.etcdPort);
-    getModuleInfo(
-        etcdReqInfo.appName, etcdReqInfo.moduleName, etcdReqInfo.groupName, etcdReqInfo.serverName);
-    etcdReqInfo.ttl = ttl;
-    etcdReqInfo.value = "prevValue=" + prevValue;
-
-    TC_HttpAsync::RequestCallbackPtr callback = new EtcdRequestCallback(etcdReqInfo, _rspHandler);
-
-    TLOGDEBUG(FILE_FUN << httpReq->dumpURL() << "|" << prevValue << endl);
-
-    int rc = _asyncHttp.doAsyncRequest(httpReq->getTCHttpRequest(), callback);
-    if (rc != 0)
+    if (sync)
     {
+        std::string resp;
+        int rc = httpReq->doRequest(DEFAULT_HTTP_REQUEST_TIMEOUT, &resp);
+        if (rc != 0)
+        {
+            TLOGERROR(FILE_FUN << httpReq->dumpURL() << "|" << prevValue << "| error:" << rc << endl);
+            return -1;
+        }
+
+        EtcdHttpParser p;
+        if (p.parseContent(resp) != 0)
+        {
+            TLOGERROR(FILE_FUN << resp << "parse error" << endl);
+            return -1;
+        }
+
+        // 在ETCD的HTTP API中，对Key的请求根据body内容的不同，返回的action字段也不同。
+        // PUT方法中，请求body中存在 prevExist=true时，action为update
+        // prevExist=false时，action为create； 其他为set。
+        std::string action;
+        rc = p.getAction(&action);
+        if (rc == 0 && action == "compareAndSwap")
+        {
+            TLOGDEBUG(FILE_FUN << " refreshCAS [" << etcdUrl << " : " << prevValue << "] succ."
+                << "resp : " << resp << endl);
+            return 0;
+        }
+
+        TLOGERROR(FILE_FUN << " refreshCAS [" << etcdUrl << " : " << prevValue << "] failed."
+            << "ETCD resp content : " << resp << endl);
+    }
+    else
+    {
+        EtcdRequestInfo etcdReqInfo;
+        etcdReqInfo.startTimeMs = TNOWMS;
+        etcdReqInfo.action = ETCD_CAS_REFRESH;
+        etcdReqInfo.current = NULL;
+
+        httpReq->getHostPort(etcdReqInfo.etcdHost, etcdReqInfo.etcdPort);
+        getModuleInfo(
+            etcdReqInfo.appName, etcdReqInfo.moduleName, etcdReqInfo.groupName, etcdReqInfo.serverName);
+        etcdReqInfo.ttl = ttl;
+        etcdReqInfo.value = "prevValue=" + prevValue;
+
+        TC_HttpAsync::RequestCallbackPtr callback = new EtcdRequestCallback(etcdReqInfo, _rspHandler);
+
+        TLOGDEBUG(FILE_FUN << httpReq->dumpURL() << "|" << prevValue << endl);
+
+        int rc = _asyncHttp.doAsyncRequest(httpReq->getTCHttpRequest(), callback);
+        if (rc == 0)
+        {
+            return rc;
+        }
+
         std::string s = "send req to " + etcdReqInfo.etcdHost + ":" +
-                        TC_Common::tostr(etcdReqInfo.etcdPort) +
-                        ",failure,ret=" + TC_Common::tostr(rc);
+            TC_Common::tostr(etcdReqInfo.etcdPort) +
+            ",failure,ret=" + TC_Common::tostr(rc);
         TLOGERROR(FILE_FUN << etcdReqInfo.toString() << "|" << s << "strerror = " << strerror(errno)
-                           << endl);
-        return -1;
+            << endl);
     }
 
-    return 0;
+    return -1;
 }
 
 int EtcdHandle::watchRouterMaster() const

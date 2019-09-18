@@ -786,6 +786,19 @@ int DbHandle::getVersion(const string &sModuleName)
 
     return iRet;
 }
+
+int DbHandle::getVersion(map<string, int> &version)
+{
+    TC_ThreadLock::Lock lock(_lock);
+    map<string, PackTable>::const_iterator it;
+    for (it = _mapPackTables->begin(); it != _mapPackTables->end(); it++)
+    {
+        version[it->first] = it->second.info.version;
+    }
+
+    return 0;
+}
+
 int DbHandle::getSwitchType(const string &sModuleName)
 {
     int iRet = -1;  // 业务模块不存在
@@ -819,6 +832,18 @@ int DbHandle::getPackTable(const string &sModuleName, PackTable &packTable)
     return iRet;
 }
 
+bool DbHandle::checkModule(const string &sModuleName)
+{
+    TC_ThreadLock::Lock lock(_lock);
+    map<string, PackTable>::const_iterator it = _mapPackTables->find(sModuleName);
+    if (it != _mapPackTables->end())
+    {
+        return true;
+    }
+
+    return false;
+}
+
 int DbHandle::getMasterIdc(const string &sModuleName, string &idc)
 {
     int iRet = -1;  // 业务模块不存在
@@ -835,10 +860,10 @@ int DbHandle::getMasterIdc(const string &sModuleName, string &idc)
     return iRet;
 }
 
-int DbHandle::loadSwitchInfo()
+int DbHandle::loadSwitchInfo(const bool isUpgrade)
 {
     TC_ThreadLock::Lock lock(_lock);
-    g_app.loadSwitchInfo(_mapPackTables);
+    g_app.loadSwitchInfo(_mapPackTables, isUpgrade);
     return 0;
 }
 
@@ -888,6 +913,13 @@ int DbHandle::getModuleInfos(map<string, ModuleInfo> &info)
     return 0;
 }
 
+int DbHandle::getRouterInfos(map<string, PackTable> &info)
+{
+    TC_ThreadLock::Lock lock(_lock);
+    info = *_mapPackTables;
+    return 0;
+}
+
 int DbHandle::getModuleList(vector<string> &moduleList)
 {
     TC_ThreadLock::Lock lock(_lock);
@@ -919,7 +951,7 @@ bool DbHandle::hasTransferingLoc(const string &sModuleName, const string &sGroup
                             << " pthread_id: " << pthread_self() << " module:" << sModuleName
                             << " group: " << sGroupName << endl;
 
-    TC_ThreadLock::Lock lock(_lock);
+    TC_ThreadLock::Lock lock(_transLock);
     map<string, map<string, TransferInfo>>::iterator it = _mapTransferInfos.find(sModuleName);
     if (it != _mapTransferInfos.end())
     {
@@ -1517,6 +1549,8 @@ int DbHandle::defragDbRecord(const string &sModuleName,
 
         vOldRecord = oldRecords;
         vNewRecord = newPackTable.recordList;
+
+        TC_ThreadLock::Lock lock(_dbLock);
         return updateVersion(sModuleName);
     }
     catch (TC_Mysql_Exception &ex)
@@ -3792,6 +3826,7 @@ bool DbHandle::doTransaction(const vector<string> &vSqlSet, string &sErrMsg)
 
 int DbHandle::addMemTransferMutexCond(const TransferInfo &transferInfo)
 {
+    TC_ThreadLock::Lock lock(_transLock);
     map<string, map<string, TransferMutexCondPtr>>::iterator _it =
         _mapTransferMutexCond.find(transferInfo.moduleName);
     if (_it != _mapTransferMutexCond.end())
@@ -3924,3 +3959,7 @@ void DbHandle::downgrade()
     clearTransferInfos();
 }
 
+void DbHandle::upgrade()
+{
+    initCheck();
+}

@@ -17,7 +17,7 @@ module DCache
 //属性上报消息头
 struct StatPropMsgHead
 {
-      0 require string moduleName;          //模块name
+      0 require string moduleName;          //app.servername
       1 require string ip;                  //ip
       2 require string propertyName;        //属性name
       3 optional string setName;            //set名  
@@ -40,10 +40,9 @@ struct StatPropMsgBody
      0 require vector<StatPropInfo> vInfo;  //上报信息
 };
 
-// 属性上报消息头
 struct StatPropMsgKey
 {
-    0 require  string moduleName;                   //模块name
+    0 require  string moduleName;                   //app.servername
     1 require  string ip;                           //ip
     2 optional string setName;                      //set名
     3 optional string setArea;                      //set地区名
@@ -52,20 +51,50 @@ struct StatPropMsgKey
 
 key[StatPropMsgKey, moduleName, ip, setName, setArea, setID];
 
-// 属性上报消息体
 struct StatPropMsgValue
 {
     0 require map<string, StatPropInfo> statInfo;	//上报信息，key为属性名
 };
 
+////////////////
+struct QueryPropCond
+{
+    0 require string moduleName;    //Dcache模块名
+    1 require string serverName;    //服务名 DCache.xxx, 不填表示查询模块下所有服务合并统计数据，填"*"表示列出所有服务的独立数据
+    2 require vector<string> date;  //需要查询的日期，日期格式20190508
+    3 require string startTime;     //e.g. 0800
+    4 require string endTime;       //e.g. 2360
+};
+
+struct QueriedProp
+{
+    0 require string timeStamp;     //e.g. 0800, 为空表示全天合并数据
+    1 require map<string, double> propData;   //<属性名，属性值>
+};
+
+struct QueriedResult
+{
+    0 require string moduleName;    //Dcache模块名
+    1 require string serverName;    //服务名 DCache.xxx，服务名为空表示result是模块所有服务合并数据
+    2 require string date;          //e.g. 20190508
+    3 require vector<QueriedProp> data;
+};
+
 interface Property
 {
       /**
-      * 上报属性统计信息   Prop = property
+      * 上报属性统计信息
       * @param statmsg,             上报信息
       * @return int,                返回0表示成功
       */
       int reportPropMsg( map<StatPropMsgHead, StatPropMsgBody> statmsg );
+
+      /**
+      * 查询属性统计信息
+      * @return int,                返回0表示成功
+      */
+      int queryPropData(QueryPropCond req, out vector<QueriedResult> rsp);
+
 };
 
 

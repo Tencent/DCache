@@ -297,6 +297,7 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
 
 SwitchThread::SwitchThread()
 {
+    _enable    = false;
     _terminate = false;
     _lastNotifyTime = 0;
 }
@@ -314,9 +315,9 @@ SwitchThread::~SwitchThread()
 
 void SwitchThread::terminate()
 {
-    _terminate = true;
     g_app.terminateSwitchThreads();
     TC_ThreadLock::Lock sync(*this);
+    _terminate = true;
     notifyAll();
     TLOGDEBUG(FILE_FUN << "DoSwitchThread  terminate() succ" << endl);
 }
@@ -325,6 +326,8 @@ void SwitchThread::init(AdminProxyWrapperPtr adminProxy, std::shared_ptr<DbHandl
 {
     try
     {
+        _terminate = false;
+        _enable = g_app.getGlobalConfig().checkEnableSwitch();
         _switchCheckInterval = g_app.getGlobalConfig().getSwitchCheckInterval(10);
         _switchTimeout = g_app.getGlobalConfig().getSwitchTimeOut(300);
         _slaveTimeout = g_app.getGlobalConfig().getSlaveTimeOut(60);
@@ -367,8 +370,15 @@ void SwitchThread::run()
     }
 
     enum RouterType lastType = g_app.getRouterType();
-    while (!_terminate)
+    while (!_terminate && _enable)
     {
+        if (!_enable)
+        {
+            TC_ThreadLock::Lock sync(*this);
+            timedWait(1000);
+            continue;
+        }
+
         if (g_app.isEnableEtcd() && g_app.getRouterType() == ROUTER_SLAVE)
         {
             if (lastType == ROUTER_MASTER)
@@ -1233,11 +1243,9 @@ void DoSwitchThread::doSwitchMirror(const SwitchWork &switchWork)
 {
     // 镜像没有备机，不存在镜像备机切换
     assert(switchWork.type == 2);
-    assert(switchWork.slaveServer.empty());
 
     string moduleName = switchWork.moduleName;
     string groupName = switchWork.groupName;
-    string slaveName = switchWork.slaveServer;
     string mirrorName = switchWork.mirrorServer;
     string mirrorIdc = switchWork.mirrorIdc;
     string mirrorMaster = switchWork.mirrorServer;

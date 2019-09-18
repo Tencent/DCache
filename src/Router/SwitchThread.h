@@ -242,6 +242,7 @@ private:
 private:
     std::shared_ptr<DbHandle> _dbHandle;
     bool _terminate;
+	bool _enable;
     int _switchTimeout;
     int _switchCheckInterval;  //自动切换check间隔
     time_t _lastNotifyTime;

@@ -27,7 +27,7 @@ using namespace tars;
 using namespace DCache;
 
 typedef MultiHashMapMallocDCache<SemLockPolicyDCache, ShmStorePolicyDCache> MultiHashMap;
-#define CACHE_VER  "Shm_MKCache_1.0.0_Malloc"
+#define CACHE_VER  "Shm_MKVCache_1.0.0"
 
 extern MultiHashMap g_HashMap;
 extern UnpackTable g_route_table;
