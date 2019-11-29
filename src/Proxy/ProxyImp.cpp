@@ -342,7 +342,7 @@ int ProxyImp::insertKV(const SetKVReq &req, TarsCurrentPtr current)
     current->setResponse(false);
     try
     {
-        WCachePrxCallbackPtr cb = new SetKVCallback(current, req, objectName, TNOWMS);
+        WCachePrxCallbackPtr cb = new InsertKVCallback(current, req, objectName, TNOWMS);
         prxWCache->async_insertKV(cb, req);
     }
     catch (exception &ex)
