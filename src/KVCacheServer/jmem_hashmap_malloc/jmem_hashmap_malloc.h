@@ -19,7 +19,7 @@
 #include "dcache_jmem_policy.h"
 #include "tup/Tars.h"
 
-namespace tars
+namespace DCache
 {
     /************************************************************************
      基本说明如下:

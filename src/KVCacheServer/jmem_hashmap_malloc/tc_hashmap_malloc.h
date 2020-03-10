@@ -22,28 +22,26 @@
 #include "util/tc_mem_vector.h"
 #include "util/tc_pack.h"
 #include "tc_malloc_chunk.h"
-//#include "util/tc_functor.h"
 #include "util/tc_hash_fun.h"
 #include "util/tc_thread.h"
 #include "CacheShare.h"
 
-using namespace DCache;
 
-namespace tars
+namespace DCache
 {
-    /////////////////////////////////////////////////
-    // 说明: hashmap类(类似于TC_HashMapCompact，只是使用的内存分配器不一样，所以初始化时略有不同）
-    // Author : jarodruan@tencent.com              
-    /////////////////////////////////////////////////
-    /**
-    * Hash map异常类
-    */
-    struct TC_HashMapMalloc_Exception : public TC_Exception
-    {
-        TC_HashMapMalloc_Exception(const string &buffer) : TC_Exception(buffer) {};
-        TC_HashMapMalloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
-        ~TC_HashMapMalloc_Exception() throw() {};
-    };
+/////////////////////////////////////////////////
+// 说明: hashmap类(类似于TC_HashMapCompact，只是使用的内存分配器不一样，所以初始化时略有不同）
+// Author : jarodruan@tencent.com
+/////////////////////////////////////////////////
+/**
+* Hash map异常类
+*/
+struct TC_HashMapMalloc_Exception : public tars::TC_Exception
+{
+    TC_HashMapMalloc_Exception(const string &buffer) : TC_Exception(buffer) {};
+    TC_HashMapMalloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
+    ~TC_HashMapMalloc_Exception() throw() {};
+};
 
     ////////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1272,7 +1270,7 @@ namespace tars
             , _pDataAllocator(new BlockAllocator(this))
             , _lock_end(this, 0, 0, 0)
             , _end(this, (uint32_t)(-1))
-            , _hashf(hash_new<string>())
+            , _hashf(tars::hash_new<string>())
         {
         }
 
@@ -2155,7 +2153,7 @@ namespace tars
         /**
          * hash对象
          */
-        TC_MemVector<tagHashItem>   _hash;
+        tars::TC_MemVector<tagHashItem>   _hash;
 
         /**
          * 修改数据块

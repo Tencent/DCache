@@ -31,14 +31,14 @@ namespace HashMap
 {
     bool judgeValue(TarsDecode &decode, const string &value, Op op, const string &type, uint8_t tag, const string &sDefault, bool isRequire)
     {
-        TarsInputStream<BufferReader> isk;
+        tars::TarsInputStream<tars::BufferReader> isk;
         isk.setBuffer(decode.getBuffer().c_str(), decode.getBuffer().length());
 
         if (type == TYPE_BYTE)
         {
-            tars::Char n = TC_Common::strto<tars::Char>(sDefault);
+            tars::Char n = tars::TC_Common::strto<tars::Char>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Char m = TC_Common::strto<tars::Char>(value);
+            tars::Char m = tars::TC_Common::strto<tars::Char>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -56,9 +56,9 @@ namespace HashMap
         }
         else if (type == TYPE_SHORT)
         {
-            tars::Short n = TC_Common::strto<tars::Short>(sDefault);
+            tars::Short n = tars::TC_Common::strto<tars::Short>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Short m = TC_Common::strto<tars::Short>(value);
+            tars::Short m = tars::TC_Common::strto<tars::Short>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -76,9 +76,9 @@ namespace HashMap
         }
         else if (type == TYPE_INT)
         {
-            tars::Int32 n = TC_Common::strto<tars::Int32>(sDefault);
+            tars::Int32 n = tars::TC_Common::strto<tars::Int32>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Int32 m = TC_Common::strto<tars::Int32>(value);
+            tars::Int32 m = tars::TC_Common::strto<tars::Int32>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -96,9 +96,9 @@ namespace HashMap
         }
         else if (type == TYPE_LONG)
         {
-            tars::Int64 n = TC_Common::strto<tars::Int64>(sDefault);
+            tars::Int64 n = tars::TC_Common::strto<tars::Int64>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Int64 m = TC_Common::strto<tars::Int64>(value);
+            tars::Int64 m = tars::TC_Common::strto<tars::Int64>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -136,9 +136,9 @@ namespace HashMap
         }
         else if (type == TYPE_FLOAT)
         {
-            tars::Float n = TC_Common::strto<tars::Float>(sDefault);
+            tars::Float n = tars::TC_Common::strto<tars::Float>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Float m = TC_Common::strto<tars::Float>(value);
+            tars::Float m = tars::TC_Common::strto<tars::Float>(value);
             if (op == DCache::EQ)
                 return FLOAT_EQ(n, m);
             else if (op == DCache::NE)
@@ -156,9 +156,9 @@ namespace HashMap
         }
         else if (type == TYPE_DOUBLE)
         {
-            tars::Double n = TC_Common::strto<tars::Double>(sDefault);
+            tars::Double n = tars::TC_Common::strto<tars::Double>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::Double m = TC_Common::strto<tars::Double>(value);
+            tars::Double m = tars::TC_Common::strto<tars::Double>(value);
             if (op == DCache::EQ)
                 return FLOAT_EQ(n, m);
             else if (op == DCache::NE)
@@ -176,9 +176,9 @@ namespace HashMap
         }
         else if (type == TYPE_UINT32)
         {
-            tars::UInt32 n = TC_Common::strto<tars::UInt32>(sDefault);
+            tars::UInt32 n = tars::TC_Common::strto<tars::UInt32>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::UInt32 m = TC_Common::strto<tars::UInt32>(value);
+            tars::UInt32 m = tars::TC_Common::strto<tars::UInt32>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -196,9 +196,9 @@ namespace HashMap
         }
         else if (type == TYPE_UINT16)
         {
-            tars::UInt16 n = TC_Common::strto<tars::UInt16>(sDefault);
+            tars::UInt16 n = tars::TC_Common::strto<tars::UInt16>(sDefault);
             isk.read(n, tag, isRequire);
-            tars::UInt16 m = TC_Common::strto<tars::UInt16>(value);
+            tars::UInt16 m = tars::TC_Common::strto<tars::UInt16>(value);
             if (op == DCache::EQ)
                 return n == m;
             else if (op == DCache::NE)
@@ -222,9 +222,9 @@ namespace HashMap
     }
     string updateValue(const map<string, DCache::UpdateValue> &mpValue, const TC_Multi_HashMap_Malloc::FieldConf &fieldConf, const string &sStreamValue)
     {
-        TarsInputStream<BufferReader> isk;
+	    tars::TarsInputStream<tars::BufferReader> isk;
         isk.setBuffer(sStreamValue.c_str(), sStreamValue.length());
-        TarsOutputStream<BufferWriter> osk;
+	    tars::TarsOutputStream<tars::BufferWriter> osk;
 
         vector<string>::const_iterator it = fieldConf.vtValueName.begin();
         for (; it != fieldConf.vtValueName.end(); it++)
@@ -239,14 +239,14 @@ namespace HashMap
 
             if (type == TYPE_BYTE)
             {
-                tars::Char n = TC_Common::strto<tars::Char>(sDefault);
+                tars::Char n = tars::TC_Common::strto<tars::Char>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Char k;
                 if (it != mpValue.end())
                 {
-                    tars::Char m = TC_Common::strto<tars::Char>(it->second.value);
+                    tars::Char m = tars::TC_Common::strto<tars::Char>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -264,14 +264,14 @@ namespace HashMap
             }
             else if (type == TYPE_SHORT)
             {
-                tars::Short n = TC_Common::strto<tars::Short>(sDefault);
+                tars::Short n = tars::TC_Common::strto<tars::Short>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Short k;
                 if (it != mpValue.end())
                 {
-                    tars::Short m = TC_Common::strto<tars::Short>(it->second.value);
+                    tars::Short m = tars::TC_Common::strto<tars::Short>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -289,14 +289,14 @@ namespace HashMap
             }
             else if (type == TYPE_INT)
             {
-                tars::Int32 n = TC_Common::strto<tars::Int32>(sDefault);
+                tars::Int32 n = tars::TC_Common::strto<tars::Int32>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Int32 k;
                 if (it != mpValue.end())
                 {
-                    tars::Int32 m = TC_Common::strto<tars::Int32>(it->second.value);
+                    tars::Int32 m = tars::TC_Common::strto<tars::Int32>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -314,14 +314,14 @@ namespace HashMap
             }
             else if (type == TYPE_LONG)
             {
-                tars::Int64 n = TC_Common::strto<tars::Int64>(sDefault);
+                tars::Int64 n = tars::TC_Common::strto<tars::Int64>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Int64 k;
                 if (it != mpValue.end())
                 {
-                    tars::Int64 m = TC_Common::strto<tars::Int64>(it->second.value);
+                    tars::Int64 m = tars::TC_Common::strto<tars::Int64>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -363,14 +363,14 @@ namespace HashMap
             }
             else if (type == TYPE_FLOAT)
             {
-                tars::Float n = TC_Common::strto<tars::Float>(sDefault);
+                tars::Float n = tars::TC_Common::strto<tars::Float>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Float k;
                 if (it != mpValue.end())
                 {
-                    tars::Float m = TC_Common::strto<tars::Float>(it->second.value);
+                    tars::Float m = tars::TC_Common::strto<tars::Float>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -388,14 +388,14 @@ namespace HashMap
             }
             else if (type == TYPE_DOUBLE)
             {
-                tars::Double n = TC_Common::strto<tars::Double>(sDefault);
+                tars::Double n = tars::TC_Common::strto<tars::Double>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::Double k;
                 if (it != mpValue.end())
                 {
-                    tars::Double m = TC_Common::strto<tars::Double>(it->second.value);
+                    tars::Double m = tars::TC_Common::strto<tars::Double>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -413,14 +413,14 @@ namespace HashMap
             }
             else if (type == TYPE_UINT32)
             {
-                tars::UInt32 n = TC_Common::strto<tars::UInt32>(sDefault);
+                tars::UInt32 n = tars::TC_Common::strto<tars::UInt32>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::UInt32 k;
                 if (it != mpValue.end())
                 {
-                    tars::UInt32 m = TC_Common::strto<tars::UInt32>(it->second.value);
+                    tars::UInt32 m = tars::TC_Common::strto<tars::UInt32>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -438,14 +438,14 @@ namespace HashMap
             }
             else if (type == TYPE_UINT16)
             {
-                tars::UInt16 n = TC_Common::strto<tars::UInt16>(sDefault);
+                tars::UInt16 n = tars::TC_Common::strto<tars::UInt16>(sDefault);
                 isk.read(n, tag, isRequire);
 
                 map<string, DCache::UpdateValue>::const_iterator it = mpValue.find(sValueName);
                 tars::UInt16 k;
                 if (it != mpValue.end())
                 {
-                    tars::UInt16 m = TC_Common::strto<tars::UInt16>(it->second.value);
+                    tars::UInt16 m = tars::TC_Common::strto<tars::UInt16>(it->second.value);
                     if (it->second.op == DCache::SET)
                         k = m;
                     else if (it->second.op == DCache::ADD)
@@ -491,14 +491,14 @@ namespace HashMap
 
     string TarsDecode::read(uint8_t tag, const string& type, const string &sDefault, bool isRequire)
     {
-        TarsInputStream<BufferReader> isk;
+	    tars::TarsInputStream<tars::BufferReader> isk;
         isk.setBuffer(m_sBuf.c_str(), m_sBuf.length());
         string s;
 
         if (type == TYPE_BYTE)
         {
             tars::Char n;
-            n = TC_Common::strto<tars::Char>(sDefault);
+            n = tars::TC_Common::strto<tars::Char>(sDefault);
             isk.read(n, tag, isRequire);
 
             //用这种方法而不用TC_Common::tostr()
@@ -510,23 +510,23 @@ namespace HashMap
         else if (type == TYPE_SHORT)
         {
             tars::Short n;
-            n = TC_Common::strto<tars::Short>(sDefault);
+            n = tars::TC_Common::strto<tars::Short>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_INT)
         {
             tars::Int32 n;
-            n = TC_Common::strto<tars::Int32>(sDefault);
+            n = tars::TC_Common::strto<tars::Int32>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_LONG)
         {
             tars::Int64 n;
-            n = TC_Common::strto<tars::Int64>(sDefault);
+            n = tars::TC_Common::strto<tars::Int64>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_STRING)
         {
@@ -536,30 +536,30 @@ namespace HashMap
         else if (type == TYPE_FLOAT)
         {
             tars::Float n;
-            n = TC_Common::strto<tars::Float>(sDefault);
+            n = tars::TC_Common::strto<tars::Float>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_DOUBLE)
         {
             tars::Double n;
-            n = TC_Common::strto<tars::Double>(sDefault);
+            n = tars::TC_Common::strto<tars::Double>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_UINT32)
         {
             tars::UInt32 n;
-            n = TC_Common::strto<tars::UInt32>(sDefault);
+            n = tars::TC_Common::strto<tars::UInt32>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else if (type == TYPE_UINT16)
         {
             tars::UInt16 n;
-            n = TC_Common::strto<tars::UInt16>(sDefault);
+            n = tars::TC_Common::strto<tars::UInt16>(sDefault);
             isk.read(n, tag, isRequire);
-            s = TC_Common::tostr(n);
+            s = tars::TC_Common::tostr(n);
         }
         else
         {

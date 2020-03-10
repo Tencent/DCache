@@ -22,7 +22,7 @@
 
 using namespace std;
 
-namespace tars
+namespace DCache
 {
     static const size_t kPageShift = 15;
     static const size_t kNumClasses = 78;

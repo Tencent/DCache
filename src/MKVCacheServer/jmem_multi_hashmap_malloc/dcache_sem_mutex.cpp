@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include "dcache_sem_mutex.h"
 
-namespace tars
+namespace DCache
 {
 
     DCache_SemMutex::DCache_SemMutex()
@@ -172,70 +172,70 @@ namespace tars
             return ret;
         }
     }
-
-    ProcessSem::~ProcessSem()
-    {
-        if (_bInit)
-        {
-            sem_destroy(&_sem);
-            _bInit = false;
-        }
-    }
-
-    void ProcessSem::init(int pshared/* = 1*/, unsigned int value /*= 1*/)
-    {
-        if (_bInit)
-        {
-            return;
-        }
-        int ret = sem_init(&_sem, pshared, value);
-        if (0 != ret)
-        {
-            throw TC_ProcessSem_Exception("[ProcessSem::init] fail. error:" + string(strerror(errno)));
-        }
-        _bInit = true;
-    }
-
-    int ProcessSem::lock()
-    {
-        int ret = -1;
-        do
-        {
-            ret = sem_wait(&_sem);
-        } while ((ret == -1) && (errno == EINTR));
-        return ret;
-    }
-
-
-    int ProcessSem::unlock()
-    {
-        int ret = -1;
-        do
-        {
-            ret = sem_post(&_sem);
-
-        } while ((ret == -1) && (errno == EINTR));
-        return ret;
-    }
-
-    bool ProcessSem::tryLock()
-    {
-        int ret = sem_trywait(&_sem);
-        if (ret == -1)
-        {
-            if (errno == EAGAIN)
-            {
-                //无法获得锁
-                return false;
-            }
-            else
-            {
-                throw TC_ProcessSem_Exception("[ProcessSem::tryLock] fail. error:" + string(strerror(errno)));
-            }
-        }
-        return true;
-    }
-
+//
+//    ProcessSem::~ProcessSem()
+//    {
+//        if (_bInit)
+//        {
+//            sem_destroy(&_sem);
+//            _bInit = false;
+//        }
+//    }
+//
+//    void ProcessSem::init(int pshared/* = 1*/, unsigned int value /*= 1*/)
+//    {
+//        if (_bInit)
+//        {
+//            return;
+//        }
+//        int ret = sem_init(&_sem, pshared, value);
+//        if (0 != ret)
+//        {
+//            throw TC_ProcessSem_Exception("[ProcessSem::init] fail. error:" + string(strerror(errno)));
+//        }
+//        _bInit = true;
+//    }
+//
+//    int ProcessSem::lock()
+//    {
+//        int ret = -1;
+//        do
+//        {
+//            ret = sem_wait(&_sem);
+//        } while ((ret == -1) && (errno == EINTR));
+//        return ret;
+//    }
+//
+//
+//    int ProcessSem::unlock()
+//    {
+//        int ret = -1;
+//        do
+//        {
+//            ret = sem_post(&_sem);
+//
+//        } while ((ret == -1) && (errno == EINTR));
+//        return ret;
+//    }
+//
+//    bool ProcessSem::tryLock()
+//    {
+//        int ret = sem_trywait(&_sem);
+//        if (ret == -1)
+//        {
+//            if (errno == EAGAIN)
+//            {
+//                //无法获得锁
+//                return false;
+//            }
+//            else
+//            {
+//                throw TC_ProcessSem_Exception("[ProcessSem::tryLock] fail. error:" + string(strerror(errno)));
+//            }
+//        }
+//        return true;
+//    }
+//
 
 
 }

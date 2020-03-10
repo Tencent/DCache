@@ -17,7 +17,7 @@
 #include "util/tc_thread_mutex.h"
 #include "dcache_sem_mutex.h"
 #include "util/tc_mmap.h"
-namespace tars
+namespace DCache
 {
     //////////////////////////////////////////////////////////////////////
     // 存储策略: 内存, 共享内存, mmap(文件)

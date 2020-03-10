@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #include <string>
 #include <vector>
-#include "AdminReg.h"
+#include "framework/AdminReg.h"
 #include "DbHandle.h"
 #include "ProxyWrapper.h"
 #include "global.h"

@@ -15,7 +15,8 @@
 #include <gtest/gtest.h>
 
 #include "RouterTableInfoFactory.h"
-#include "MockRouterHandle.h"
+#include "MockClass/MockRouterHandle.h"
+#include "ProxyShare.h"
 
 using namespace std;
 
@@ -78,7 +79,7 @@ TEST(RouterTableInfoTest,  update)
 
     RouterTableInfo routerTableInfo(MODULE1, "Path2StoreRouterData", shared_ptr<RouterHandle>(pMock));
     EXPECT_EQ(0, routerTableInfo.initRouterTable());
-    EXPECT_EQ(ET_SUCC, routerTableInfo.update());
+    EXPECT_EQ(DCache::ET_SUCC, routerTableInfo.update());
 
 }
 

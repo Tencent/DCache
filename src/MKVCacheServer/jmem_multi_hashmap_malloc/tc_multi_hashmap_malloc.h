@@ -26,10 +26,10 @@
 #include "CacheShare.h"
 #include "tc_malloc_chunk.h"
 //#include "tc_functor.h"
-#include "tc_hash_fun.h"
+#include "util/tc_hash_fun.h"
 
 
-namespace tars
+namespace DCache
 {
     /////////////////////////////////////////////////
     // 说明: 支持多key的hashmap类
@@ -40,10 +40,10 @@ namespace tars
     /**
     * Multi Hash map异常类
     */
-    struct TC_Multi_HashMap_Malloc_Exception : public TC_Exception
+    struct TC_Multi_HashMap_Malloc_Exception : public tars::TC_Exception
     {
         TC_Multi_HashMap_Malloc_Exception(const string &buffer) : TC_Exception(buffer) {};
-        TC_Multi_HashMap_Malloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
+//        TC_Multi_HashMap_Malloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
         ~TC_Multi_HashMap_Malloc_Exception() throw() {};
     };
 
@@ -2443,7 +2443,7 @@ namespace tars
             , _lock_end(this, 0, 0, 0)
             , _end(this, (uint32_t)(-1))
             , _mk_end(this, (uint32_t)(-1))
-            , _hashf(magic_string_hash())
+            , _hashf(tars::magic_string_hash())
         {
         }
 
@@ -4089,12 +4089,12 @@ namespace tars
         /**
          * 联合主键hash索引区
          */
-        TC_MemVector<tagHashItem>   _hash;
+        tars::TC_MemVector<tagHashItem>   _hash;
 
         /**
         * 主key hash索引区
         */
-        TC_MemVector<tagMainKeyHashItem>	_hashMainKey;
+        tars::TC_MemVector<tagMainKeyHashItem>	_hashMainKey;
 
         /**
          * 修改数据块

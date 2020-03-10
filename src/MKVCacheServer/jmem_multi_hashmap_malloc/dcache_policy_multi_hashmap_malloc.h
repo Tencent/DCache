@@ -21,7 +21,7 @@
 #include "NormalHash.h"
 #include "util/tc_shm.h"
 #include <math.h>
-namespace tars
+namespace DCache
 {
     template<typename LockPolicy,
         template<class, class> class StorePolicy>

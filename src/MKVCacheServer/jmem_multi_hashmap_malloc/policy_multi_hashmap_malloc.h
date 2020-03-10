@@ -17,7 +17,7 @@
 #include "tc_multi_hashmap_malloc.h"
 #include "util/tc_autoptr.h"
 
-namespace tars
+namespace DCache
 {
 
     /************************************************************************
