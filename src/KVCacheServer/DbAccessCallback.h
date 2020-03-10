@@ -105,7 +105,7 @@ struct BatchParam : public TC_HandleBase
     BatchParam() :bEnd(false) {}
     BatchParam(int iCount, const vector<SKeyValue> vtValue) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->vtValue = vtValue;
     }
 
@@ -122,7 +122,7 @@ struct BatchParam : public TC_HandleBase
         mutex.unlock();
     }
 
-    TC_Atomic count;
+    std::atomic<int> count;
     vector<SKeyValue> vtValue;
     TC_ThreadMutex mutex;
     bool bEnd;
@@ -135,7 +135,7 @@ struct DelBatchParam : public TC_HandleBase
     DelBatchParam() :bEnd(false) {}
     DelBatchParam(int iCount, const vector<string> &vtKey, DCache::RemoveKVBatchRsp &rsp) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->vtKey = vtKey;
         result = rsp;
     }
@@ -149,7 +149,7 @@ struct DelBatchParam : public TC_HandleBase
 
     DCache::RemoveKVBatchRsp result;
 
-    TC_Atomic count;
+    std::atomic<int> count;
     vector<string> vtKey;
     TC_ThreadMutex mutex;
     bool bEnd;

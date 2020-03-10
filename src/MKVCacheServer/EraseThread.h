@@ -110,7 +110,7 @@ protected:
 
     unsigned int _eraseThreadCount;
 
-    TC_Atomic _activeJmemCount;
+    std::atomic<int> _activeJmemCount;
 
 };
 

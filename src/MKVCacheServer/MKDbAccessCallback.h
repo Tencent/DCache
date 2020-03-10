@@ -22,14 +22,14 @@ struct SelectBatchParam : public TC_HandleBase
     SelectBatchParam() :bEnd(false) {}
     SelectBatchParam(int iCount, const vector<MainKeyValue>& vtKeyValue) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->vtKeyValue.reserve(iCount);
         this->vtKeyValue = vtKeyValue;
     }
 
     SelectBatchParam(int iCount, const vector<DCache::Record>& vtData) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->vtData = vtData;
     }
 
@@ -70,7 +70,7 @@ struct SelectBatchParam : public TC_HandleBase
         return bResult;
     }
 
-    TC_Atomic count;
+    std::atomic<int> count;
     vector<MainKeyValue> vtKeyValue;
     TC_ThreadMutex mutex;
 
@@ -86,7 +86,7 @@ struct InsertBatchParam : public TC_HandleBase
     InsertBatchParam() :bEnd(false) {}
     InsertBatchParam(int iCount, const map<tars::Int32, tars::Int32>& mpFailIndexReason) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->rsp.rspData = mpFailIndexReason;
     }
 
@@ -116,7 +116,7 @@ struct InsertBatchParam : public TC_HandleBase
         return bResult;
     }
 
-    TC_Atomic count;
+	std::atomic<int> count;
     MKVBatchWriteRsp rsp;
     TC_ThreadMutex mutex;
     bool bEnd;
@@ -130,7 +130,7 @@ struct UpdateBatchParam : public TC_HandleBase
     UpdateBatchParam() :bEnd(false) {}
     UpdateBatchParam(int iCount, const map<tars::Int32, tars::Int32>& mpFailIndexReason) :bEnd(false)
     {
-        count.set(iCount);
+        count = iCount;
         this->rsp.rspData = mpFailIndexReason;
     }
 
@@ -160,7 +160,7 @@ struct UpdateBatchParam : public TC_HandleBase
         return bResult;
     }
 
-    TC_Atomic count;
+	std::atomic<int> count;
     MKVBatchWriteRsp rsp;
     TC_ThreadMutex mutex;
     bool bEnd;
@@ -175,7 +175,7 @@ struct DelBatchParam : public TC_HandleBase
     DelBatchParam(TarsCurrentPtr current, int iCount, const map<tars::Int32, tars::Int32>& mRet, const map<string, int> &mIndex) :bEnd(false)
     {
         this->current = current;
-        count.set(iCount);
+        count = iCount;
         this->rsp.rspData = mRet;
         this->mIndex = mIndex;
 
@@ -189,7 +189,7 @@ struct DelBatchParam : public TC_HandleBase
             bFail = true;
         rsp.rspData[iIndex] = iFailReason;
 
-        if (count.dec() <= 0)
+        if ((--count) <= 0)
         {
             if (!bFail)
                 MKWCache::async_response_delMKVBatch(current, ET_SUCC, rsp);
@@ -230,7 +230,7 @@ struct DelBatchParam : public TC_HandleBase
     bool bFail;
 
     TarsCurrentPtr current;
-    TC_Atomic count;
+	std::atomic<int> count;
     MKVBatchWriteRsp rsp;
     map<string, int> mIndex;
     TC_ThreadMutex mutex;

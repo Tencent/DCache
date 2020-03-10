@@ -77,7 +77,7 @@ void EraseThread::createThread()
 
     _isStart = true;
     setRuning(true);
-    _activeJmemCount.set(_eraseThreadCount);
+    _activeJmemCount = _eraseThreadCount;
     pthread_t* pThread = new pthread_t[_eraseThreadCount];
     Arg* pArg = new Arg[_eraseThreadCount];
     for (unsigned int i = 0; i < _eraseThreadCount; ++i)
@@ -131,7 +131,7 @@ void* EraseThread::EraseData(void* pArg)
         }
     }
 
-    if (pthis->_activeJmemCount.dec() < 1)
+    if ((--pthis->_activeJmemCount) < 1)
     {
         TLOGDEBUG("EraseThread all thread finished." << endl);
         pthis->setRuning(false);

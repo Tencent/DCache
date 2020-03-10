@@ -47,7 +47,7 @@ struct TransParam : public TC_HandleBase
 
     TransParam(int iCount) : _end(false), _endPage(false)
     {
-        _count.set(iCount);
+        _count = iCount;
     }
 
     bool setEnd()
@@ -72,7 +72,7 @@ struct TransParam : public TC_HandleBase
         _mutex.lock();
         if (!_end)
         {
-            if (_count.get() == 0)
+            if (_count == 0)
             {
                 bResult = false;
                 _end = true;
@@ -90,7 +90,7 @@ struct TransParam : public TC_HandleBase
     {
         bool bResult = true;
         _mutex.lock();
-        if (_count.dec() > 0 || _end)
+        if ((_count--)>0 || _end)
         {
             bResult = false;
         }
@@ -107,7 +107,7 @@ struct TransParam : public TC_HandleBase
 
     volatile bool  _end;
     volatile bool  _endPage;
-    TC_Atomic 	   _count;
+    std::atomic<int> 	   _count;
     TC_ThreadMutex _mutex;
 };
 
@@ -180,7 +180,7 @@ public:
         ++_slaveHbCount;
     }
     int getSlaveHbCount() {
-        return _slaveHbCount.get();
+        return _slaveHbCount;
     }
     string getConnectHbAddr();
     int masterDowngrade();
@@ -221,7 +221,7 @@ private:
 
     vector<TransferInfo> _transferingInfoList; // 模快处于迁移状态的信息列表
 
-    TC_Atomic	_slaveHbCount;
+    std::atomic<int> _slaveHbCount;
 
 };
 

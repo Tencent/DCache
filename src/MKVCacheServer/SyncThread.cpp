@@ -123,7 +123,7 @@ void* SyncThread::Run(void* arg)
             TC_ThreadPool twpool;
             twpool.init(pthis->getThreadNum());
             twpool.start();
-            TC_Functor<void, TL::TLMaker<time_t>::Result> cmd(pthis, &SyncThread::syncData);
+//            TC_Functor<void, TL::TLMaker<time_t>::Result> cmd(pthis, &SyncThread::syncData);
 
             time_t tNow = TC_TimeProvider::getInstance()->getNow();
             if (tNow - tLastDb >= pthis->_syncInterval)
@@ -131,10 +131,10 @@ void* SyncThread::Run(void* arg)
                 if (g_app.gstat()->serverType() == MASTER)
                 {
                     pthis->sync();
-                    TC_Functor<void, TL::TLMaker<time_t>::Result>::wrapper_type fw(cmd, tNow);
+//                    TC_Functor<void, TL::TLMaker<time_t>::Result>::wrapper_type fw(cmd, tNow);
                     for (size_t i = 0; i < twpool.getThreadNum(); i++)
                     {
-                        twpool.exec(fw);
+                        twpool.exec(std::bind(&SyncThread::syncData, pthis, tNow));
                     }
                     twpool.waitForAllDone();
                     pthis->_syncTime = tNow;
@@ -158,10 +158,11 @@ void* SyncThread::Run(void* arg)
                         {
                             time_t tSyncSlave = tSync - 60;
                             pthis->sync();
-                            TC_Functor<void, TL::TLMaker<time_t>::Result>::wrapper_type fw(cmd, tSyncSlave);
+//                            TC_Functor<void, TL::TLMaker<time_t>::Result>::wrapper_type fw(cmd, tSyncSlave);
                             for (size_t i = 0; i < twpool.getThreadNum(); i++)
                             {
-                                twpool.exec(fw);
+	                            twpool.exec(std::bind(&SyncThread::syncData, pthis, tSyncSlave));
+//	                            twpool.exec(fw);
                             }
                             twpool.waitForAllDone();
                         }

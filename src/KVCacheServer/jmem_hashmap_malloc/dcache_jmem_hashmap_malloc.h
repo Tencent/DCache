@@ -297,8 +297,9 @@ namespace tars
             return _hashMapVec[_pHash->HashRawString(k) % _jmemNum]->set(k, iVersion);
         }
 
-        int update(const string& k, const string& v, Op option, bool bDirty = true, uint32_t iExpireTime = 0, bool bCheckExpire = false, uint32_t iNowTime = -1, string &retValue = "")
-        {
+//        int update(const string& k, const string& v, Op option, bool bDirty = true, uint32_t iExpireTime = 0, bool bCheckExpire = false, uint32_t iNowTime = -1, string &retValue = "")
+	    int update(const string& k, const string& v, Op option, bool bDirty, uint32_t iExpireTime , bool bCheckExpire, uint32_t iNowTime , string &retValue)
+	    {
             return _hashMapVec[_pHash->HashRawString(k) % _jmemNum]->update(k, v, option, bDirty, iExpireTime, bCheckExpire, iNowTime, retValue);
         }
 
@@ -350,31 +351,31 @@ namespace tars
         template<typename C>
         int eraseHashByForce(size_t h, C c)
         {
-            return _hashMapVec[h%_jmemNum]->eraseHashByForce<C>(h, c);
+            return _hashMapVec[h%_jmemNum]->template eraseHashByForce<C>(h, c);
         }
 
         template<typename C>
         int eraseHashByForce(size_t h, C c, vector<string>& vDelK)
         {
-            return _hashMapVec[h%_jmemNum]->eraseHashByForce<C>(h, c, vDelK);
+            return _hashMapVec[h%_jmemNum]->template eraseHashByForce<C>(h, c, vDelK);
         }
 
         template<typename C>
         int getHash(size_t h, vector<pair<string, string> > &vv, C c)
         {
-            return _hashMapVec[h%_jmemNum]->getHash<C>(h, vv, c);
+            return _hashMapVec[h%_jmemNum]->template getHash<C>(h, vv, c);
         }
 
         template<typename C>
         int getHash(size_t h, vector<CacheDataRecord> &vv, C c)
         {
-            return _hashMapVec[h%_jmemNum]->getHash<C>(h, vv, c);
+            return _hashMapVec[h%_jmemNum]->template getHash<C>(h, vv, c);
         }
 
         template<typename C>
         int getHashWithOnlyKey(size_t h, vector<CacheDataRecord> &vv, C c)
         {
-            return _hashMapVec[h%_jmemNum]->getHashWithOnlyKey<C>(h, vv, c);
+            return _hashMapVec[h%_jmemNum]->template getHashWithOnlyKey<C>(h, vv, c);
         }
 
         void getMapHead(vector<TC_HashMapMalloc::tagMapHead> & headVtr)
@@ -487,7 +488,7 @@ namespace tars
             vector<int> iRetVec(_jmemNum, 0);
             for (size_t i = 0; i < _jmemNum; i++)
             {
-                iRetVec[i] = _hashMapVec[i]->syncOnce<C>(iNowTime, c);
+                iRetVec[i] = _hashMapVec[i]->template syncOnce<C>(iNowTime, c);
             }
             bool bOK = true;
             bool bError = false;

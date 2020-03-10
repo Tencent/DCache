@@ -61,7 +61,7 @@ namespace tars
             //将所有信号量的值设置为0
             if (semctl(iSemID, 0, SETALL, arg) == -1)
             {
-                delete arrayShort;
+                delete[] arrayShort;
                 throw DCache_SemMutex_Exception("[TC_SemMutex::init] semctl error:" + string(strerror(errno)));
             }
         }
@@ -70,14 +70,14 @@ namespace tars
             //信号量已经存在
             if (errno != EEXIST)
             {
-                delete arrayShort;
+                delete[] arrayShort;
                 throw DCache_SemMutex_Exception("[TC_SemMutex::init] sem has exist error:" + string(strerror(errno)));
             }
 
             //连接信号量
             if ((iSemID = semget(iKey, SemNum, 0666)) == -1)
             {
-                delete arrayShort;
+                delete[] arrayShort;
                 throw DCache_SemMutex_Exception("[TC_SemMutex::init] connect sem error:" + string(strerror(errno)));
             }
         }
@@ -86,7 +86,7 @@ namespace tars
         _semID = iSemID;
         _index = index;
         _semNum = SemNum;
-        delete arrayShort;
+        delete[] arrayShort;
     }
 
     int DCache_SemMutex::wlock() const

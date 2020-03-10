@@ -19,6 +19,7 @@
 #include "tc_multi_hashmap_malloc.h"
 #include "dcache_jmem_policy.h"
 #include "NormalHash.h"
+#include "util/tc_shm.h"
 #include <math.h>
 namespace tars
 {
@@ -1063,7 +1064,7 @@ namespace tars
         template<typename C>
         int getHashM(uint32_t h, map<string, vector<Value> > &mv, C c)
         {
-            return _multiHashMapVec[h%_jmemNum]->getHashM<C>(h, mv, c);
+            return _multiHashMapVec[h%_jmemNum]->template getHashM<C>(h, mv, c);
         }
 
 
@@ -1079,7 +1080,7 @@ namespace tars
         template<typename C>
         int getHashM(uint32_t h, map<string, vector<PackValue> > &mv, C c)
         {
-            return _multiHashMapVec[h%_jmemNum]->getHashM<C>(h, mv, c);
+            return _multiHashMapVec[h%_jmemNum]->template getHashM<C>(h, mv, c);
         }
 
         //插入一个onlykey数据，用于删除数据库
@@ -1468,7 +1469,7 @@ namespace tars
             vector<int> iRetVec(_jmemNum, 0);
             for (size_t i = 0; i < _jmemNum; i++)
             {
-                iRetVec[i] = _multiHashMapVec[i]->syncOnce<C>(iNowTime, c);
+                iRetVec[i] = _multiHashMapVec[i]->template syncOnce<C>(iNowTime, c);
             }
 
             bool bOK = true;

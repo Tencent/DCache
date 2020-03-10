@@ -15,12 +15,12 @@ endif()
 set(TARS_TOOL_FLAG "--with-tars")
 set(TARS_WEB_HOST "http://127.0.0.1:4001")
 
-# include_directories(/usr/local/taf/cpp/thirdparty/include)
-# link_directories(/usr/local/taf/cpp/thirdparty/lib)
+include_directories(/usr/local/taf/cpp/thirdparty/include)
+link_directories(/usr/local/taf/cpp/thirdparty/lib)
 
 #include_directories(/home/tarsprotol/App/OtherServer)
 
 add_subdirectory(src)
 # add_subdirectory(test)
-link_libraries(mysqlclient)
+#link_libraries(mysqlclient z)
 

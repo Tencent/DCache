@@ -709,7 +709,7 @@ void CacheServer::initialize()
 
     //hashmap初始化
     NormalHash *pHash = new NormalHash();
-    typedef size_t(NormalHash::*TpMem)(const string &);
+//    typedef size_t(NormalHash::*TpMem)(const string &);
 
     bool bCreate = false;
     string sSemKeyFile = ServerConfig::DataPath + "/SemKey.dat", sSemKey = "";
@@ -869,7 +869,7 @@ void CacheServer::initialize()
     TLOGDEBUG("g_sHashMap.setToDoFunctor" << endl);
     g_sHashMap.setToDoFunctor(&_todoFunctor);
 
-    TC_HashMapMalloc::hash_functor cmd(pHash, static_cast<TpMem>(&NormalHash::HashRawString));
+    TC_HashMapMalloc::hash_functor cmd = std::bind(&NormalHash::HashRawString, pHash, std::placeholders::_1); //(pHash, static_cast<TpMem>(&NormalHash::HashRawString));
     g_sHashMap.setHashFunctor(cmd);
     g_sHashMap.setAutoErase(false);
 
@@ -1506,9 +1506,9 @@ bool CacheServer::eraseDataInPage(const string& command, const string& params, s
     iPageNoStart = TC_Common::strto<int>(vtParams[0]);
     iPageNoEnd = TC_Common::strto<int>(vtParams[1]);
 
-    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
-    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
-    _tpool.exec(fwrapper);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
+    _tpool.exec(std::bind(&EraseDataInPageFunctor::operator(), &_eraseDataInPageFunc, iPageNoStart, iPageNoEnd));
 
     result = "begin erase data in page [" + vtParams[0] + "," + vtParams[1] + "]\n";
     result += "please wait and check result later, bye";
@@ -1537,9 +1537,9 @@ bool CacheServer::eraseWrongRouterData(const string& command, const string& para
             TLOGDEBUG("CacheServer::eraseWrongRouterData iPageNoStart=" << iPageNoStart << "|iPageNoEnd=" << iPageNoEnd << endl);
             os << "[" << iPageNoStart << "," << iPageNoEnd << "],";
 
-            TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
-            TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
-            _tpool.exec(fwrapper);
+//            TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
+//            TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
+            _tpool.exec(std::bind(&EraseDataInPageFunctor::operator(), _eraseDataInPageFunc, iPageNoStart, iPageNoEnd));
         }
     }
     os << " please wait and check result later, bye.";

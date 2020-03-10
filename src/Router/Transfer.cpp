@@ -219,7 +219,7 @@ int Transfer::notifyTransDestServer(const TransferInfo &transferInfo)
     ret = getRouterClientJceAddr(packTable, transferInfo.transGroupName, addr);
     if (ret != e_Succ)
     {
-        ret = ret;
+//        ret = ret;
         break;
     }
 

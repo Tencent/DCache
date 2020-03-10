@@ -369,7 +369,7 @@ void SwitchThread::run()
         timedWait(30000);
     }
 
-    enum RouterType lastType = g_app.getRouterType();
+//    enum RouterType lastType = g_app.getRouterType();
     while (!_terminate && _enable)
     {
         if (!_enable)
@@ -379,33 +379,33 @@ void SwitchThread::run()
             continue;
         }
 
-        if (g_app.isEnableEtcd() && g_app.getRouterType() == ROUTER_SLAVE)
-        {
-            if (lastType == ROUTER_MASTER)
-            {
-                TLOGDEBUG(FILE_FUN << "downgrade from master to slave" << endl);
-                downgrade();
-            }
-            lastType = ROUTER_SLAVE;
-            TC_ThreadLock::Lock sync(*this);
-            timedWait(1000);
-            continue;
-        }
+//        if (g_app.isEnableEtcd() && g_app.getRouterType() == ROUTER_SLAVE)
+//        {
+//            if (lastType == ROUTER_MASTER)
+//            {
+//                TLOGDEBUG(FILE_FUN << "downgrade from master to slave" << endl);
+//                downgrade();
+//            }
+//            lastType = ROUTER_SLAVE;
+//            TC_ThreadLock::Lock sync(*this);
+//            timedWait(1000);
+//            continue;
+//        }
 
         // 以下是master主机执行的逻辑
-        if (g_app.isEnableEtcd() && lastType == ROUTER_SLAVE)
-        {
-            int rc = reloadRouter();
-            if (rc != 0)
-            {
-                TLOGERROR(FILE_FUN << "SwitchThread::run reloadRouter error:" << rc << endl);
-                TC_ThreadLock::Lock sync(*this);
-                timedWait(1000);
-                continue;
-            }
-            TLOGDEBUG(FILE_FUN << "reloadRouter succ, server change to master" << endl);
-            lastType = ROUTER_MASTER;
-        }
+//        if (g_app.isEnableEtcd() && lastType == ROUTER_SLAVE)
+//        {
+//            int rc = reloadRouter();
+//            if (rc != 0)
+//            {
+//                TLOGERROR(FILE_FUN << "SwitchThread::run reloadRouter error:" << rc << endl);
+//                TC_ThreadLock::Lock sync(*this);
+//                timedWait(1000);
+//                continue;
+//            }
+//            TLOGDEBUG(FILE_FUN << "reloadRouter succ, server change to master" << endl);
+//            lastType = ROUTER_MASTER;
+//        }
 
         doSwitchCheck();
 
@@ -1173,7 +1173,7 @@ DoSwitchThread::DoSwitchThread(AdminProxyWrapperPtr adminProxy,
                                int switchMaxTimes,
                                int downGradeTimeout)
     : _dbHandle(dbHandle),
-      _switchTimeout(switchTimeOut),
+//      _switchTimeout(switchTimeOut),
       _switchBlogDifLimit(switchBinLogDiffLimit),
       _switchMaxTimes(switchMaxTimes),
       _downGradeTimeout(downGradeTimeout)

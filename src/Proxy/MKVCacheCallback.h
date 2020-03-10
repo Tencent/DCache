@@ -989,7 +989,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
                 param->_rsp.data.insert(param->_rsp.data.end(), rsp.data.begin(), rsp.data.end());
             }
 
-            if (param->_count.dec() <= 0)
+            if ((--param->_count) <= 0)
             {
                 ResponserPtr responser = make_responser(resmf, param->_rsp);
 
@@ -1101,7 +1101,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
 
             if (ret == ET_SUCC)
             {
-                _param->_count.add(objectReq.size() - 1);
+                _param->_count.fetch_add(objectReq.size() - 1);
 
                 typename map<string, Request>::const_iterator it = objectReq.begin();
                 typename map<string, Request>::const_iterator itEnd = objectReq.end();
@@ -1388,7 +1388,7 @@ struct GetAllMainKeyCallback : public ProcMKCacheBatchCallback<GetAllKeysReq, Ge
                 param->_rsp.isEnd = false;
             }
 
-            if (param->_count.dec() <= 0)
+            if ((--param->_count) <= 0)
             {
                 ResponserPtr responser = make_responser(&Proxy::async_response_getAllMainKey, param->_rsp);
                 const string &caller = _current->getContext()[CONTEXT_CALLER];
@@ -1556,7 +1556,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
             param->addResult(failedIndexRet);
         }
 
-        if (param->_count.dec() <= 0)
+        if ((--param->_count) <= 0)
         {
             ResponserPtr responser = make_responser(resmf, param->_rsp);
 
@@ -1588,7 +1588,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
 
         param->addResult(rspData);
 
-        if (_param->_count.dec() <= 0)
+        if ((--_param->_count) <= 0)
         {
             ResponserPtr responser = make_responser(resmf, param->_rsp);
 
@@ -1657,7 +1657,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
 
             if (!objectReq.empty())
             {
-                _param->_count.add(objectReq.size());
+                _param->_count.fetch_add(objectReq.size());
 
                 typename map<string, Request>::const_iterator it = objectReq.begin(), itEnd = objectReq.end();
                 map<string, vector<size_t>>::const_iterator itIndex = objectDataIndexs.begin();
@@ -1691,7 +1691,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
                         failedIndexRet[indexs[i]] = errcode;
                     }
 
-                    _param->_count.dec();
+                    --_param->_count;
                 }
             }
         }

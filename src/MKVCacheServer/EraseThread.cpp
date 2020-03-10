@@ -79,7 +79,7 @@ void EraseThread::createThread()
 
     _isStart = true;
     setRuning(true);
-    _activeJmemCount.set(_eraseThreadCount);
+    _activeJmemCount = _eraseThreadCount;
     pthread_t* pThread = new pthread_t[_eraseThreadCount];
     Arg* pArg = new Arg[_eraseThreadCount];
     for (unsigned int i = 0; i < _eraseThreadCount; ++i)
@@ -99,8 +99,9 @@ void* EraseThread::EraseData(void* pArg)
     Arg* p = (Arg*)(pArg);
     unsigned int uThreadIndex = p->uThreadIndex;
 
+#if TARGET_PLATFORM_LINUX
     pthread_setschedprio(pthread_self(), sched_get_priority_min(SCHED_RR));
-
+#endif
     EraseThread* pthis = p->pthis;
     while (pthis->isStart())
     {
@@ -134,7 +135,7 @@ void* EraseThread::EraseData(void* pArg)
         }
     }
 
-    if (pthis->_activeJmemCount.dec() < 1)
+    if ((--pthis->_activeJmemCount) < 1)
     {
         TLOGDEBUG("EraseThread::" << __FUNCTION__ << " all thread finished." << endl);
         pthis->setRuning(false);

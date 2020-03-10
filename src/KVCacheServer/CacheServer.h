@@ -30,8 +30,7 @@
 #include "BinLogTimeThread.h"
 #include "SlaveCreateThread.h"
 #include "DumpThread.h"
-#include "Config.h"
-
+#include "../ConfigServer/Config.h"
 
 using namespace std;
 using namespace tars;

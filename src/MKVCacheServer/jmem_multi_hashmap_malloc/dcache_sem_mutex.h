@@ -33,7 +33,7 @@ namespace tars
     struct DCache_SemMutex_Exception : public TC_Lock_Exception
     {
         DCache_SemMutex_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
-        DCache_SemMutex_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
+//        DCache_SemMutex_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
         ~DCache_SemMutex_Exception() throw() {};
     };
 
@@ -128,7 +128,7 @@ namespace tars
     struct TC_ProcessSem_Exception : public TC_Lock_Exception
     {
         TC_ProcessSem_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
-        TC_ProcessSem_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
+//        TC_ProcessSem_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
         ~TC_ProcessSem_Exception() throw() {};
     };
 

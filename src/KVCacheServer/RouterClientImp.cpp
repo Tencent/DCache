@@ -315,9 +315,9 @@ tars::Int32 RouterClientImp::cleanFromTransferData(const std::string & moduleNam
         return -1;
     }
 
-    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_cleanDataFunc);
-    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, fromPageNo, toPageNo);
-    _tpool.exec(fwrapper);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_cleanDataFunc);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, fromPageNo, toPageNo);
+    _tpool.exec(std::bind(&CleanDataFunctor::operator(), _cleanDataFunc, fromPageNo, toPageNo));
 
     return 0;
 }

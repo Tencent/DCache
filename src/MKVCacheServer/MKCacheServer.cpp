@@ -806,7 +806,7 @@ MKCacheServer::initialize()
 
     //hashmap初始化
     MKHash *pHash = new MKHash();
-    typedef uint32_t(MKHash::*TpMem)(const string &);
+//    typedef uint32_t(MKHash::*TpMem)(const string &);
 
     bool bCreate = false;
     string sSemKeyFile = ServerConfig::DataPath + "/SemKey.dat", sSemKey = "";
@@ -983,10 +983,10 @@ MKCacheServer::initialize()
 
     g_HashMap.setToDoFunctor(&_todoFunctor);
 
-    TC_Multi_HashMap_Malloc::hash_functor cmd_mk(pHash, static_cast<TpMem>(&MKHash::HashMK));
-    TC_Multi_HashMap_Malloc::hash_functor cmd_mkuk(pHash, static_cast<TpMem>(&MKHash::HashMKUK));
-    g_HashMap.setHashFunctorM(cmd_mk);
-    g_HashMap.setHashFunctor(cmd_mkuk);
+//    TC_Multi_HashMap_Malloc::hash_functor cmd_mk(pHash, static_cast<TpMem>(&MKHash::HashMK));
+//    TC_Multi_HashMap_Malloc::hash_functor cmd_mkuk(pHash, static_cast<TpMem>(&MKHash::HashMKUK));
+    g_HashMap.setHashFunctorM(std::bind(&MKHash::HashMK, pHash, std::placeholders::_1));
+    g_HashMap.setHashFunctor(std::bind(&MKHash::HashMKUK, pHash, std::placeholders::_1));
     g_HashMap.setAutoErase(false);
 
     _gStat.setSlaveCreating(false);
@@ -1471,9 +1471,9 @@ bool MKCacheServer::eraseDataInPage(const string& command, const string& params,
     iPageNoStart = TC_Common::strto<int>(vtParams[0]);
     iPageNoEnd = TC_Common::strto<int>(vtParams[1]);
 
-    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
-    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
-    _tpool.exec(fwrapper);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
+//    TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
+    _tpool.exec(std::bind(&EraseDataInPageFunctor::operator(), _eraseDataInPageFunc, iPageNoStart, iPageNoEnd));
 
     result = "begin erase data in page [" + vtParams[0] + "," + vtParams[1] + "]\n";
     result += "please wait and check result later, bye";
@@ -1507,9 +1507,12 @@ bool MKCacheServer::eraseWrongRouterData(const string& command, const string& pa
             TLOGDEBUG("MKCacheServer::eraseWrongRouterData iPageNoStart=" << iPageNoStart << "|iPageNoEnd=" << iPageNoEnd << endl);
             os << "[" << iPageNoStart << "," << iPageNoEnd << "],";
 
-            TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
-            TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
-            _tpool.exec(fwrapper);
+//            TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
+//            TC_Functor<void, TL::TLMaker<int, int>::Result>::wrapper_type fwrapper(cmd, iPageNoStart, iPageNoEnd);
+//            _tpool.exec(fwrapper);
+
+	        _tpool.exec(std::bind(&EraseDataInPageFunctor::operator(), _eraseDataInPageFunc, iPageNoStart, iPageNoEnd));
+
         }
     }
     os << " please wait and check result later, bye.";

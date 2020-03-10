@@ -1724,7 +1724,7 @@ namespace tars
          *          TC_HashMapMalloc::RT_OK: 设置成功
          *          其他返回值: 错误
          */
-        int update(const string& k, const string& v, Op option, bool bDirty = true, uint32_t iExpireTime = 0, bool bCheckExpire = false, uint32_t iNowTime = -1, string &retValue = "")
+        int update(const string& k, const string& v, Op option, bool bDirty, uint32_t iExpireTime, bool bCheckExpire, uint32_t iNowTime, string &retValue)
         {
             int ret = TC_HashMapMalloc::RT_OK;
             vector<TC_HashMapMalloc::BlockData> vtData;

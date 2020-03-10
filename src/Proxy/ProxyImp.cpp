@@ -490,7 +490,7 @@ int ProxyImp::setKVBatch(const SetKVBatchReq &req, SetKVBatchRsp &rsp, TarsCurre
         WCacheBatchCallParam<SetKVBatchRsp> *tmpParam = (WCacheBatchCallParam<SetKVBatchRsp> *)(pParam.get());
         tmpParam->addResult(tempRsp.keyResult);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_setKVBatch(current, ET_PARTIAL_FAIL, tmpParam->_rsp);
         }
@@ -680,7 +680,7 @@ int ProxyImp::eraseKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, T
         WCacheBatchCallParam<RemoveKVBatchRsp> *tmpParam = (WCacheBatchCallParam<RemoveKVBatchRsp> *)(pParam.get());
         tmpParam->addResult(tempRsp.keyResult);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_eraseKVBatch(current, ET_PARTIAL_FAIL, tmpParam->_rsp);
         }
@@ -818,7 +818,7 @@ int ProxyImp::delKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, Tar
         WCacheBatchCallParam<RemoveKVBatchRsp> *tmpParam = (WCacheBatchCallParam<RemoveKVBatchRsp> *)(pParam.get());
         tmpParam->addResult(tempRsp.keyResult);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_delKVBatch(current, ET_PARTIAL_FAIL, tmpParam->_rsp);
         }
@@ -1310,7 +1310,7 @@ int ProxyImp::updateMKVBatch(const UpdateMKVBatchReq &req, MKVBatchWriteRsp &rsp
         MKWCacheBatchCallParam<UpdateMKVBatchReq> *tmpParam = (MKWCacheBatchCallParam<UpdateMKVBatchReq> *)(pParam.get());
         tmpParam->addResult(tempRsp.rspData);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_updateMKVBatch(current, ET_PARTIAL_FAIL, tmpParam->_rsp);
             break;
@@ -1418,7 +1418,7 @@ int ProxyImp::insertMKVBatch(const InsertMKVBatchReq &req, MKVBatchWriteRsp &rsp
         MKWCacheBatchCallParam<InsertMKVBatchReq> *tmpParam = (MKWCacheBatchCallParam<InsertMKVBatchReq> *)(pParam.get());
         tmpParam->addResult(tempRsp.rspData);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_insertMKVBatch(current, ET_PARTIAL_FAIL, tmpParam->_rsp);
             break;
@@ -1660,7 +1660,7 @@ int ProxyImp::delMKVBatch(const DelMKVBatchReq &req, MKVBatchWriteRsp &rsp, Tars
         }
         ((MKWCacheBatchCallParam<DelMKVBatchReq> *)(pParam.get()))->addResult(tempRsp.rspData);
 
-        if (pParam->_count.dec() <= 0)
+        if ((--pParam->_count) <= 0)
         {
             Proxy::async_response_delMKVBatch(current, ET_PARTIAL_FAIL, ((MKWCacheBatchCallParam<DelMKVBatchReq> *)(pParam.get()))->_rsp);
             break;

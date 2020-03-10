@@ -15,6 +15,6 @@
 #define _PROXY_GLOBAL_H_
 
 #define CONTEXT_CALLER "DCache::Proxy::Caller"
-#define TNOWMS tars::TC_TimeProvider::getInstance()->getNowMs()
+//#define TNOWMS tars::TC_TimeProvider::getInstance()->getNowMs()
 
 #endif

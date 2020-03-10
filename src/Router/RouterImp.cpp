@@ -15,7 +15,7 @@
 // 备机向主机转发请求前要更新主机的proxy，因为主机可能切换。
 #include "RouterImp.h"
 #include "DbHandle.h"
-#include "EtcdHandle.h"
+//#include "EtcdHandle.h"
 #include "Transfer.h"
 
 extern RouterServer g_app;

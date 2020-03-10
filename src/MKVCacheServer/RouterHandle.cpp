@@ -315,8 +315,8 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
                     TLOGERROR("[RouterHandle::fromTransferDo] getHash error, iret =  " << iRet << endl);
                     return -1;
                 }
-                map<string, vector<MultiHashMap::Value> >::iterator it = vv.begin(), itEnd = vv.end();
-                for (map<string, vector<MultiHashMap::Value> >::iterator it = vv.begin(); it != itEnd; ++it)
+//                map<string, vector<MultiHashMap::Value> >::iterator it = vv.begin(), itEnd = vv.end();
+                for (map<string, vector<MultiHashMap::Value> >::iterator it = vv.begin(); it != vv.end(); ++it)
                 {
                     bool full = (g_HashMap.checkMainKey(it->first) == TC_Multi_HashMap_Malloc::RT_OK ? true : false);
 

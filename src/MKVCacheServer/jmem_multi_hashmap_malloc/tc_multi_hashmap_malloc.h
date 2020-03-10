@@ -25,7 +25,7 @@
 #include "util/tc_pack.h"
 #include "CacheShare.h"
 #include "tc_malloc_chunk.h"
-#include "tc_functor.h"
+//#include "tc_functor.h"
 #include "tc_hash_fun.h"
 
 
@@ -2423,9 +2423,10 @@ namespace tars
         typedef HashMapLockIterator lock_iterator;
         typedef MKHashMapIterator   mhash_iterator;
         //定义hash处理器
-        typedef TC_Functor<uint32_t, TL::TLMaker<const string &>::Result> hash_functor;
+//        typedef TC_Functor<uint32_t, TL::TLMaker<const string &>::Result> hash_functor;
+	    typedef std::function<uint32_t(const string &)> hash_functor;
 
-        //////////////////////////////////////////////////////////////////////////////////////////////
+	    //////////////////////////////////////////////////////////////////////////////////////////////
         //map的接口定义
 
         /**
@@ -3449,9 +3450,9 @@ namespace tars
         friend class MainKey;
         friend class Block;
         friend class BlockAllocator;
-        friend class HashMapIterator;
+        friend struct HashMapIterator;
         friend class HashMapItem;
-        friend class HashMapLockIterator;
+        friend struct HashMapLockIterator;
         friend class HashMapLockItem;
 
         //禁止copy构造

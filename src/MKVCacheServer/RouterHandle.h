@@ -17,7 +17,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "servant/Application.h"
-#include "policy_multi_hashmap_malloc.h"
+#include "jmem_multi_hashmap_malloc/policy_multi_hashmap_malloc.h"
 #include "MKCacheGlobe.h"
 #include "Router.h"
 #include "RouterClient.h"
@@ -113,7 +113,7 @@ public:
     }
     int getSlaveHbCount()
     {
-        return _slaveHbCount.get();
+        return _slaveHbCount;
     }
     string getConnectHbAddr();
     int masterDowngrade();
@@ -174,7 +174,7 @@ protected:
     //传输数据是否压缩
     bool _transferCompress;
 
-    TC_Atomic	_slaveHbCount;
+	std::atomic<int>	_slaveHbCount;
 };
 
 #endif

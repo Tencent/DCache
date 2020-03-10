@@ -15,7 +15,7 @@
 #define _DCacheOptServer_H_
 
 #include <iostream>
-
+#include <atomic>
 #include "servant/Application.h"
 
 #include "UninstallThread.h"
@@ -25,6 +25,7 @@
 #include "UndeployThread.h"
 
 using namespace tars;
+using namespace std;
 
 /**
  *
@@ -65,7 +66,7 @@ public:
 protected:
 
     // release 任务ID
-    TC_Atomic _releaseID;
+    std::atomic<int> _releaseID;
 
     // release 请求管理器
     ReleaseRequestQueueManager _releaseRequestQueueManager;

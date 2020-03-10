@@ -561,7 +561,7 @@ struct ProcCacheBatchCallback : public CacheCallbackComm
 
             if (ret == ET_SUCC)
             {
-                _param->_count.add(objectReq.size() - 1);
+                _param->_count.fetch_add(objectReq.size() - 1);
 
                 typename map<string, Request>::iterator it = objectReq.begin();
                 typename map<string, Request>::iterator itEnd = objectReq.end();
@@ -665,7 +665,7 @@ struct GetKVBatchCallback : public ProcCacheBatchCallback<GetKVBatchReq, GetKVBa
                 param->_rsp.values.insert(param->_rsp.values.end(), rsp.values.begin(), rsp.values.end());
             }
 
-            if (param->_count.dec() <= 0)
+            if ((--param->_count) <= 0)
             {
                 ResponserPtr responser = make_responser(&Proxy::async_response_getKVBatch, param->_rsp);
 
@@ -718,7 +718,7 @@ struct CheckKeyCallback : public ProcCacheBatchCallback<CheckKeyReq, CheckKeyRsp
                 param->_rsp.keyStat.insert(rsp.keyStat.begin(), rsp.keyStat.end());
             }
 
-            if (param->_count.dec() <= 0)
+            if ((--param->_count) <= 0)
             {
                 ResponserPtr responser = make_responser(&Proxy::async_response_checkKey, param->_rsp);
 
@@ -777,7 +777,7 @@ struct GetAllKeysCallback : public CachePrxCallback, public CacheCallbackComm
                 param->_rsp.isEnd = false;
             }
 
-            if (param->_count.dec() <= 0)
+            if ((--param->_count) <= 0)
             {
                 ResponserPtr responser = make_responser(&Proxy::async_response_getAllKeys, param->_rsp);
 
@@ -918,7 +918,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
 
         param->addResult(keyResult);
 
-        if (param->_count.dec() <= 0)
+        if ((--param->_count) <= 0)
         {
             ResponserPtr responser = make_responser(resmf, param->_rsp);
 
@@ -951,7 +951,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
 
         param->addResult(keyResult);
 
-        if (param->_count.dec() <= 0)
+        if ((--param->_count) <= 0)
         {
             ResponserPtr responser = make_responser(resmf, param->_rsp);
 
@@ -1023,7 +1023,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
 
             if (!objectReq.empty())
             {
-                _param->_count.add(objectReq.size());
+                _param->_count.fetch_add(objectReq.size());
 
                 typename map<string, Request>::const_iterator it = objectReq.begin();
                 typename map<string, Request>::const_iterator itEnd = objectReq.end();
@@ -1057,7 +1057,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
                         keyResult[req.data[i].keyItem] = WRITE_ERROR;
                     }
 
-                    _param->_count.dec();
+                    --_param->_count;
                 }
             }
         }

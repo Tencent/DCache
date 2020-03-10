@@ -668,7 +668,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -705,7 +705,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 {
                     g_app.gstat()->hit(_hitIndex);
                     pParam->addFailIndexReason(param.iIndex, ET_DATA_EXIST);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -724,7 +724,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                     TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -763,7 +763,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                     }
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -782,7 +782,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                     WriteBinLog::set(param.mk, param.uk, param.value, param.expireTime, param.dirty, _binlogFile);
                 if (_recordKeyBinLog)
                     WriteBinLog::set(param.mk, param.uk, _keyBinlogFile);
-                if (pParam->count.dec() <= 0)
+                if ((--pParam->count) <= 0)
                 {
                     if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                     {
@@ -1143,7 +1143,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -1197,7 +1197,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                         }
-                        if (pParam->count.dec() <= 0)
+                        if ((--pParam->count) <= 0)
                         {
                             if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                             {
@@ -1215,7 +1215,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                         WriteBinLog::set(param.mk, param.uk, value, param.expireTime, param.dirty, _binlogFile);
                     if (_recordKeyBinLog)
                         WriteBinLog::set(param.mk, param.uk, _keyBinlogFile);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {
@@ -1266,7 +1266,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                             }
-                            if (pParam->count.dec() <= 0)
+                            if ((--pParam->count) <= 0)
                             {
                                 if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1284,7 +1284,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                             WriteBinLog::set(param.mk, param.uk, insertValue, param.expireTime, param.dirty, _binlogFile);
                         if (_recordKeyBinLog)
                             WriteBinLog::set(param.mk, param.uk, _keyBinlogFile);
-                        if (pParam->count.dec() <= 0)
+                        if ((--pParam->count) <= 0)
                         {
                             if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                             {
@@ -1300,7 +1300,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     else
                     {
                         pParam->addFailIndexReason(param.iIndex, ET_NO_DATA);
-                        if (pParam->count.dec() <= 0)
+                        if ((--pParam->count) <= 0)
                         {
                             if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                             {
@@ -1319,7 +1319,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         if (bGetRoute && pParam->updateServant.mpServant.size() > 0)
                         {

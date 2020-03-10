@@ -98,7 +98,7 @@ struct BatchCallParamComm : public TC_HandleBase
 {
     BatchCallParamComm(size_t count);
 
-    TC_Atomic _count; // 批量访问分路由后的请求计数
+    std::atomic<int> _count; // 批量访问分路由后的请求计数
 
     TC_ThreadLock _lock;
 };

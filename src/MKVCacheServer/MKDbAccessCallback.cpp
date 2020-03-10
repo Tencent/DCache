@@ -929,7 +929,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                         {
                             keyValue.mainKey = sMainKey;
                             vtSelect[i].pParam->addValue(keyValue);
-                            if (vtSelect[i].pParam->count.dec() <= 0)
+                            if ((--(vtSelect[i].pParam->count)) <= 0)
                             {
                                 if (!vtSelect[i].bBatchOr)
                                 {
@@ -961,7 +961,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                             keyValue.mainKey = sMainKey;
                             keyValue.ret = 0;
                             vtSelect[i].pParam->addValue(keyValue);
-                            if (vtSelect[i].pParam->count.dec() <= 0)
+                            if ((--(vtSelect[i].pParam->count)) <= 0)
                             {
                                 if (!vtSelect[i].bBatchOr)
                                 {
@@ -1175,7 +1175,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
                     record.ret = 0;
                     record.mpRecord.insert(keyValue.value[0].begin(), keyValue.value[0].end());
                     selectCbParam.pParam->addValue(record);
-                    if (selectCbParam.pParam->count.dec() <= 0)
+                    if ((--(selectCbParam.pParam->count)) <= 0)
                     {
                         MUKBatchRsp rsp;
                         rsp.data = selectCbParam.pParam->vtData;
@@ -1188,7 +1188,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
             {
                 keyValue.mainKey = sMainKey;
                 selectCbParam.pParam->addValue(keyValue);
-                if (selectCbParam.pParam->count.dec() <= 0)
+                if ((--(selectCbParam.pParam->count)) <= 0)
                 {
                     MKVBatchRsp rsp;
                     rsp.data = selectCbParam.pParam->vtKeyValue;
@@ -1221,7 +1221,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
                 record.mainKey = sMainKey;
                 iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY ? record.ret = ET_ONLY_KEY : record.ret = ET_NO_DATA;
                 selectCbParam.pParam->addValue(record);
-                if (selectCbParam.pParam->count.dec() <= 0)
+                if ((--(selectCbParam.pParam->count)) <= 0)
                 {
                     MUKBatchRsp rsp;
                     rsp.data = selectCbParam.pParam->vtData;
@@ -1233,7 +1233,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
             {
                 keyValue.mainKey = sMainKey;
                 selectCbParam.pParam->addValue(keyValue);
-                if (selectCbParam.pParam->count.dec() <= 0)
+                if ((--(selectCbParam.pParam->count)) <= 0)
                 {
                     MKVBatchRsp rsp;
                     rsp.data = selectCbParam.pParam->vtKeyValue;
@@ -1298,7 +1298,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[j].bBatch)
                         {
                             vtInsert[j].pParam->addFailIndexReason(vtInsert[j].iIndex, ET_FORBID_OPT);
-                            if (vtInsert[j].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[j].pParam->count)) <= 0)
                             {
                                 if (vtInsert[j].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1343,7 +1343,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                             }
 
                             vtInsert[j].pParam->addFailIndexReason(vtInsert[j].iIndex, ET_KEY_AREA_ERR);
-                            if (vtInsert[j].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[j].pParam->count)) <= 0)
                             {
                                 if (vtInsert[j].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1401,7 +1401,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_DATA_EXIST);
-                            if (vtInsert[i].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[i].pParam->count)) <= 0)
                             {
                                 if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1426,7 +1426,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_SYS_ERR);
-                            if (vtInsert[i].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[i].pParam->count)) <= 0)
                             {
                                 if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1467,7 +1467,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_DATA_VER_MISMATCH);
-                            if (vtInsert[i].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[i].pParam->count)) <= 0)
                             {
                                 if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1491,7 +1491,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_MEM_FULL);
-                            if (vtInsert[i].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[i].pParam->count)) <= 0)
                             {
                                 if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1516,7 +1516,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_SYS_ERR);
-                            if (vtInsert[i].pParam->count.dec() <= 0)
+                            if ((--(vtInsert[i].pParam->count)) <= 0)
                             {
                                 if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -1542,7 +1542,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
 
                 if (vtInsert[i].bBatch)
                 {
-                    if (vtInsert[i].pParam->count.dec() <= 0)
+                    if ((--(vtInsert[i].pParam->count)) <= 0)
                     {
                         if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                         {
@@ -1578,7 +1578,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                 if (vtInsert[i].bBatch)
                 {
                     vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_SYS_ERR);
-                    if (vtInsert[i].pParam->count.dec() <= 0)
+                    if ((--(vtInsert[i].pParam->count)) <= 0)
                     {
                         if (vtInsert[i].pParam->updateServant.mpServant.size() > 0)
                         {
@@ -2472,7 +2472,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                     for (size_t j = i; j < vtUpdateBatch.size(); ++j)
                     {
                         vtUpdateBatch[j].pParam->addFailIndexReason(vtUpdateBatch[j].iIndex, ET_FORBID_OPT);
-                        if (vtUpdateBatch[j].pParam->count.dec() <= 0)
+                        if ((--(vtUpdateBatch[j].pParam->count)) <= 0)
                         {
                             if (vtUpdateBatch[j].pParam->updateServant.mpServant.size() > 0)
                             {
@@ -2509,7 +2509,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                         }
 
                         vtUpdateBatch[j].pParam->addFailIndexReason(vtUpdateBatch[j].iIndex, ET_KEY_AREA_ERR);
-                        if (vtUpdateBatch[j].pParam->count.dec() <= 0)
+                        if ((--(vtUpdateBatch[j].pParam->count)) <= 0)
                         {
                             if (vtUpdateBatch[j].pParam->updateServant.mpServant.size() > 0)
                             {
@@ -2567,7 +2567,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
                         }
-                        if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                        if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                         {
                             if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                             {
@@ -2584,7 +2584,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                         WriteBinLog::set(sMainKey, vtUpdateBatch[i].uk, value, vtUpdateBatch[i].expireTime, dirty, _binlogFile);
                     if (_recordKeyBinLog)
                         WriteBinLog::set(sMainKey, vtUpdateBatch[i].uk, _keyBinlogFile);
-                    if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                    if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                     {
                         if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                         {
@@ -2601,7 +2601,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                     TLOGERROR("MKDbAccessCallback::procUpdateBatch g_HashMap.get error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
-                    if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                    if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                     {
                         if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                         {
@@ -2650,7 +2650,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
                             }
-                            if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                            if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                             {
                                 if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                                 {
@@ -2667,7 +2667,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                             WriteBinLog::set(sMainKey, vtUpdateBatch[i].uk, insertValue, vtUpdateBatch[i].expireTime, vtUpdateBatch[i].dirty, _binlogFile);
                         if (_recordKeyBinLog)
                             WriteBinLog::set(sMainKey, vtUpdateBatch[i].uk, _keyBinlogFile);
-                        if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                        if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                         {
                             if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                             {
@@ -2682,7 +2682,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                     else
                     {
                         vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_NO_DATA);
-                        if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                        if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                         {
                             if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                             {
@@ -2723,7 +2723,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                 {
                     vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, iRetCode);
                 }
-                if (vtUpdateBatch[i].pParam->count.dec() <= 0)
+                if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
                 {
                     if (vtUpdateBatch[i].pParam->updateServant.mpServant.size() > 0)
                     {

@@ -92,7 +92,7 @@ protected:
     unsigned int _shmNum;
     unsigned int _maxEraseCountOneTime;
     unsigned int _eraseThreadCount;
-    TC_Atomic _activeJmemCount;
+    std::atomic<int> _activeJmemCount;
 
 };
 

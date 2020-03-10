@@ -26,7 +26,12 @@ typedef DCache::StatPropMsgHead  PropHead;
 typedef DCache::StatPropMsgKey   PropKey;
 typedef DCache::StatPropMsgValue PropValue;
 typedef TarsHashMap<PropKey, PropValue, ThreadLockPolicy, FileStorePolicy> PropHashMap;
+//typedef map<PropKey, PropValue, std::less<PropKey>, __gnu_cxx::__pool_alloc<std::pair<PropKey const, PropValue> > > PropertyMsg;
+#if TARGET_PLATFORM_LINUX
 typedef map<PropKey, PropValue, std::less<PropKey>, __gnu_cxx::__pool_alloc<std::pair<PropKey const, PropValue> > > PropertyMsg;
+#else
+typedef map<PropKey, PropValue, std::less<PropKey>> PropertyMsg;
+#endif
 
 class PropertyHashMap : public PropHashMap
 {
@@ -66,7 +71,7 @@ public:
             TarsInputStream<BufferReader> is;
             is.setBuffer(sv.c_str(), sv.length());
             value.readFrom(is);
-            if (LOG->IsNeedLog(TarsRollLogger::INFO_LOG))
+            if (LOG->isNeedLog(TarsRollLogger::INFO_LOG))
             {
                 ostringstream os;
                 key.displaySimple(os);
@@ -149,7 +154,7 @@ public:
                 }
             }
 
-            if(LOG->IsNeedLog(TarsRollLogger::INFO_LOG))
+            if(LOG->isNeedLog(TarsRollLogger::INFO_LOG))
             {
                 ostringstream os;
                 key.displaySimple(os);
