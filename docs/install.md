@@ -22,14 +22,9 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以
 
 ## <a id = "2"></a> 2. 准备工作
 
-### 2.1 下载第三方依赖代码
+### 2.1 编译
 
-进入`src/thirdParty`目录，执行
-`chmod +x thirdparty.sh; ./thirdparty.sh`下载第三方依赖代码。
-
-### 2.2 编译
-
-在`src/`目录下执行：`make release;make`，然后再分别进入以下目录：
+在源码目录执行：`mkdir build; cd build; cmake ..; make; make release`，然后再分别进入以下目录：
 
 - src/OptServer/
 - src/ConfigServer/
@@ -45,7 +40,7 @@ make tar
 ```
 即可生成各服务的发布包。
 
-### 2.3 创建模板
+### 2.2 创建模板
 
 在Tars的Web平台创建DCache.Cache模板，后续部署DCache模块时会用到该模板。
 
@@ -62,9 +57,6 @@ make tar
     </application>
 </tars>
 ```
-
-
-
 
 ## <a id = "3"></a> 3. 公共服务部署
 在正式安装DCache应用前需要部署和安装公共服务：OptServer、ConfigServer和PropertyServer。
