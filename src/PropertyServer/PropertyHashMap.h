@@ -28,6 +28,7 @@ typedef DCache::StatPropMsgValue PropValue;
 typedef TarsHashMap<PropKey, PropValue, ThreadLockPolicy, FileStorePolicy> PropHashMap;
 //typedef map<PropKey, PropValue, std::less<PropKey>, __gnu_cxx::__pool_alloc<std::pair<PropKey const, PropValue> > > PropertyMsg;
 #if TARGET_PLATFORM_LINUX
+#include "ext/pool_allocator.h"
 typedef map<PropKey, PropValue, std::less<PropKey>, __gnu_cxx::__pool_alloc<std::pair<PropKey const, PropValue> > > PropertyMsg;
 #else
 typedef map<PropKey, PropValue, std::less<PropKey>> PropertyMsg;
