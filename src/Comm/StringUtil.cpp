@@ -12,6 +12,7 @@
 * and limitations under the License.
 */
 #include "StringUtil.h"
+#include <string.h>
 
 const size_t StringUtil::GZIP_MIN_STR_LEN = 9 * 1024 * 1024;
 
