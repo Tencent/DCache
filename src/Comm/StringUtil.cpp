@@ -12,8 +12,6 @@
 * and limitations under the License.
 */
 #include "StringUtil.h"
-#include "servant/TarsLogger.h"
-using namespace tars;
 
 const size_t StringUtil::GZIP_MIN_STR_LEN = 9 * 1024 * 1024;
 

@@ -20,7 +20,7 @@
 
 #include "servant/Global.h"
 #include "servant/Application.h"
-#include "servant/TarsCurrent.h"
+#include "servant/Current.h"
 #include "servant/ServantHelper.h"
 #include "util/tc_epoll_server.h"
 

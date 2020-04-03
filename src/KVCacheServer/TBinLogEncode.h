@@ -14,10 +14,10 @@
 #ifndef _TBINLOGENCODE_H
 #define _TBINLOGENCODE_H
 
-#include<netinet/in.h>
+#include <netinet/in.h>
+#include "servant/Application.h"
 
 #include "util/tc_timeprovider.h"
-#include "servant/TarsLogger.h"
 #include "BinLogEncodeComm.h"
 
 using namespace std;

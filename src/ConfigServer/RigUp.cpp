@@ -12,7 +12,7 @@
 * and limitations under the License.
 */
 #include "RigUp.h"
-#include "servant/TarsLogger.h"
+#include "servant/Application.h"
 
 TreeNode::TreeNode()
 {

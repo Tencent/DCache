@@ -20,7 +20,6 @@
 #include "Router.h"
 #include "RouterClient.h"
 #include "servant/Application.h"
-#include "servant/TarsLogger.h"
 #include "util/tc_common.h"
 #include "util/tc_config.h"
 
