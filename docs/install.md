@@ -24,20 +24,9 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以
 
 ### 2.1 编译
 
-在源码目录执行：`mkdir build; cd build; cmake ..; make; make release`，然后再分别进入以下目录：
+在源码目录执行：`mkdir build; cd build; cmake ..; make; make release; make tar`
 
-- src/OptServer/
-- src/ConfigServer/
-- src/PropertyServer/
-- src/Router/
-- src/Proxy/
-- src/KVCacheServer/
-- src/MKVCacheServer/
 
-执行:
-```
-make tar
-```
 即可生成各服务的发布包。
 
 ### 2.2 创建模板

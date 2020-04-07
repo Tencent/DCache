@@ -1,11 +1,12 @@
 
 include_directories(/usr/local/tars/cpp/include/framework)
+include_directories(/usr/local/tars/cpp/include/servant)
 include_directories(../Proxy)
 include_directories(../Router)
 include_directories(../PropertyServer)
 
-gen_server(DCache OptServer)
+gen_server(DCache DCacheOptServer)
 
-add_dependencies(OptServer PropertyServer ProxyServer RouterServer)
+add_dependencies(DCacheOptServer PropertyServer ProxyServer RouterServer)
 
-target_link_libraries(OptServer mysqlclient)
+target_link_libraries(DCacheOptServer mysqlclient)
