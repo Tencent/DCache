@@ -80,7 +80,7 @@ inline static bool IsDigit(const string &key)
     return true;
 }
 
-namespace tars
+namespace DCache
 {
 
     int TC_HashMapMalloc::Block::getBlockData(TC_HashMapMalloc::BlockData &data)
@@ -101,7 +101,7 @@ namespace tars
 
         try
         {
-            TC_PackOut po(pGetData, iGetLen);
+            tars::TC_PackOut po(pGetData, iGetLen);
             po >> data._key;
 
             //如果不是只有Key
@@ -358,7 +358,7 @@ namespace tars
                 setExpireTime(iExpireTime);
             }
             // 当数据过期后，再调用set不带过期时间的接口时，将过期时间置为0
-            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < TC_TimeProvider::getInstance()->getNow())) {
+            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < tars::TC_TimeProvider::getInstance()->getNow())) {
                 getBlockHead()->_iExpireTime = 0;
             }
 
@@ -493,7 +493,7 @@ namespace tars
             }
             // 当数据过期后，再调用set不带过期时间的接口时，将过期时间置为0
             else if ((iExpireTime == 0) && (lExpireTime != 0)
-                && (lExpireTime < (uint32_t)TC_TimeProvider::getInstance()->getNow()))
+                && (lExpireTime < (uint32_t)tars::TC_TimeProvider::getInstance()->getNow()))
             {
                 getBlockHead()->_iExpireTime = 0;
             }
@@ -1472,7 +1472,7 @@ namespace tars
 
         try
         {
-            TC_PackOut po(k.c_str(), k.length());
+	        tars::TC_PackOut po(k.c_str(), k.length());
             po >> k;
             if (!block.isOnlyKey())
             {
@@ -1504,7 +1504,7 @@ namespace tars
 
         try
         {
-            TC_PackOut po(k.c_str(), k.length());
+	        tars::TC_PackOut po(k.c_str(), k.length());
             po >> k;
         }
         catch (exception &ex)
@@ -1515,11 +1515,9 @@ namespace tars
         return TC_HashMapMalloc::RT_OK;
     }
 
-
-
     int TC_HashMapMalloc::HashMapLockItem::set(const string& k, const string& v, uint32_t iExpireTime, uint8_t iVersion, bool bNewBlock, vector<TC_HashMapMalloc::BlockData> &vtData)
     {
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << k;
         pi << v;
 
@@ -1528,10 +1526,9 @@ namespace tars
         return block.set(pi.topacket(), false, iExpireTime, iVersion, bNewBlock, vtData);
     }
 
-
     int TC_HashMapMalloc::HashMapLockItem::set(const string& k, uint8_t iVersion, bool bNewBlock, vector<TC_HashMapMalloc::BlockData> &vtData)
     {
-        TC_PackIn pi;
+        tars::TC_PackIn pi;
         pi << k;
 
         Block block(_pMap, _iAddr);
@@ -2042,7 +2039,7 @@ namespace tars
 
         if (_iAvgDataSize == 0)
         {
-            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::create] init average data size error:" + TC_Common::tostr(_iAvgDataSize));
+            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::create] init average data size error:" + tars::TC_Common::tostr(_iAvgDataSize));
         }
 
         init(pAddr);
@@ -2087,7 +2084,7 @@ namespace tars
 
         void *pHashAddr = (char*)_pHead + sizeof(tagMapHead) + sizeof(tagModifyHead);
 
-        uint32_t iHashMemSize = TC_MemVector<tagHashItem>::calcMemSize(iHashCount);
+        uint32_t iHashMemSize = tars::TC_MemVector<tagHashItem>::calcMemSize(iHashCount);
         _hash.create(pHashAddr, iHashMemSize);
 
         void *pDataAddr = (char*)pHashAddr + _hash.getMemSize();
@@ -2126,12 +2123,12 @@ namespace tars
 
         if (_pHead->_iMemSize != iSize)
         {
-            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::connect] hash map size not equal:" + TC_Common::tostr(_pHead->_iMemSize) + "!=" + TC_Common::tostr(iSize));
+            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::connect] hash map size not equal:" + tars::TC_Common::tostr(_pHead->_iMemSize) + "!=" + tars::TC_Common::tostr(iSize));
         }
 
         if (_pHead->_iMinChunkSize != _iMinChunkSize)
         {
-            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::connect] hash map MinChunkSize not equal:" + TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + TC_Common::tostr(_iMinChunkSize) + " (data != code)");
+            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::connect] hash map MinChunkSize not equal:" + tars::TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + tars::TC_Common::tostr(_iMinChunkSize) + " (data != code)");
         }
 
         void *pHashAddr = (char*)_pHead + sizeof(tagMapHead) + sizeof(tagModifyHead);
@@ -2180,7 +2177,7 @@ namespace tars
 
         if (_pHead->_iMinChunkSize != _iMinChunkSize)
         {
-            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::append] hash map MinChunkSize not equal:" + TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + TC_Common::tostr(_iMinChunkSize) + " (data != code)");
+            throw TC_HashMapMalloc_Exception("[TC_HashMapMalloc::append] hash map MinChunkSize not equal:" + tars::TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + tars::TC_Common::tostr(_iMinChunkSize) + " (data != code)");
         }
 
         void *pHashAddr = (char*)_pHead + sizeof(tagMapHead) + sizeof(tagModifyHead);
@@ -2630,7 +2627,7 @@ namespace tars
             return ret;
         }
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << k;
         pi << v;
         uint32_t iAllocSize = sizeof(Block::tagBlockHead) + pi.topacket().length();
@@ -2711,7 +2708,7 @@ namespace tars
             return ret;
         }
 
-        TC_PackIn pi;
+        tars::TC_PackIn pi;
         pi << k;
         pi << v;
         uint32_t iAllocSize = sizeof(Block::tagBlockHead) + pi.topacket().length();
@@ -2799,7 +2796,7 @@ namespace tars
             return ret;
         }
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << k;
         if (it == end())
         {
@@ -2906,7 +2903,7 @@ namespace tars
 
         if (bNeedNew)
         {
-            TC_PackIn pi;
+	        tars::TC_PackIn pi;
             pi << k;
             //按照值为"0"分配内存
             pi << "0";
@@ -2931,7 +2928,7 @@ namespace tars
         case ADD:
             if (IsDigit(oldValue))
             {
-                retValue = TC_Common::tostr(TC_Common::strto<tars::Int64>(oldValue) + TC_Common::strto<tars::Int64>(v));
+                retValue = tars::TC_Common::tostr(tars::TC_Common::strto<tars::Int64>(oldValue) + tars::TC_Common::strto<tars::Int64>(v));
             }
             else
                 return TC_HashMapMalloc::RT_DATATYPE_ERR;
@@ -2939,7 +2936,7 @@ namespace tars
         case SUB:
             if (IsDigit(oldValue))
             {
-                retValue = TC_Common::tostr(TC_Common::strto<tars::Int64>(oldValue) - TC_Common::strto<tars::Int64>(v));
+                retValue = tars::TC_Common::tostr(tars::TC_Common::strto<tars::Int64>(oldValue) - tars::TC_Common::strto<tars::Int64>(v));
             }
             else
                 return TC_HashMapMalloc::RT_DATATYPE_ERR;
@@ -2957,7 +2954,7 @@ namespace tars
         case ADD_INSERT:
             if (IsDigit(oldValue))
             {
-                retValue = TC_Common::tostr(TC_Common::strto<tars::Int64>(oldValue) + TC_Common::strto<tars::Int64>(v));
+                retValue = tars::TC_Common::tostr(tars::TC_Common::strto<tars::Int64>(oldValue) + tars::TC_Common::strto<tars::Int64>(v));
             }
             else
                 return TC_HashMapMalloc::RT_DATATYPE_ERR;
@@ -2965,7 +2962,7 @@ namespace tars
         case SUB_INSERT:
             if (IsDigit(oldValue))
             {
-                retValue = TC_Common::tostr(TC_Common::strto<tars::Int64>(oldValue) - TC_Common::strto<tars::Int64>(v));
+                retValue = tars::TC_Common::tostr(tars::TC_Common::strto<tars::Int64>(oldValue) - tars::TC_Common::strto<tars::Int64>(v));
             }
             else
                 return TC_HashMapMalloc::RT_DATATYPE_ERR;
@@ -2975,7 +2972,7 @@ namespace tars
 
         }
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << k;
         pi << retValue;
 
@@ -3370,7 +3367,7 @@ namespace tars
             s << "[AutoErase        = " << _pHead->_bAutoErase << "]" << endl;
             s << "[MemSize          = " << _pHead->_iMemSize << "]" << endl;
             s << "[AllBlockCapacity      = " << _pDataAllocator->getAllCapacity() << "]" << endl;
-            s << "[SingleBlockCapacity   = " << TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
+            s << "[SingleBlockCapacity   = " << tars::TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
             s << "[UsedChunk        = " << _pHead->_iUsedChunk << "]" << endl;
             s << "[UsedDataMem      = " << _pHead->_iUsedDataMem << "]" << endl;
             s << "[FreeDataMem      = " << _pDataAllocator->getAllCapacity() - _pHead->_iUsedDataMem << "]" << endl;
@@ -3678,7 +3675,7 @@ namespace tars
     {
         while (true)
         {
-            if (TC_Common::isPrimeNumber(n))
+            if (tars::TC_Common::isPrimeNumber(n))
             {
                 return n;
             }

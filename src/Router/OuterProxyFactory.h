@@ -18,7 +18,6 @@
 #include <map>
 #include "RouterServerConfig.h"
 #include "global.h"
-#include "servant/TarsLogger.h"
 #include "util/tc_common.h"
 #include "util/tc_monitor.h"
 

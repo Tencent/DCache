@@ -33,7 +33,7 @@ pthread_key_t ThreadKey::_threadKey;
 
 BatchCallParamComm::BatchCallParamComm(size_t count)
 {
-    _count.set(count);
+    _count = count;
 }
 
 //////////////////////////////////////////////////////////////////////////

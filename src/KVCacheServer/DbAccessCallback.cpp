@@ -84,7 +84,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                 {
                     _pParam->addValue(_key, value, VALUE_SUCC, 2, iExpireTime);
                 }
-                if (_pParam->count.dec() <= 0)
+                if ((--_pParam->count) <= 0)
                 {
                     GetKVBatchRsp rsp;
                     rsp.values = _pParam->vtValue;
@@ -270,7 +270,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                 if (_pParam->bEnd)
                     return;
                 _pParam->addValue(_key, "", VALUE_NO_DATA, 1, 0);
-                if (_pParam->count.dec() <= 0)
+                if ((--_pParam->count) <= 0)
                 {
                     GetKVBatchRsp rsp;
                     rsp.values = _pParam->vtValue;
@@ -531,7 +531,7 @@ void DbAccessCallback::callback_del(tars::Int32 ret)
 
                 _pDelParam->addValue(_key, DEL_SUCC);
 
-                if (_pDelParam->count.dec() <= 0)
+                if ((--_pDelParam->count) <= 0)
                 {
                     WCache::async_response_delKVBatch(_current, ET_SUCC, _pDelParam->result);
                     _pDelParam->bEnd = true;
@@ -568,7 +568,7 @@ void DbAccessCallback::callback_del(tars::Int32 ret)
 
                 _pDelParam->addValue(_key, DEL_ERROR);
 
-                if (_pDelParam->count.dec() <= 0)
+                if ((--_pDelParam->count) <= 0)
                 {
                     WCache::async_response_delKVBatch(_current, ET_SUCC, _pDelParam->result);
                     _pDelParam->bEnd = true;

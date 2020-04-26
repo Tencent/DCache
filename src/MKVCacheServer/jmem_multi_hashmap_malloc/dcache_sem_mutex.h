@@ -21,7 +21,7 @@
 #include <semaphore.h>
 
 
-namespace tars
+namespace DCache
 {
     /////////////////////////////////////////////////
     // 说明: 信号量锁类
@@ -30,12 +30,11 @@ namespace tars
     /**
     * 信号量锁异常类
     */
-    struct DCache_SemMutex_Exception : public TC_Lock_Exception
-    {
-        DCache_SemMutex_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
-        DCache_SemMutex_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
-        ~DCache_SemMutex_Exception() throw() {};
-    };
+struct DCache_SemMutex_Exception : public tars::TC_Lock_Exception
+{
+    DCache_SemMutex_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
+    ~DCache_SemMutex_Exception() throw() {};
+};
 
     /**
     * 进程间锁, 排斥锁
@@ -123,30 +122,28 @@ namespace tars
 
     };
 
-
-
-    struct TC_ProcessSem_Exception : public TC_Lock_Exception
-    {
-        TC_ProcessSem_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
-        TC_ProcessSem_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
-        ~TC_ProcessSem_Exception() throw() {};
-    };
-
-
-    class ProcessSem
-    {
-    public:
-        ProcessSem() {};
-        ~ProcessSem();
-        void init(int pshared = 1, unsigned int value = 1);
-        int lock();
-        int unlock();
-        bool tryLock();
-
-    private:
-        sem_t _sem;
-        bool _bInit;
-    };
+//    struct TC_ProcessSem_Exception : public TC_Lock_Exception
+//    {
+//        TC_ProcessSem_Exception(const string &buffer) : TC_Lock_Exception(buffer) {};
+////        TC_ProcessSem_Exception(const string &buffer, int err) : TC_Lock_Exception(buffer, err) {};
+//        ~TC_ProcessSem_Exception() throw() {};
+//    };
+//
+//
+//    class ProcessSem
+//    {
+//    public:
+//        ProcessSem() {};
+//        ~ProcessSem();
+//        void init(int pshared = 1, unsigned int value = 1);
+//        int lock();
+//        int unlock();
+//        bool tryLock();
+//
+//    private:
+//        sem_t _sem;
+//        bool _bInit;
+//    };
 
 
 

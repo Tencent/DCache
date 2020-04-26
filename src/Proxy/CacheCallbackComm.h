@@ -98,7 +98,7 @@ struct BatchCallParamComm : public TC_HandleBase
 {
     BatchCallParamComm(size_t count);
 
-    TC_Atomic _count; // 批量访问分路由后的请求计数
+    std::atomic<int> _count; // 批量访问分路由后的请求计数
 
     TC_ThreadLock _lock;
 };
@@ -196,11 +196,13 @@ class CacheCallbackComm : public ThreadKey
 
         if (data)
         {
-            const string &masterName = _current->getContext()[ServantProxy::TARS_MASTER_KEY];
-            if (masterName.empty())
-            {
-                return;
-            }
+
+//            const string &masterName = _current->getContext()[ServantProxy::TARS_MASTER_KEY];
+            auto it = _current->getRequestStatus().find("DCACHE_MASTER_NAME");            
+	    if(it == _current->getRequestStatus().end()) 
+	        return;
+            string masterName = it->second;
+
             // Proxy的stat上报主要是用来统计访问某个模块的tars服务信息的，返回值默认填0
             data->_statDataNode->report(masterName,
                                         _current->getIp(),

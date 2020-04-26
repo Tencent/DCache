@@ -11,7 +11,6 @@
 * either express or implied. See the License for the specific language governing permissions
 * and limitations under the License.
 */
-#include "servant/TarsLogger.h"
 #include "util/tc_common.h"
 #include "servant/Application.h"
 

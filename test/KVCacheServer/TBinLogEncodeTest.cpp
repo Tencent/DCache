@@ -13,6 +13,7 @@
 */
 #include <gtest/gtest.h>
 #include <unistd.h>
+#include "util/tc_common.h"
 #include "TBinLogEncode.h"
 
 class TBinLogEncodeTest : public ::testing::Test
@@ -160,9 +161,9 @@ TEST(TBinLogEncode, GetTimeString)
 {
     string s("SERA0000");
     int64_t nowTime = time(NULL); 
-    char szBuf[64] = {0};
-    strftime(szBuf, sizeof(szBuf), "%Y%m%d%H%M%S", localtime(&nowTime));
-    string nowTimeString(szBuf); 
+//    char szBuf[64] = {0};
+//    strftime(szBuf, sizeof(szBuf), "%Y%m%d%H%M%S", localtime(&nowTime));
+    string nowTimeString = TC_Common::now2str("%Y%m%d%H%M%S"); //(szBuf);
 
     int64_t timestamp = tars_htonll(nowTime);
     s += string((char*)(&timestamp), sizeof(timestamp));

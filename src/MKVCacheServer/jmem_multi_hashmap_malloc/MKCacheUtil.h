@@ -18,7 +18,7 @@
 #include "CacheShare.h"
 
 using namespace DCache;
-using namespace tars;
+//using namespace tars;
 
 namespace HashMap
 {

@@ -18,7 +18,7 @@
 
 #include "MKCacheUtil.h"
 
-namespace tars
+namespace DCache
 {
 
     //int TC_Multi_HashMap_Malloc::FailureRecover::_iRefCount = 0;
@@ -966,7 +966,7 @@ namespace tars
         try
         {
             // block保存的数据中，第一部分为除主key外的联合主键
-            TC_PackOut po(s.c_str(), s.length());
+	        tars::TC_PackOut po(s.c_str(), s.length());
             po >> data._key;
 
             // 如果不是只有Key
@@ -1542,7 +1542,7 @@ namespace tars
             }
             // Changed by tutuli 2017-2-27 15:06
             // 当数据过期后，再调用set不带过期时间的接口时，将过期时间置为0
-            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < TC_TimeProvider::getInstance()->getNow())) {
+            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < tars::TC_TimeProvider::getInstance()->getNow())) {
                 getBlockHead()->_iExpireTime = 0;
             }
 
@@ -1681,7 +1681,7 @@ namespace tars
             }
             // Changed by tutuli 2017-2-27 15:06
             // 当数据过期后，再调用set不带过期时间的接口时，将过期时间置为0
-            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < (uint32_t)TC_TimeProvider::getInstance()->getNow())) {
+            else if ((iExpireTime == 0) && (lExpireTime != 0) && (lExpireTime < (uint32_t)tars::TC_TimeProvider::getInstance()->getNow())) {
                 getBlockHead()->_iExpireTime = 0;
             }
 
@@ -3587,7 +3587,7 @@ namespace tars
         try
         {
             // 提取除主key外的联合主键
-            TC_PackOut po(s.c_str(), s.length());
+	        tars::TC_PackOut po(s.c_str(), s.length());
             po >> uk;
         }
         catch (exception &ex)
@@ -3643,7 +3643,7 @@ namespace tars
     {
         Block block(_pMap, _iAddr);
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;		// 数据区只存放uk，不存mk，节省空间
         pi << v;
 
@@ -3655,7 +3655,7 @@ namespace tars
     {
         Block block(_pMap, _iAddr);
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;		// 数据区只存放uk，不存mk，节省空间
         pi << v;
 
@@ -3666,7 +3666,7 @@ namespace tars
     {
         Block block(_pMap, _iAddr);
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;		// 数据区只存放uk
 
         return block.set(pi.topacket().c_str(), pi.topacket().length(), true, 0, 0, vtData);
@@ -3686,7 +3686,7 @@ namespace tars
     {
         Block block(_pMap, _iAddr);
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uniqueId;
         pi << v;
 
@@ -4189,7 +4189,7 @@ namespace tars
                             try
                             {
                                 // 提取除主key外的联合主键
-                                TC_PackOut po(s.c_str(), s.length());
+	                            tars::TC_PackOut po(s.c_str(), s.length());
                                 po >> tmExpire._ukey;
                                 vtTimes.push_back(tmExpire);
                             }
@@ -4290,7 +4290,7 @@ namespace tars
                             try
                             {
                                 // 提取除主key外的联合主键
-                                TC_PackOut po(s.c_str(), s.length());
+	                            tars::TC_PackOut po(s.c_str(), s.length());
                                 po >> tmDel._ukey;
                             }
                             catch (exception &ex)
@@ -5001,7 +5001,7 @@ namespace tars
 
         if (_iDataSize == 0)
         {
-            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::create] init data size error:" + TC_Common::tostr(_iDataSize));
+            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::create] init data size error:" + tars::TC_Common::tostr(_iDataSize));
         }
 
         init(pAddr);
@@ -5101,7 +5101,7 @@ namespace tars
         void *pHashAddr = (char*)_pHead + sizeof(tagMapHead) + sizeof(tagModifyHead) * 2;
 
         // 主key hash索引区
-        size_t iHashMemSize = TC_MemVector<tagMainKeyHashItem>::calcMemSize(iMHashCount);
+        size_t iHashMemSize = tars::TC_MemVector<tagMainKeyHashItem>::calcMemSize(iMHashCount);
         if ((char*)pHashAddr - (char*)_pHead + iHashMemSize > iSize)
         {
             throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::create] mem size not enougth.");
@@ -5110,7 +5110,7 @@ namespace tars
         pHashAddr = (char*)pHashAddr + _hashMainKey.getMemSize();
 
         // 联合hash索引区
-        iHashMemSize = TC_MemVector<tagHashItem>::calcMemSize(iUHashCount);
+        iHashMemSize = tars::TC_MemVector<tagHashItem>::calcMemSize(iUHashCount);
         if ((char*)pHashAddr - (char*)_pHead + iHashMemSize > iSize)
         {
             throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::create] mem size not enougth.");
@@ -5188,17 +5188,17 @@ namespace tars
         if (_pHead->_iMemSize != iSize)
         {
             // 内存大小不匹配
-            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] hash map size not equal:" + TC_Common::tostr(_pHead->_iMemSize) + "!=" + TC_Common::tostr(iSize));
+            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] hash map size not equal:" + tars::TC_Common::tostr(_pHead->_iMemSize) + "!=" + tars::TC_Common::tostr(iSize));
         }
 
         if (_pHead->_iMinChunkSize != _iMinChunkSize)
         {
-            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] hash map MinChunkSize not equal:" + TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + TC_Common::tostr(_iMinChunkSize) + " (data != code)");
+            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] hash map MinChunkSize not equal:" + tars::TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + tars::TC_Common::tostr(_iMinChunkSize) + " (data != code)");
         }
 
         if (_pHead->_iKeyType != _iKeyType)
         {
-            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] keyType not equal:" + TC_Common::tostr(int(_pHead->_iKeyType)) + "!=" + TC_Common::tostr(int(_iKeyType)));
+            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::connect] keyType not equal:" + tars::TC_Common::tostr(int(_pHead->_iKeyType)) + "!=" + tars::TC_Common::tostr(int(_iKeyType)));
         }
 
         _pstCurrModify = _pstOuterModify;
@@ -5271,7 +5271,7 @@ namespace tars
 
         if (_pHead->_iMinChunkSize != _iMinChunkSize)
         {
-            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::append] hash map MinChunkSize not equal:" + TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + TC_Common::tostr(_iMinChunkSize) + " (data != code)");
+            throw TC_Multi_HashMap_Malloc_Exception("[TC_Multi_HashMap_Malloc::append] hash map MinChunkSize not equal:" + tars::TC_Common::tostr(_pHead->_iMinChunkSize) + "!=" + tars::TC_Common::tostr(_iMinChunkSize) + " (data != code)");
         }
 
         _pstCurrModify = _pstOuterModify;
@@ -7215,7 +7215,7 @@ namespace tars
             }
         }
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;
         uint32_t iAllocSize = (uint32_t)(sizeof(Block::tagBlockHead) + pi.length());
 
@@ -7290,7 +7290,7 @@ namespace tars
 
         uint32_t iOldAddr = 0;
 
-        TC_PackIn pi;
+        tars::TC_PackIn pi;
         pi << uk;
         pi << v;
         uint32_t iAllocSize = (uint32_t)(sizeof(Block::tagBlockHead) + pi.length());
@@ -7450,7 +7450,7 @@ namespace tars
 
         uint32_t iOldAddr = 0;
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;
         pi << v;
         uint32_t iAllocSize = (uint32_t)(sizeof(Block::tagBlockHead) + pi.length());
@@ -7651,7 +7651,7 @@ namespace tars
             }
         }
 
-        TC_PackIn pi;
+	    tars::TC_PackIn pi;
         pi << uk;
         uint32_t iAllocSize = (uint32_t)(sizeof(Block::tagBlockHead) + pi.length());
 
@@ -11278,7 +11278,7 @@ namespace tars
             s << "[MainKeyUsedChunk        = " << _pHead->_iMKUsedChunk << "]" << endl;
             s << "[MainKeyUsedMem          = " << _pHead->_iMKUsedMem << "]" << endl;
             s << "[DataCapacity            = " << _pDataAllocator->getAllCapacity() << "]" << endl;
-            s << "[SingleBlockDataCapacity = " << TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
+            s << "[SingleBlockDataCapacity = " << tars::TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
             s << "[DataUsedChunk    = " << _pHead->_iDataUsedChunk << "]" << endl;
             s << "[UsedDataMem      = " << _pHead->_iUsedDataMem << "]" << endl;
             s << "[FreeDataMem      = " << _pDataAllocator->getAllCapacity() - _pHead->_iUsedDataMem << "]" << endl;
@@ -11348,7 +11348,7 @@ namespace tars
             s << "[MainKeyUsedChunk        = " << _pHead->_iMKUsedChunk << "]" << endl;
             s << "[MainKeyUsedMem          = " << _pHead->_iMKUsedMem << "]" << endl;
             s << "[DataCapacity            = " << _pDataAllocator->getAllCapacity() << "]" << endl;
-            s << "[SingleBlockDataCapacity = " << TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
+            s << "[SingleBlockDataCapacity = " << tars::TC_Common::tostr(_pDataAllocator->getSingleBlockCapacity()) << "]" << endl;
             s << "[DataUsedChunk    = " << _pHead->_iDataUsedChunk << "]" << endl;
             s << "[UsedDataMem      = " << _pHead->_iUsedDataMem << "]" << endl;
             s << "[FreeDataMem      = " << _pDataAllocator->getAllCapacity() - _pHead->_iUsedDataMem << "]" << endl;
@@ -12100,7 +12100,7 @@ namespace tars
     {
         while (true)
         {
-            if (TC_Common::isPrimeNumber(n))
+            if (tars::TC_Common::isPrimeNumber(n))
             {
                 return n;
             }

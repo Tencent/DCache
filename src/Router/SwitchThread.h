@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #include <string>
 #include <vector>
-#include "AdminReg.h"
+#include "framework/AdminReg.h"
 #include "DbHandle.h"
 #include "ProxyWrapper.h"
 #include "global.h"
@@ -193,7 +193,7 @@ private:
     int checkServerSettingState(const string &serverName);
 
     std::shared_ptr<DbHandle> _dbHandle;
-    int _switchTimeout;
+//    int _switchTimeout;
     int _switchBlogDifLimit;
     int _switchMaxTimes;    //每天最多切换次数
     int _downGradeTimeout;  //主机降级的等待时间

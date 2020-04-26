@@ -20,7 +20,7 @@
 #include "util/tc_file.h"
 #include "util/tc_mysql.h"
 #include "util/tc_config.h"
-#include "servant/TarsLogger.h"
+#include "servant/Application.h"
 #include "jmem/jmem_hashmap.h"
 #include "Property.h"
 #include "PropertyHashMap.h"

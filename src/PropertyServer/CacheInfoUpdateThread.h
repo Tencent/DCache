@@ -17,7 +17,7 @@
 #include <iostream>
 #include "util/tc_thread.h"
 #include "util/tc_common.h"
-#include "servant/TarsLogger.h"
+#include "servant/Application.h"
 
 using namespace tars;
 

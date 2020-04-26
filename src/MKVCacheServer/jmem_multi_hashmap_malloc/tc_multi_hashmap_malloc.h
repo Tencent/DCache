@@ -25,11 +25,11 @@
 #include "util/tc_pack.h"
 #include "CacheShare.h"
 #include "tc_malloc_chunk.h"
-#include "tc_functor.h"
-#include "tc_hash_fun.h"
+//#include "tc_functor.h"
+#include "util/tc_hash_fun.h"
 
 
-namespace tars
+namespace DCache
 {
     /////////////////////////////////////////////////
     // 说明: 支持多key的hashmap类
@@ -40,10 +40,10 @@ namespace tars
     /**
     * Multi Hash map异常类
     */
-    struct TC_Multi_HashMap_Malloc_Exception : public TC_Exception
+    struct TC_Multi_HashMap_Malloc_Exception : public tars::TC_Exception
     {
         TC_Multi_HashMap_Malloc_Exception(const string &buffer) : TC_Exception(buffer) {};
-        TC_Multi_HashMap_Malloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
+//        TC_Multi_HashMap_Malloc_Exception(const string &buffer, int err) : TC_Exception(buffer, err) {};
         ~TC_Multi_HashMap_Malloc_Exception() throw() {};
     };
 
@@ -2423,9 +2423,10 @@ namespace tars
         typedef HashMapLockIterator lock_iterator;
         typedef MKHashMapIterator   mhash_iterator;
         //定义hash处理器
-        typedef TC_Functor<uint32_t, TL::TLMaker<const string &>::Result> hash_functor;
+//        typedef TC_Functor<uint32_t, TL::TLMaker<const string &>::Result> hash_functor;
+	    typedef std::function<uint32_t(const string &)> hash_functor;
 
-        //////////////////////////////////////////////////////////////////////////////////////////////
+	    //////////////////////////////////////////////////////////////////////////////////////////////
         //map的接口定义
 
         /**
@@ -2442,7 +2443,7 @@ namespace tars
             , _lock_end(this, 0, 0, 0)
             , _end(this, (uint32_t)(-1))
             , _mk_end(this, (uint32_t)(-1))
-            , _hashf(magic_string_hash())
+            , _hashf(tars::magic_string_hash())
         {
         }
 
@@ -3449,9 +3450,9 @@ namespace tars
         friend class MainKey;
         friend class Block;
         friend class BlockAllocator;
-        friend class HashMapIterator;
+        friend struct HashMapIterator;
         friend class HashMapItem;
-        friend class HashMapLockIterator;
+        friend struct HashMapLockIterator;
         friend class HashMapLockItem;
 
         //禁止copy构造
@@ -4088,12 +4089,12 @@ namespace tars
         /**
          * 联合主键hash索引区
          */
-        TC_MemVector<tagHashItem>   _hash;
+        tars::TC_MemVector<tagHashItem>   _hash;
 
         /**
         * 主key hash索引区
         */
-        TC_MemVector<tagMainKeyHashItem>	_hashMainKey;
+        tars::TC_MemVector<tagMainKeyHashItem>	_hashMainKey;
 
         /**
          * 修改数据块

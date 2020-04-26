@@ -14,11 +14,11 @@
 #ifndef _UNPACK_TABLE_H_
 #define _UNPACK_TABLE_H_
 
+#include "servant/Application.h"
 #include "RouterShare.h"
 #include "util/tc_file.h"
 #include "util/tc_thread.h"
 #include "NormalHash.h"
-#include "servant/TarsLogger.h"
 
 using namespace std;
 using namespace tars;

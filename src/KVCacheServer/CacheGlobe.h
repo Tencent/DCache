@@ -15,7 +15,7 @@
 #define _CACHEGLOBE_H
 
 #include "servant/Application.h"
-#include "dcache_jmem_hashmap_malloc.h"
+#include "jmem_hashmap_malloc/dcache_jmem_hashmap_malloc.h"
 #include "CacheShare.h"
 #include "UnpackTable.h"
 #include "StringUtil.h"
@@ -174,7 +174,7 @@ private:
     //BinLog同步时间点
     BinLogSyncTime _binLogSyncTime;
     //get命中率
-    TC_Atomic _hitIndex;
+    std::atomic<int> _hitIndex;
     HitCount _hitCount[50];
     bool _slaveCreating;
     bool _enableExpire;

@@ -16,7 +16,7 @@
 
 #include <atomic>
 #include <memory>
-#include "EtcdThread.h"
+//#include "EtcdThread.h"
 #include "SwitchThread.h"
 #include "TimerThread.h"
 #include "global.h"
@@ -64,7 +64,7 @@ public:
         : _dbHandle(std::make_shared<DbHandle>()),
           _outerProxy(std::make_shared<OuterProxyFactory>()),
           _transfer(std::make_shared<DCache::Transfer>(_outerProxy)),
-          _enableEtcd(false),
+//          _enableEtcd(false),
           _routerType(ROUTER_SLAVE)
     {
     }
@@ -109,13 +109,13 @@ public:
 
     virtual bool procAdminCommand(const string &command, const string &params, string &result);
 
-    virtual bool isEnableEtcd() const { return _enableEtcd; }
+//    virtual bool isEnableEtcd() const { return _enableEtcd; }
 
-    virtual void setEnableEtcd(bool b) { _enableEtcd = b; }
+//    virtual void setEnableEtcd(bool b) { _enableEtcd = b; }
 
     virtual void setRouterType(enum RouterType t) { _routerType = t; }
 
-    virtual void updateLastHeartbeat(const int64_t lastHeartbeat) { _etcdThread.updateLastHeartbeat(lastHeartbeat); }
+//    virtual void updateLastHeartbeat(const int64_t lastHeartbeat) { _etcdThread.updateLastHeartbeat(lastHeartbeat); }
 
     virtual enum RouterType getRouterType() const { return _routerType; }
 
@@ -213,7 +213,7 @@ public:
 
 private:
     // 启动ETCD相关的流程。
-    int setUpEtcd();
+//    int setUpEtcd();
 
 protected:
     // 测试用，不要在正式代码中调用此方法。
@@ -233,8 +233,8 @@ private:
     std::shared_ptr<DbHandle> _dbHandle;               // 数据库操作句柄
     std::shared_ptr<OuterProxyFactory> _outerProxy;    // 代理工厂
     std::shared_ptr<DCache::Transfer> _transfer;
-    std::shared_ptr<EtcdHandle> _etcdHandle;
-    bool _enableEtcd;                                  // 是否开启ETCD
+//    std::shared_ptr<EtcdHandle> _etcdHandle;
+//    bool _enableEtcd;                                  // 是否开启ETCD
     std::atomic<enum RouterType> _routerType;          // router的类型(主机或备机)
     RouterServerConfig _conf;                          // 配置文件管理
     std::string _masterRouterObj;                      // master主机的obj
@@ -248,7 +248,7 @@ private:
     HeartbeatInfo _heartbeatInfo;                      // 主机心跳上报信息，key为groupName
     mutable tars::TC_ThreadLock _heartbeatInfoLock;    // 对_heartbeatInfo的锁
     TimerThread  _timerThread;                         // 定时任务线程
-    EtcdThread   _etcdThread;                          // ETCD处理线程
+//    EtcdThread   _etcdThread;                          // ETCD处理线程
     SwitchThread _switchThread;                        // 主备切换线程
     map<string, TAdminFunc> _procAdminCommandFunctors; // 处理管理命令函数列表
 };

@@ -1186,7 +1186,7 @@ public:
                 sDirty = s.substr(curIndex, 1);
                 if (sDirty == "3")
                 {
-                    v._isDelete = tars::TC_Multi_HashMap_Malloc::DELETE_TRUE;
+                    v._isDelete = DCache::TC_Multi_HashMap_Malloc::DELETE_TRUE;
                 }
                 else if (sDirty != "0" && sDirty != "1")
                 {
@@ -1480,7 +1480,7 @@ public:
                 TLOGDEBUG("decode mk:" << _mainKey << " sDirty:" << sDirty << endl);
                 if (sDirty == "3")
                 {
-                    v._isDelete = tars::TC_Multi_HashMap_Malloc::DELETE_TRUE;
+                    v._isDelete = DCache::TC_Multi_HashMap_Malloc::DELETE_TRUE;
                 }
                 else if (sDirty != "0" && sDirty != "1")
                 {
@@ -1527,7 +1527,7 @@ public:
                 sDirty = s.substr(curIndex, 1);
                 if (sDirty == "3")
                 {
-                    v._isDelete = tars::TC_Multi_HashMap_Malloc::DELETE_TRUE;
+                    v._isDelete = DCache::TC_Multi_HashMap_Malloc::DELETE_TRUE;
                 }
                 else if (sDirty != "0" && sDirty != "1")
                 {

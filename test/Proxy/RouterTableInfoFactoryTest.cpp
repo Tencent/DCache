@@ -15,7 +15,8 @@
 #include <gtest/gtest.h>
 
 #include "RouterTableInfoFactory.h"
-#include "MockRouterHandle.h"
+#include "MockClass/MockRouterHandle.h"
+#include "ProxyShare.h"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ class RouterTableInfoFactoryTest : public ::testing::Test
         _pRouterTableInfoFactory = make_shared<RouterTableInfoFactory>(pRouterHandle);
         TC_Config conf;
         conf.parseString(CFG_FOR_ROUTERTABLEINFOFACTORY);
-        EXPECT_EQ(ET_SUCC, _pRouterTableInfoFactory->init(conf));
+        EXPECT_EQ(DCache::ET_SUCC, _pRouterTableInfoFactory->init(conf));
     }
 
   protected:

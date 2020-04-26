@@ -17,7 +17,7 @@
 #include "util/tc_common.h"
 #include "util/tc_thread.h"
 #include "util/tc_option.h"
-#include "servant/TarsLogger.h"
+#include "servant/Application.h"
 #include "Property.h"
 #include "PropertyHashMap.h"
 

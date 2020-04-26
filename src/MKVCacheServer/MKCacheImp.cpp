@@ -491,7 +491,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                 {
                     keyValue.mainKey = vtNeedDBAccessMainKey[i];
                     pParam->addValue(keyValue);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         pParam->bEnd = true;
                         MKVBatchRsp rsp;
@@ -765,7 +765,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                     {
                         keyValue.mainKey = needDbIt->first;
                         pParam->addValue(keyValue);
-                        if (pParam->count.dec() <= 0)
+                        if ((--pParam->count) <= 0)
                         {
                             pParam->bEnd = true;
                             MUKBatchRsp rsp;
@@ -1198,7 +1198,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                 {
                     keyValue.mainKey = vtNeedDBAccessMainKey[i].mk;
                     pParam->addValue(keyValue);
-                    if (pParam->count.dec() <= 0)
+                    if ((--pParam->count) <= 0)
                     {
                         pParam->bEnd = true;
                         MKVBatchExRsp rsp;

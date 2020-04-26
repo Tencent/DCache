@@ -565,7 +565,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
 
                 if (v.size() >= 20 || (i == uEnd && v.size() > 0))
                 {
-                    param->_count.inc();
+                    ++param->_count;
                     try
                     {
                         RouterClientPrxCallbackPtr cb = new RouterClientCallback(current, param);
@@ -582,7 +582,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
 
                 if ((vtOnlyKey.size() >= 100) || (i == uEnd && vtOnlyKey.size() > 0))
                 {
-                    param->_count.inc();
+                    ++param->_count;
                     try
                     {
                         RouterClientPrxCallbackPtr cb = new RouterClientCallback(current, param);

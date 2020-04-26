@@ -166,7 +166,7 @@ int GlobalStat::init()
 {
     _binLogSyncTime.tSync = 0;
     _binLogSyncTime.tLast = 0;
-    _hitIndex.set(0);
+    _hitIndex = 0;
     _slaveCreating = false;
     _enableExpire = false;
 
@@ -213,7 +213,7 @@ void GlobalStat::setBinlogTime(unsigned int sync, unsigned int last)
 
 int GlobalStat::genHitIndex()
 {
-    return _hitIndex.add(1);
+    return ++_hitIndex;
 }
 
 int GlobalStat::hitIndex()

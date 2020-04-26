@@ -17,7 +17,7 @@
 #include "RouterServer.h"
 #include "StatProperty.h"
 #include "Transfer.h"
-#include "util/tc_functor.h"
+//#include "util/tc_functor.h"
 
 using namespace std;
 

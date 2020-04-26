@@ -38,7 +38,7 @@ void DCacheOptServer::initialize()
     relationDbConf.loadFromMap(relationDBInfo);
 
     // release 任务ID 初始化为0
-    _releaseID.set(0);
+    _releaseID = 0;
 
     // 初始化 release 线程
     int releaseThreadCount = TC_Common::strto<int>(conf.get("/Main/Release<ThreadCount>", "5"));
@@ -73,7 +73,7 @@ ReleaseRequestQueueManager* DCacheOptServer::releaseRequestQueueManager()
 
 int DCacheOptServer::getReleaseID()
 {
-    return _releaseID.inc();
+    return (++_releaseID);
 }
 
 UninstallRequestQueueManager* DCacheOptServer::uninstallRequestQueueManager()

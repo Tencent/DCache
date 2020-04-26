@@ -107,9 +107,9 @@ class HashmapTest : public ::testing::Test
         cout << __FUNCTION__ << "| initStore succ" << endl;
 
         NormalHash *pHash = new NormalHash();
-        typedef size_t (NormalHash::*TpMem)(const string &);
-        TC_HashMapMalloc::hash_functor cmd(pHash, static_cast<TpMem>(&NormalHash::HashRawString));
-        g_sHashMap.setHashFunctor(cmd);
+//        typedef size_t (NormalHash::*TpMem)(const string &);
+//        TC_HashMapMalloc::hash_functor cmd(pHash, static_cast<TpMem>(&NormalHash::HashRawString));
+        g_sHashMap.setHashFunctor(std::bind(&NormalHash::HashRawString, pHash, std::placeholders::_1));
         cout << __FUNCTION__ << "| setHashFunctor succ" << endl;
 
         g_sHashMap.setAutoErase(false);

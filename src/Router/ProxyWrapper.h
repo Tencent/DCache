@@ -13,7 +13,7 @@
 */
 #ifndef __PROXY_WRAPPER_H__
 #define __PROXY_WRAPPER_H__
-#include "AdminReg.h"
+#include "framework/AdminReg.h"
 #include "servant/Application.h"
 
 class AdminRegProxyWrapper

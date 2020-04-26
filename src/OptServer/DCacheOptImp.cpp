@@ -4321,7 +4321,7 @@ uint16_t DCacheOptImp::getPort(const string &sIp, uint16_t iPort)
 uint16_t DCacheOptImp::getRand()
 {
     struct timeval tv;
-    gettimeofday(&tv,NULL);
+    TC_Common::gettimeofday(tv);
 
     srand(tv.tv_usec);
     return (rand() % 20000) + 10000;
