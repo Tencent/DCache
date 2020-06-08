@@ -20,4 +20,5 @@ link_directories(/usr/local/tars/cpp/thirdparty/lib)
 
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(mysql-tool)
 
