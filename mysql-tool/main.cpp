@@ -69,9 +69,9 @@ struct MysqlCommand
 			data["level"]		= make_pair(TC_Mysql::DB_INT, "2");
 			data["posttime"]	= make_pair(TC_Mysql::DB_INT, "now()");
 
-			cout << "-----------------------------------------------" << endl;
-			cout << fileName << endl;
-			cout << content << endl;
+			// cout << "-----------------------------------------------" << endl;
+			// cout << fileName << endl;
+			// cout << content << endl;
 			// cout << mysql.escapeString(content) << endl;
 
 			mysql.replaceRecord("t_config_files", data);

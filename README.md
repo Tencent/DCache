@@ -24,7 +24,7 @@ DCache具有以下特点
 
 ## 文档
 
-DCache接口使用方法请参考文档[Proxy接口指南](docs/proxy_api_guide.md)，更多文档请查看[docs目录](docs/)
+DCache接口使用方法请参考文档[Proxy接口指南](docs/proxy_api_guide.md)，更多文档请查看[docs目录](docs/README.md)
 
 ## 目录说明
 
