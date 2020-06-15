@@ -1015,7 +1015,8 @@ void BinToDbValue(const string &sMK, const string &sUK, const string &sValue, in
 
 
 const double EPSILON = 1.00e-07;
-#define FLOAT_EQ(x,v) (((v - EPSILON) < x) && (x <( v + EPSILON)))
+//#define FLOAT_EQ(x,v) (((v - EPSILON) <= x) && (x <=( v + EPSILON)))
+#define FLOAT_EQ(x,v) (fabs((x) - (v)) <= EPSILON)
 
 bool judgeValue(TarsDecode &decode, const string &value, Op op, const string &type, uint8_t tag, const string &sDefault, bool isRequire)
 {
