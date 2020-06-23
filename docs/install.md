@@ -6,7 +6,7 @@
 >   * [安装OptServer](#3.1)
 >   * [安装ConfigServer](#3.2)
 >   * [安装PropertyServer](#3.3)
-> * [DCache管理平台安装](#4)
+> * [一键安装DCache基础包](#4)
 > * [创建一个DCache应用](#5)
 >   * [发布包上传](#5.1)
 >   * [部署和发布Proxy和Router服务](#5.2)
@@ -16,7 +16,8 @@
 
 
 ## <a id = "1"></a> 1. 依赖环境
-DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以上）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
+
+DCache(>=2.1.0)是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v2.4.2以上）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
 
 ![Tars管理平台主页](images/tars_mainPage.png)
 
@@ -26,12 +27,11 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以
 
 在源码目录执行：`mkdir build; cd build; cmake ..; make; make release; make tar`
 
-
 即可生成各服务的发布包。
 
 ### 2.2 创建模板
 
-在Tars的Web平台创建DCache.Cache模板，后续部署DCache模块时会用到该模板。
+在Tars的Web平台创建DCache.Cache模板，后续部署DCache模块时会用到该模板, 如果已经存在, 则忽略这步骤
 
 ![创建模板](images/tars_add_tmplate.png)
 
@@ -100,8 +100,6 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以
 ![重启成功](images/restart_opt_succ.png)
 
 
-
-
 ### <a id = "3.2"></a> 3.2 安装ConfigServer
 
 安装ConfigServer的步骤和安装OptServer的步骤类似，除了不需要创建数据库外。
@@ -148,9 +146,33 @@ DCache是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本v1.6.0以
 
 该步骤参考安装OptServer的**step5**即可。  
 
-## <a id = "4"></a> 4. DCache管理平台安装
+## <a id = "4"></a> 4. 一键安装DCache基础包
 
-DCache管理界面是以模块的形式加载到Tars管理平台，最终会和Tars管理平台使用同一个地址，具体的模块安装步骤请参考[DCache管理平台安装](https://github.com/TarsCloud/TarsWeb)
+DCache依赖Tars环境, 因此安装时需要知道TARS数据库, 同时DCache也会有自己的数据库, 会创建dcache相关的表.
+
+进入build目录(必须在build下执行)
+```
+cd build
+../deploy/install.sh TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD WEB_HOST WEB_TOKEN
+```
+
+注意:
+TARS_MYSQL_IP: tars数据库的ip
+TARS_MYSQL_PORT: tars数据库的port
+TARS_MYSQL_USER: tars数据库的user
+TARS_MYSQL_PASSWORD: tars数据库的密码
+DCACHE_MYSQL_IP: dcache数据库的ip
+DCACHE_MYSQL_PORT: dcache数据库的port
+DCACHE_MYSQL_USER: dcache数据库的user
+DCACHE_MYSQL_PASSWORD: dcache数据库的密码
+WEB_HOST: TARS web平台地址
+WEB_TOKEN: TARS web平台token(需要进入web平台, 用户中心上, 创建一个Token)
+
+执行install.sh脚本后, DCache所有基础环境就准备完毕了:
+- Router、Cache、Proxy等发布包已经上传
+- DCacheOptServer/PropertyServer/ConfigServer的配置和服务包已经上传
+
+下一步就可以创建DCache的模块了.
 
 ## <a id = "5"></a> 5. 创建一个DCache应用
 
@@ -160,33 +182,6 @@ DCache管理界面是以模块的形式加载到Tars管理平台，最终会和T
 >
 > * 模块：类似于mysql中table的概念，使用者创建一个模块来存储数据。模块分为KVCache和MKVCache两种，如果要存储key-value数据则创建KVCache模块，如果要使用k-k-row，list，set，zset则创建MKVCache模块。
 > * 应用：应用是多个模块的集合，应用下所有模块共享Proxy和Router服务，类似于mysql中db的概念。
-
-
-### <a id = "5.1"></a> 5.1 发布包上传
-
-部署Router、Cache、Proxy服务前必须上传相应的发布包
-
-#### Proxy发布包上传
-如下图：
-
-![上传发布包](images/upload_proxy_package.png)
-
-依次点击，然后在弹出的提示框页面选择Proxy服务的发布包，上传。点击“默认”，将该发布包设置为Proxy服务的默认发布包，如下图：
-
-![设为默认](images/set_default.png)
-
-#### Router发布包上传
-Router发布包的上传和Proxy发布包的上传步骤相同。
-
-#### Cache发布包上传
-Cache发布包的上传和Proxy发布包上传步骤类似，只不过Cache有两种不同类型（KVCache和MKVCache）的发布包，在“上传提示框”页面要注意类型匹配，如下图：
-
-![Cache发布包上传](images/upload_cache_package.png)
-
-上传完两种不同类型的发布包并分别设置为默认，得到下图：
-
-![Cache发布包上传成功](images/upload_cache_package_succ.png)
-
 
 ### <a id = "5.2"></a> 5.2 部署和发布Proxy和Router服务
 
@@ -241,11 +236,9 @@ Cache服务的模板默认会选择DCache.Cache，如果模板DCache.Cache不存
 
 ### <a id = "5.5"></a> 5.5 Cache配置管理
 
-
 ![Cache配置管理](images/cache_config.png)
 
 按照上图箭头依次点击，可添加配置项。
-
 
 #### 模块和单节点的配置管理
 

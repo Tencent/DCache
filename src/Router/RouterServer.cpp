@@ -54,11 +54,11 @@ void RouterServer::initialize()
         _conf.init(ServerConfig::BasePath + "/" + ServerConfig::ServerName + ".conf");
         _adminCreatePolicy = std::bind(defaultAdminProxyCreatePolicy,
                                        _conf.getAdminRegObj("tars.tarsregistry.AdminRegObj"));
-//        if (setUpEtcd() != 0)
-//        {
-//            TLOGERROR(FILE_FUN << "set up etcd error" << endl);
-//            exit(-1);
-//        }
+       if (setUpEtcd() != 0)
+       {
+           TLOGERROR(FILE_FUN << "set up etcd error" << endl);
+           exit(-1);
+       }
 
         _dbHandle->init(_conf.getDbReloadTime(100000),
                         createMySqlHandler(_conf.getDbConnInfo()),
@@ -1820,18 +1820,18 @@ void RouterServer::destroyApp()
 //        _etcdHandle->destroy();
 //    }
 }
-//
-//int RouterServer::setUpEtcd()
-//{
+
+int RouterServer::setUpEtcd()
+{
 //    setEnableEtcd(_conf.checkEnableEtcd());
-//
+
 //    if (!isEnableEtcd())
 //    {
-//        TLOGDEBUG("RouterServer::setUpEtcd ETCD is not enable" << endl);
-//        setRouterType(ROUTER_MASTER);
-//        return 0;
+       TLOGDEBUG("RouterServer::setUpEtcd ETCD is not enable" << endl);
+       setRouterType(ROUTER_MASTER);
+       return 0;
 //    }
-//
+
 //    _etcdHandle = std::make_shared<EtcdHandle>();
 //    auto etcdHost = std::make_shared<EtcdHost>();
 //    if (_etcdHandle->init(_conf, etcdHost) != 0)
@@ -1839,15 +1839,15 @@ void RouterServer::destroyApp()
 //        TLOGERROR("RouterServer::setUpEtcd init etcd handle error" << endl);
 //        return -1;
 //    }
-//
+
 //    // RouterServer启动时均配置为slave，待后续抢主
 //    setRouterType(ROUTER_SLAVE);
-//
+
 //    _etcdThread.init(_conf, _etcdHandle);
 //    _etcdThread.start();
-//
-//    return 0;
-//}
+
+   return 0;
+}
 
 void RouterServer::clearSwitchThreads()
 {

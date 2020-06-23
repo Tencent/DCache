@@ -213,7 +213,7 @@ public:
 
 private:
     // 启动ETCD相关的流程。
-//    int setUpEtcd();
+   int setUpEtcd();
 
 protected:
     // 测试用，不要在正式代码中调用此方法。

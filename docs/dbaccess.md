@@ -79,8 +79,6 @@ ObjName可以通过点击“管理Servant”获取，如下图所示：
 5. Main/Cache<SyncInterval> = 100 // 回写操作的时间间隔（秒），即频率
 ```
 
-
-
 ## <a id = "4"></a> 4. 部署dbaccess服务
 生成dbaccess服务的发布包和做好相关配置后，就可以在tars管理平台部署该服务了。
 

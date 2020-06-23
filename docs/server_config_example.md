@@ -375,11 +375,11 @@
             dbuser=
             dbpass=
             dbport=
-            charset=gbk
+            charset=utf8
         </property>
         #db_dcache_relation的数据库信息
         <relation>
-            charset=gbk
+            charset=utf8
             dbname=db_dcache_relation
             dbhost=
             dbpass=

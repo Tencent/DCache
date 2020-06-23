@@ -7,7 +7,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -21,7 +21,7 @@
 
 DROP TABLE IF EXISTS `t_router_app`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_router_app` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `router_name` varchar(128) NOT NULL DEFAULT '',
@@ -30,11 +30,11 @@ CREATE TABLE `t_router_app` (
   `port` char(10) DEFAULT NULL,
   `user` char(50) DEFAULT NULL,
   `password` char(50) DEFAULT NULL,
-  `charset` char(10) DEFAULT 'utf8',
+  `charset` char(10) DEFAULT 'utf8mb4',
   `db_name` char(50) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `router_app` (`router_name`,`app_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1528 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_proxy_app`
@@ -42,14 +42,14 @@ CREATE TABLE `t_router_app` (
 
 DROP TABLE IF EXISTS `t_proxy_app`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_proxy_app` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `proxy_name` varchar(128) NOT NULL DEFAULT '',
   `app_name` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_app` (`proxy_name`,`app_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=587 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -58,7 +58,7 @@ CREATE TABLE `t_proxy_app` (
 
 DROP TABLE IF EXISTS `t_proxy_router`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_proxy_router` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `proxy_name` varchar(128) NOT NULL DEFAULT '',
@@ -69,7 +69,7 @@ CREATE TABLE `t_proxy_router` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_router` (`proxy_name`,`router_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2443935 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_appMod`
@@ -77,7 +77,7 @@ CREATE TABLE `t_proxy_router` (
 
 DROP TABLE IF EXISTS `t_config_appMod`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_config_appMod` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `appName` varchar(128) DEFAULT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE `t_config_appMod` (
   `cacheType` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `app_module` (`appName`,`moduleName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=42270 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_cache_router`
@@ -93,7 +93,7 @@ CREATE TABLE `t_config_appMod` (
 
 DROP TABLE IF EXISTS `t_cache_router`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_cache_router` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `cache_name` varchar(128) NOT NULL DEFAULT '',
@@ -121,7 +121,7 @@ CREATE TABLE `t_cache_router` (
   KEY `group_name` (`group_name`),
   KEY `server_status` (`server_status`),
   KEY `idc_area` (`idc_area`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=13869505 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_proxy_cache`
@@ -129,7 +129,7 @@ CREATE TABLE `t_cache_router` (
 
 DROP TABLE IF EXISTS `t_proxy_cache`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_proxy_cache` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `proxy_name` varchar(128) NOT NULL DEFAULT '',
@@ -137,7 +137,7 @@ CREATE TABLE `t_proxy_cache` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_cache` (`proxy_name`,`cache_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=390163667 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_table`
@@ -145,7 +145,7 @@ CREATE TABLE `t_proxy_cache` (
 
 DROP TABLE IF EXISTS `t_config_table`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_config_table` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `config_id` int(11) NOT NULL DEFAULT '0',
@@ -162,7 +162,7 @@ CREATE TABLE `t_config_table` (
   KEY `item` (`item_id`),
   KEY `server` (`server_name`,`host`),
   KEY `item_id` (`item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1308101 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_reference`
@@ -170,7 +170,7 @@ CREATE TABLE `t_config_table` (
 
 DROP TABLE IF EXISTS `t_config_reference`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_config_reference` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `reference_id` int(11) DEFAULT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE `t_config_reference` (
   `host` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `reference_id` (`server_name`,`host`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=194653 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_item`
@@ -186,7 +186,7 @@ CREATE TABLE `t_config_reference` (
 
 DROP TABLE IF EXISTS `t_config_item`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_config_item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `remark` varchar(128) DEFAULT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE `t_config_item` (
   `period` varchar(4) DEFAULT 'U',
   PRIMARY KEY (`id`),
   UNIQUE KEY `item_path` (`item`,`path`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `t_config_item`
@@ -214,13 +214,13 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `t_idc_map`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_idc_map` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `city` varchar(255) NOT NULL COMMENT 'city name',
   `idc` varchar(32) NOT NULL COMMENT 'idc area',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_transfer_status`
@@ -228,7 +228,7 @@ CREATE TABLE `t_idc_map` (
 
 DROP TABLE IF EXISTS `t_transfer_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_transfer_status` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `app_name` varchar(50) NOT NULL DEFAULT '',
@@ -241,7 +241,7 @@ CREATE TABLE `t_transfer_status` (
   `transfer_start_time` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `transfer_record` (`app_name`,`module_name`,`src_group`,`dst_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=52975 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -251,7 +251,7 @@ CREATE TABLE `t_transfer_status` (
 
 DROP TABLE IF EXISTS `t_expand_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_expand_status` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `app_name` varchar(50) NOT NULL,
@@ -263,7 +263,7 @@ CREATE TABLE `t_expand_status` (
   `expand_start_time` varchar(32) DEFAULT NULL,
   `modify_group_name` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1999 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -272,7 +272,7 @@ CREATE TABLE `t_expand_status` (
 
 DROP TABLE IF EXISTS `t_router_switch`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `t_router_switch` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `app_name` varchar(128) NOT NULL,
@@ -291,7 +291,7 @@ CREATE TABLE `t_router_switch` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `switch_property` enum('auto','manual') DEFAULT 'manual',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=18083 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 

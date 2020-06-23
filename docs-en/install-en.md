@@ -3,14 +3,10 @@
 ## Dependence
 Install Tars development environment and Tars web before compiling DCache, since it is based on [Tars](https://github.com/TarsCloud/Tars) framework.
 
-change directory to `src/thirdParty`, issue commands: `chmod +x thirdparty.sh; ./thirdparty.sh` to download third-party libraries.
-
 ## Compilation
 
-Issue command: `make release;make` in `src/` directory, then go to directory of each service, issue the following commands: 
-```
-make tar
-```
+In source director：`mkdir build; cd build; cmake ..; make; make release; make tar`
+
 to generate a Tars release package for each service.
 
 ## Depoly Public Services
@@ -28,3 +24,5 @@ step1: Create a APP on DCache web.
 step2: Deploy Router and Proxy, Router and Proxy serve all modules of a APP.
 
 step3: Deploy Cache module. KVCache module is for key-value, MKVCache module is for k-k-row, list, set, zset.
+
+to be continue...
