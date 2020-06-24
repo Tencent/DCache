@@ -78,6 +78,8 @@ function exec_dcache()
 }
 
 #执行建库命令
+exec_dcache "create database db_dcache_property"
+
 exec_dcache "create database db_dcache_relation"
 mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation.sql
 
