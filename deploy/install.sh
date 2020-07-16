@@ -45,8 +45,8 @@ function LOG_INFO()
 #yum install mysql
 #输入参数: tars数据库地址, dcache数据库地址
 
-if [ $# -lt 9 ]; then
-    echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD WEB_HOST WEB_TOKEN";
+if [ $# -lt 10 ]; then
+    echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN";
     exit 1
 fi
 
@@ -58,10 +58,41 @@ DCACHE_MYSQL_IP=$5
 DCACHE_MYSQL_PORT=$6
 DCACHE_MYSQL_USER=$7
 DCACHE_MYSQL_PASSWORD=$8
-WEB_HOST=$9
-WEB_TOKEN=$10
+CREATE=$9
+WEB_HOST=${10}
+WEB_TOKEN=${11}
+
+if [ "$CREATE" == "" ]; then
+	CREATE="false"
+fi
+
 
 WORKDIR=$(cd $(dirname $0); pwd)
+
+
+LOG_INFO "====================================================================";
+LOG_INFO "===**********************dcache-install**************************===";
+LOG_INFO "====================================================================";
+
+#输出配置信息
+LOG_DEBUG "===>print config info >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
+LOG_DEBUG "PARAMS:                  "$*
+LOG_DEBUG "TARS_MYSQL_IP:           "$TARS_MYSQL_IP 
+LOG_DEBUG "TARS_MYSQL_PORT:         "$TARS_MYSQL_PORT
+LOG_DEBUG "TARS_MYSQL_USER:         "$TARS_MYSQL_USER
+LOG_DEBUG "TARS_MYSQL_PASSWORD:     "$TARS_MYSQL_PASSWORD
+LOG_DEBUG "DCACHE_MYSQL_IP:         "$DCACHE_MYSQL_IP
+LOG_DEBUG "DCACHE_MYSQL_PORT:       "$DCACHE_MYSQL_PORT
+LOG_DEBUG "DCACHE_MYSQL_USER:       "${DCACHE_MYSQL_USER}
+LOG_DEBUG "DCACHE_MYSQL_PASSWORD:   "${DCACHE_MYSQL_PASSWORD}
+LOG_DEBUG "CREATE:                  "${CREATE}
+LOG_DEBUG "WEB_HOST:                "${WEB_HOST}
+LOG_DEBUG "WEB_TOKEN:               "${WEB_TOKEN}
+LOG_DEBUG "WORKDIR:                 "${WORKDIR}
+LOG_DEBUG "===<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< print config info finish.\n";
+
+cmake ..
+make tar
 
 cmake .. -DTARS_WEB_HOST=${WEB_HOST} -DTARS_TOKEN=${WEB_TOKEN}
 
@@ -77,25 +108,46 @@ function exec_dcache()
     return $ret
 }
 
-#执行建库命令
+if [ "${CREATE}" == "true" ]; then 
 exec_dcache "create database db_dcache_relation"
-mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation.sql
-
-#授权
-exec_dcache "grant all on *.* to 'dcache'@'%' identified by 'dcache@2019' with grant option;"
-exec_dcache "grant all on *.* to 'dcache'@'localhost' identified by 'dcache@2019' with grant option;"
-exec_dcache "flush privileges;"
+exec_dcache "create database db_dcache_property"
+mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation_create.sql
+fi
 
 #上传发布包
-curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@ConfigServer.tgz -Fapplication=DCache -Fmodule_name=ConfigServer -Fcomment=dcache-install
-curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheOptServer.tgz -Fapplication=DCache -Fmodule_name=DCacheOptServer -Fcomment=dcache-install 
-curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@PropertyServer.tgz -Fapplication=DCache -Fmodule_name=PropertyServer -Fcomment=dcache-install
-curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@RouterServer.tgz -Fapplication=DCache -Fmodule_name=RouterServer -Fcomment=dcache-install
-curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@ProxyServer.tgz -Fapplication=DCache -Fmodule_name=ProxyServer -Fcomment=dcache-install
-curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@DG-KVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=1
-curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@DG-MKVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=2
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheConfigServer.tgz -Fapplication=DCache -Fmodule_name=DCacheConfigServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheConfigServer.tgz -Fapplication=DCache -Fmodule_name=DCacheConfigServer -Fcomment=dcache-install
 
-#修改配置文件内的ip地址并写库
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheOptServer.tgz -Fapplication=DCache -Fmodule_name=DCacheOptServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheOptServer.tgz -Fapplication=DCache -Fmodule_name=DCacheOptServer -Fcomment=dcache-install 
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@PropertyServer.tgz -Fapplication=DCache -Fmodule_name=PropertyServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@PropertyServer.tgz -Fapplication=DCache -Fmodule_name=PropertyServer -Fcomment=dcache-install
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@RouterServer.tgz -Fapplication=DCache -Fmodule_name=RouterServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@RouterServer.tgz -Fapplication=DCache -Fmodule_name=RouterServer -Fcomment=dcache-install
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@CombinDbAccessServer.tgz -Fapplication=DCache -Fmodule_name=CombinDbAccessServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@CombinDbAccessServer.tgz -Fapplication=DCache -Fmodule_name=CombinDbAccessServer -Fcomment=dcache-install
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@ProxyServer.tgz -Fapplication=DCache -Fmodule_name=ProxyServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@ProxyServer.tgz -Fapplication=DCache -Fmodule_name=ProxyServer -Fcomment=dcache-install
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@KVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=1"
+curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@KVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=1
+
+LOG_DEBUG
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=2"
+curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=2
+
+LOG_DEBUG
+
 cp -rf ../deploy/config config_tmp
 
 bin/mysql-tool --config=config_tmp --dcache_host=${DCACHE_MYSQL_IP}  --dcache_user=${DCACHE_MYSQL_USER} --dcache_port=${DCACHE_MYSQL_PORT} --dcache_pass=${TARS_MYSQL_PASSWORD} --tars_host=${TARS_MYSQL_IP} --tars_user=${TARS_MYSQL_USER} --tars_port=${TARS_MYSQL_PORT} --tars_pass=${TARS_MYSQL_PASSWORD}

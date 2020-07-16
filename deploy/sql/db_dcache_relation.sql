@@ -34,7 +34,7 @@ CREATE TABLE `t_router_app` (
   `db_name` char(50) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `router_app` (`router_name`,`app_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=1528 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_proxy_app`
@@ -49,7 +49,7 @@ CREATE TABLE `t_proxy_app` (
   `app_name` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_app` (`proxy_name`,`app_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=587 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,7 +69,7 @@ CREATE TABLE `t_proxy_router` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_router` (`proxy_name`,`router_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2443935 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_appMod`
@@ -85,7 +85,7 @@ CREATE TABLE `t_config_appMod` (
   `cacheType` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `app_module` (`appName`,`moduleName`)
-) ENGINE=InnoDB AUTO_INCREMENT=42270 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_cache_router`
@@ -121,7 +121,7 @@ CREATE TABLE `t_cache_router` (
   KEY `group_name` (`group_name`),
   KEY `server_status` (`server_status`),
   KEY `idc_area` (`idc_area`)
-) ENGINE=InnoDB AUTO_INCREMENT=13869505 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_proxy_cache`
@@ -137,7 +137,7 @@ CREATE TABLE `t_proxy_cache` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `proxy_cache` (`proxy_name`,`cache_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=390163667 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_table`
@@ -162,7 +162,7 @@ CREATE TABLE `t_config_table` (
   KEY `item` (`item_id`),
   KEY `server` (`server_name`,`host`),
   KEY `item_id` (`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1308101 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_reference`
@@ -178,7 +178,7 @@ CREATE TABLE `t_config_reference` (
   `host` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `reference_id` (`server_name`,`host`)
-) ENGINE=InnoDB AUTO_INCREMENT=194653 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_config_item`
@@ -196,7 +196,7 @@ CREATE TABLE `t_config_item` (
   `period` varchar(4) DEFAULT 'U',
   PRIMARY KEY (`id`),
   UNIQUE KEY `item_path` (`item`,`path`)
-) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `t_config_item`
@@ -220,7 +220,7 @@ CREATE TABLE `t_idc_map` (
   `city` varchar(255) NOT NULL COMMENT 'city name',
   `idc` varchar(32) NOT NULL COMMENT 'idc area',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `t_transfer_status`
@@ -241,7 +241,7 @@ CREATE TABLE `t_transfer_status` (
   `transfer_start_time` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `transfer_record` (`app_name`,`module_name`,`src_group`,`dst_group`)
-) ENGINE=InnoDB AUTO_INCREMENT=52975 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -263,7 +263,7 @@ CREATE TABLE `t_expand_status` (
   `expand_start_time` varchar(32) DEFAULT NULL,
   `modify_group_name` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1999 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -291,9 +291,18 @@ CREATE TABLE `t_router_switch` (
   `modify_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `switch_property` enum('auto','manual') DEFAULT 'manual',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18083 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+DROP TABLE IF EXISTS `t_dbaccess_app`;
+
+CREATE TABLE `t_dbaccess_app` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dbaccess_name` varchar(128) NOT NULL DEFAULT '',
+  `app_name` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ro_app` (`dbaccess_name`,`app_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Dump completed on 2018-11-29 11:18:13
 
