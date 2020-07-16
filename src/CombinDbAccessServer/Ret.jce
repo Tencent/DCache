@@ -1,0 +1,11 @@
+module DCache
+{
+	const int eDbSucc = 0;                //成功
+	const int eDbRecordNotExist = 1;         //记录不存在
+	const int eDbError = -1;              //数据库操作错误
+	const int eDbNotImplement = -2;       //接口没有实现
+	const int eDbJceDecodeError = -3;     //jce解码失败
+	const int eDbUnknownError = -4;       //未知错误
+	const int eDbTableNameError = -5;     //获取库连接或表名错误
+	const int eDbErrorNeedDel = -6;	    //需要删除cache中的相应数据
+};
