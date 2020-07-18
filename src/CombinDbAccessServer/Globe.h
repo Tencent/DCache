@@ -69,8 +69,8 @@ public:
 	void initialize(const string &sConf);
     string getTableName(const string &k);
 	/*
-    string getTableName(taf::Int64 k);
-    string getTableName(taf::Int32 k);
+    string getTableName(tars::Int64 k);
+    string getTableName(tars::Int32 k);
 	*/
 	string getTablePostfix(size_t postfix);
 

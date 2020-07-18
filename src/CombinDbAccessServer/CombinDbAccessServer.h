@@ -4,7 +4,7 @@
 #include <iostream>
 #include "util/tc_config.h"
 #include "servant/Application.h"
-using namespace taf;
+using namespace tars;
 
 /**
  *

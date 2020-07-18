@@ -15,22 +15,22 @@ void JceEncode::write(const string &s, uint8_t tag, string type)
 {
 	if(type == JCE_BYTE)
 	{
-		taf::Char n = TC_Common::strto<taf::Char>(s);
+		tars::Char n = TC_Common::strto<tars::Char>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_SHORT)
 	{
-		taf::Short n = TC_Common::strto<taf::Short>(s);
+		tars::Short n = TC_Common::strto<tars::Short>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_INT)
 	{
-		taf::Int32 n = TC_Common::strto<taf::Int32>(s);
+		tars::Int32 n = TC_Common::strto<tars::Int32>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_LONG)
 	{
-		taf::Int64 n = TC_Common::strto<taf::Int64>(s);
+		tars::Int64 n = TC_Common::strto<tars::Int64>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_STRING)
@@ -40,22 +40,22 @@ void JceEncode::write(const string &s, uint8_t tag, string type)
 	}
 	else if(type == JCE_FLOAT)
 	{
-		taf::Float n = TC_Common::strto<taf::Float>(s);
+		tars::Float n = TC_Common::strto<tars::Float>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_DOUBLE)
 	{
-		taf::Double n = TC_Common::strto<taf::Double>(s);
+		tars::Double n = TC_Common::strto<tars::Double>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_UINT32)
 	{
-		taf::UInt32 n = TC_Common::strto<taf::UInt32>(s);
+		tars::UInt32 n = TC_Common::strto<tars::UInt32>(s);
 		m_osk.write(n, tag);
 	}
 	else if(type == JCE_UINT16)
 	{
-		taf::UInt16 n = TC_Common::strto<taf::UInt16>(s);
+		tars::UInt16 n = TC_Common::strto<tars::UInt16>(s);
 		m_osk.write(n, tag);
 	}
 	else
@@ -65,35 +65,35 @@ void JceEncode::write(const string &s, uint8_t tag, string type)
 }
 string JceDecode::read(uint8_t tag, const string& type, const string &sDefault, bool isRequire)
 {
-	JceInputStream<BufferReader> isk;
+	TarsInputStream<BufferReader> isk;
 	isk.setBuffer(m_sBuf.c_str(), m_sBuf.length());
 	string s;
 
 	if(type == JCE_BYTE)
 	{
-		taf::Char n;
-		n = TC_Common::strto<taf::Char>(sDefault);
+		tars::Char n;
+		n = TC_Common::strto<tars::Char>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_SHORT)
 	{
-		taf::Short n;
-		n = TC_Common::strto<taf::Short>(sDefault);
+		tars::Short n;
+		n = TC_Common::strto<tars::Short>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_INT)
 	{
-		taf::Int32 n;
-		n = TC_Common::strto<taf::Int32>(sDefault);
+		tars::Int32 n;
+		n = TC_Common::strto<tars::Int32>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_LONG)
 	{
-		taf::Int64 n;
-		n = TC_Common::strto<taf::Int64>(sDefault);
+		tars::Int64 n;
+		n = TC_Common::strto<tars::Int64>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
@@ -104,29 +104,29 @@ string JceDecode::read(uint8_t tag, const string& type, const string &sDefault, 
 	}
 	else if(type == JCE_FLOAT)
 	{
-		taf::Float n;
-		n = TC_Common::strto<taf::Float>(sDefault);
+		tars::Float n;
+		n = TC_Common::strto<tars::Float>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_DOUBLE)
 	{
-		taf::Double n;
-		n = TC_Common::strto<taf::Double>(sDefault);
+		tars::Double n;
+		n = TC_Common::strto<tars::Double>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_UINT32)
 	{
-		taf::UInt32 n;
-		n = TC_Common::strto<taf::UInt32>(sDefault);
+		tars::UInt32 n;
+		n = TC_Common::strto<tars::UInt32>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}
 	else if(type == JCE_UINT16)
 	{
-		taf::UInt16 n;
-		n = TC_Common::strto<taf::UInt16>(sDefault);
+		tars::UInt16 n;
+		n = TC_Common::strto<tars::UInt16>(sDefault);
 		isk.read(n, tag, isRequire);
 		s = TC_Common::tostr(n);
 	}

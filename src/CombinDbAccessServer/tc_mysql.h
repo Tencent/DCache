@@ -7,8 +7,8 @@
 #include <vector>
 #include <stdlib.h>
 #include "util/tc_common.h"
-using namespace taf;
-namespace taf
+using namespace tars;
+namespace tars
 {
 /////////////////////////////////////////////////
 // 说明: mysql操作类

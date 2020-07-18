@@ -1,10 +1,10 @@
 #include "tc_mysql.h"
 #include "errmsg.h"
-#include "servant/taf_logger.h"
+#include "servant/RemoteLogger.h"
 #include <sstream>
 #include <string.h>
 
-namespace taf
+namespace tars
 {
 
 TC_Mysql::TC_Mysql()

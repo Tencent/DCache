@@ -143,7 +143,7 @@ protected:
 
     void doReleaseRequest(ReleaseRequest * request);
 
-    int releaseServer(ReleaseInfo serverInfo, string & errmsg);
+    int releaseServer(ReleaseInfo &serverInfo, string & errmsg);
 
 private:
 

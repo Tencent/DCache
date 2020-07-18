@@ -6,7 +6,7 @@
 #include "DbAccess.h"
 #include "Globe.h"
 
-using namespace taf;
+using namespace tars;
 using namespace std;
 using namespace DCache;
 
@@ -44,12 +44,12 @@ public:
     {
         _basc = b;
     }
-	taf::Int32 select(const string &mainKey, const string &field, 
+	tars::Int32 select(const string &mainKey, const string &field, 
 		const vector<DbCondition> &vtCond, vector<map<string, string> > &vtData);
 
-	taf::Int32 replace(const string &mainKey, const map<string, DbUpdateValue> &mpValue, const vector<DbCondition> &vtCond);
+	tars::Int32 replace(const string &mainKey, const map<string, DbUpdateValue> &mpValue, const vector<DbCondition> &vtCond);
 
-	taf::Int32 del(const string &mainKey, const vector<DbCondition> &vtCond);
+	tars::Int32 del(const string &mainKey, const vector<DbCondition> &vtCond);
 
 protected:
 	// 根据主key获取数据库连接

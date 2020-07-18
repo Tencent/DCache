@@ -81,8 +81,8 @@ void DCacheOptImp::initialize()
 //////////////////////////////////////////////////////
 void DCacheOptImp::destroy()
 {
-    _mysqlTarsDb.disconnect();
-    TLOGDEBUG("DCacheOptImp::destroyApp ok" << endl);
+    // _mysqlTarsDb.disconnect();
+    // TLOGDEBUG("DCacheOptImp::destroyApp ok" << endl);
 }
 
 /*
@@ -193,15 +193,16 @@ int DCacheOptImp::tarsServerConf(const string &appName, const string &serverName
 			//配置obj信息
 			LOG->debug() << "get DBAccess Server port" << endl;
 			uint16_t iDbAccessObjPort = getPort(serverIp);
-			uint16_t iWDbAccessObjPort = getPort(serverIp);
-			if (0 == iDbAccessObjPort || 0 == iWDbAccessObjPort)
+			// uint16_t iWDbAccessObjPort = getPort(serverIp);
+			// if (0 == iDbAccessObjPort || 0 == iWDbAccessObjPort)
+			if (0 == iDbAccessObjPort) 
 			{
-				LOG->error() << "failed to get port for " << serverName << "_" << serverIp << "|" << iDbAccessObjPort << "|" << iWDbAccessObjPort << endl;
+				LOG->error() << "failed to get port for " << serverName << "_" << serverIp << "|" << iDbAccessObjPort << endl;
 				//return -1; 非致命错误,不需要停止
 			} //获取PORT失败
-			LOG->debug() << "success for getting DBAccess Server. DbAccessObjport:" << iDbAccessObjPort << " WDbAccessObjPort:" << iWDbAccessObjPort << endl;
+			LOG->debug() << "success for getting DBAccess Server. DbAccessObjport:" << iDbAccessObjPort << endl;
 
-			if (insertTarsServerTable("DCache", serverName, serverIp, templateName, "CombinDbAccessServer", "", false, bReplace, err) != 0)
+			if (insertTarsServerTable("DCache", serverName, serverIp, templateName, "", "", false, bReplace, err) != 0)
 				return -1;
 
 			string sDBAccessServant = serverName + ".DbAccessObj";
@@ -209,10 +210,10 @@ int DCacheOptImp::tarsServerConf(const string &appName, const string &serverName
 			if (insertServantTable("DCache", serverName.substr(7), serverIp, sDBAccessServant, sDBAccessEndpoint, "5", bReplace, err) != 0)
 				return -1;
 
-			string sWDBAccessServant = serverName + ".WDbAccessObj";
-			string sWDBAccessEndpoint = "tcp -h " + serverIp + " -t 60000 -p " + TC_Common::tostr(getPort(serverIp, iWDbAccessObjPort));
-			if (insertServantTable("DCache", serverName.substr(7), serverIp, sWDBAccessServant, sWDBAccessEndpoint, "5", bReplace, err) != 0)
-				return -1;
+			// string sWDBAccessServant = serverName + ".WDbAccessObj";
+			// string sWDBAccessEndpoint = "tcp -h " + serverIp + " -t 60000 -p " + TC_Common::tostr(getPort(serverIp, iWDbAccessObjPort));
+			// if (insertServantTable("DCache", serverName.substr(7), serverIp, sWDBAccessServant, sWDBAccessEndpoint, "5", bReplace, err) != 0)
+			// 	return -1;
 
 			//insertServerGroupRelation(serverName, string("DbAccessServer"), bReplace);
 			LOG->debug() << "insert DBAccess info to taf table success" << endl;
@@ -238,10 +239,9 @@ int DCacheOptImp::createDBAccessConf(int type, bool isSerializatedconst, const v
 	else
 		isHashForLocateDB = "Y";
 
-
 	string configFile = "";
 	//增加taf标签
-	configFile += "<taf>\n";
+	configFile += "<tars>\n";
 	configFile += "    #主从机读写配置 m|s\n";
 	configFile += "    #readAble = m\n";
 	configFile += "    #writeAble = m\n";
@@ -266,7 +266,9 @@ int DCacheOptImp::createDBAccessConf(int type, bool isSerializatedconst, const v
 		for (unsigned int i = 0; i < vtModuleRecord.size(); i++)
 		{
 			if (vtModuleRecord[i].keyType == "mkey")
+            {
 				mKey = vtModuleRecord[i].fieldName;
+            }
 			else if (vtModuleRecord[i].keyType == "value")
 			{
 				record += "            " + vtModuleRecord[i].fieldName + "=" + TC_Common::tostr(recordIndex) + "|" + vtModuleRecord[i].dataType + "|" + vtModuleRecord[i].property + "|" + vtModuleRecord[i].defaultValue + "\n";
@@ -425,7 +427,7 @@ int DCacheOptImp::createDBAccessConf(int type, bool isSerializatedconst, const v
 	configFile += "        # DataBase编号; DataBase所在的连接编号\n";
 	configFile += dataBaseStr;
 	configFile += "    </DataBase>\n";
-	configFile += "</taf>";
+	configFile += "</tars>";
 
 	result = configFile;
 
@@ -650,7 +652,7 @@ void DCacheOptImp::creatDBAccessTableThread(const string &dbIp, const string &db
 
 tars::Int32 DCacheOptImp::installDBAccess(const InstallDbAccessReq &req, InstallDbAccessRsp &rsp, tars::CurrentPtr current)
 {
-	LOG->debug() << __FUNCTION__ << ":" << __LINE__ << "|" << req.appName << "|" << req.serverName << endl;
+	LOG->debug() << __FUNCTION__ << ":" << __LINE__ << "|" << req.writeToJsonString() << endl;
 
 	try
 	{
@@ -709,7 +711,7 @@ int DCacheOptImp::getShmKey(size_t &shmKey)
         {
             shmKey = 1141161986 + rand()%10000000;
 
-            string sql = "select t1.config_value as config_value from t_config_table as t1, t_map_table as t2 where t1.`item_id` = t2.`id` and t2.item='ShmKey' and t1.config_value = " + TC_Common::tostr(shmKey);
+            string sql = "select t1.config_value as config_value from t_config_table as t1, t_config_item as t2 where t1.`item_id` = t2.`id` and t2.item='ShmKey' and t1.config_value = " + TC_Common::tostr(shmKey);
 
             auto data = _mysqlRelationDB.queryRecord(sql);
 
@@ -3829,7 +3831,7 @@ int DCacheOptImp::createKVCacheConf(const string &appName, const string &moduleN
         vector < map <string, string> > level2Vec;
 
         string hostShmSize = TC_Common::tostr(cacheHost[i].shmSize);
-        insertConfigItem2Vector("ShmSize", "Main/Cache", hostShmSize + "G", level2Vec);
+        insertConfigItem2Vector("ShmSize", "Main/Cache", hostShmSize + "M", level2Vec);
 
         size_t shmKey = TC_Common::strto<size_t>(cacheHost[i].shmKey);
         if(shmKey == 0)
@@ -4025,7 +4027,7 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
         string level2_item_id;
 
         string hostShmSize = TC_Common::tostr(vtCacheHost[i].shmSize);
-        level3Map["config_value"] = hostShmSize + "G";
+        level3Map["config_value"] = hostShmSize + "M";
 
         level2_item = "ShmSize";
         level2_path = "Main/Cache";
@@ -5169,7 +5171,7 @@ int DCacheOptImp::expandCacheConf(const string &appName, const string &moduleNam
 
         string shmSize = TC_Common::tostr(vtCacheHost[i].shmSize);
 
-        insertConfigItem2Vector("ShmSize", "Main/Cache",  shmSize + "G", level3Vec);
+        insertConfigItem2Vector("ShmSize", "Main/Cache",  shmSize + "M", level3Vec);
 
         size_t shmKey = TC_Common::strto<size_t>(vtCacheHost[i].shmKey);
         if(shmKey == 0)

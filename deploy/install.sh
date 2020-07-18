@@ -7,7 +7,7 @@ function LOG_ERROR()
 
     msg="${msg} $@";
 
-	echo -e "\033[31m $msg \033[0m";	
+	echo -e "\033[31m$msg \033[0m";	
 }
 
 function LOG_WARNING()
@@ -16,7 +16,7 @@ function LOG_WARNING()
 
     msg="${msg} $@";
 
-	echo -e "\033[33m $msg \033[0m";	
+	echo -e "\033[33m$msg \033[0m";	
 }
 
 function LOG_DEBUG()
@@ -25,7 +25,7 @@ function LOG_DEBUG()
 
     msg="${msg} $@";
 
- 	echo -e "\033[40;37m $msg \033[0m";	
+ 	echo -e "\033[40;37m$msg \033[0m";	
 }
 
 function LOG_INFO()
@@ -37,7 +37,7 @@ function LOG_INFO()
 		msg=${msg}" "${p};
 	done
 	
-	echo -e "\033[32m $msg \033[0m"  	
+	echo -e "\033[32m$msg \033[0m"  	
 }
 
 #手工创建: DCacheOptServer/ConfigServer/PropertyServer
@@ -62,13 +62,11 @@ CREATE=$9
 WEB_HOST=${10}
 WEB_TOKEN=${11}
 
-if [ "$CREATE" == "" ]; then
+if [ "$CREATE" != "true" ]; then
 	CREATE="false"
 fi
 
-
 WORKDIR=$(cd $(dirname $0); pwd)
-
 
 LOG_INFO "====================================================================";
 LOG_INFO "===**********************dcache-install**************************===";
@@ -91,9 +89,6 @@ LOG_DEBUG "WEB_TOKEN:               "${WEB_TOKEN}
 LOG_DEBUG "WORKDIR:                 "${WORKDIR}
 LOG_DEBUG "===<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< print config info finish.\n";
 
-cmake ..
-make tar
-
 cmake .. -DTARS_WEB_HOST=${WEB_HOST} -DTARS_TOKEN=${WEB_TOKEN}
 
 make tar
@@ -115,38 +110,38 @@ mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DC
 fi
 
 #上传发布包
-LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheConfigServer.tgz -Fapplication=DCache -Fmodule_name=DCacheConfigServer -Fcomment=dcache-install"
-curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheConfigServer.tgz -Fapplication=DCache -Fmodule_name=DCacheConfigServer -Fcomment=dcache-install
+LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DConfigServer.tgz -Fapplication=DCache -Fmodule_name=ConfigServer -Fcomment=dcache-install"
+curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@ConfigServer.tgz -Fapplication=DCache -Fmodule_name=ConfigServer -Fcomment=dcache-install
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheOptServer.tgz -Fapplication=DCache -Fmodule_name=DCacheOptServer -Fcomment=dcache-install"
 curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@DCacheOptServer.tgz -Fapplication=DCache -Fmodule_name=DCacheOptServer -Fcomment=dcache-install 
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@PropertyServer.tgz -Fapplication=DCache -Fmodule_name=PropertyServer -Fcomment=dcache-install"
 curl ${WEB_HOST}/api/upload_and_publish?ticket=${WEB_TOKEN} -Fsuse=@PropertyServer.tgz -Fapplication=DCache -Fmodule_name=PropertyServer -Fcomment=dcache-install
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@RouterServer.tgz -Fapplication=DCache -Fmodule_name=RouterServer -Fcomment=dcache-install"
 curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@RouterServer.tgz -Fapplication=DCache -Fmodule_name=RouterServer -Fcomment=dcache-install
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@CombinDbAccessServer.tgz -Fapplication=DCache -Fmodule_name=CombinDbAccessServer -Fcomment=dcache-install"
 curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@CombinDbAccessServer.tgz -Fapplication=DCache -Fmodule_name=CombinDbAccessServer -Fcomment=dcache-install
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@ProxyServer.tgz -Fapplication=DCache -Fmodule_name=ProxyServer -Fcomment=dcache-install"
 curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@ProxyServer.tgz -Fapplication=DCache -Fmodule_name=ProxyServer -Fcomment=dcache-install
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@KVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=1"
 curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@KVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=1
 
-LOG_DEBUG
+echo 
 LOG_DEBUG "curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=2"
 curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheServer.tgz -Fapplication=DCache -Fmodule_name=DCacheServerGroup -Fcomment=dcache-install -Fpackage_type=2
 
-LOG_DEBUG
+echo 
 
 cp -rf ../deploy/config config_tmp
 

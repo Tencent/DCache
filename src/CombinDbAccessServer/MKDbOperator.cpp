@@ -1,5 +1,5 @@
 #include "MKDbOperator.h"
-#include "servant/taf_logger.h"
+#include "servant/RemoteLogger.h"
 
 string MKDbOperator::buildConditionSQL(const vector<DbCondition> &vtCond, TC_Mysql *pMysql)
 {
@@ -152,7 +152,7 @@ TC_Mysql* MKDbOperator::getDb(string &sDbName, string &sTableName, string &mysql
 	return mysql;
 }
 
-taf::Int32 MKDbOperator::select(const string &mainKey, const string &field, const vector<DbCondition> &vtCond, vector<map<string, string> > &vtData)
+tars::Int32 MKDbOperator::select(const string &mainKey, const string &field, const vector<DbCondition> &vtCond, vector<map<string, string> > &vtData)
 {
 	int iRet = eDbUnknownError;
 	string sTableName;
@@ -203,7 +203,7 @@ taf::Int32 MKDbOperator::select(const string &mainKey, const string &field, cons
 		TC_Mysql::MysqlData recordSet = mysql->queryRecord(sSql);
 
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(false);
 	
 		size_t iRecordSize = recordSet.size();
@@ -237,7 +237,7 @@ taf::Int32 MKDbOperator::select(const string &mainKey, const string &field, cons
 		//db_error->report(1);
 
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_EXCE,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_EXCE,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		iRet = eDbError;
 	}
@@ -247,7 +247,7 @@ taf::Int32 MKDbOperator::select(const string &mainKey, const string &field, cons
         LOG->error() << ex.what() << endl;
 
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_TIMEOUT,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(true);
 		//db_error_timeout->report(1);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
@@ -263,7 +263,7 @@ taf::Int32 MKDbOperator::select(const string &mainKey, const string &field, cons
 
 	return iRet;
 }
-taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpdateValue> &mpValue, const vector<DbCondition> &vtCond)
+tars::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpdateValue> &mpValue, const vector<DbCondition> &vtCond)
 {
 	int iRet = eDbUnknownError;
 	string sTableName;
@@ -295,7 +295,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 		//TC_Mysql::MysqlData recordSet = mysql->queryRecord(sSql);
 
 		//endTime = TC_TimeProvider::getInstance()->getNowMs();
-		//Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+		//Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 		//mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		//if(recordSet.size() == 0)
 		//{
@@ -315,7 +315,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 		//	optDBTpye = "update";
 		//	mysql->execute(sSql);
 		//	endTime = TC_TimeProvider::getInstance()->getNowMs();
-		//	Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+		//	Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 		//	DB_LOG<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|update|"<<endTime-beginTime<<endl;
 		//	mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		//	return mysql_affected_rows(mysql->getMysql());
@@ -334,7 +334,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 		//	optDBTpye = "insert";
 		//	iRet = mysql->insertRecord(sDbName + "." + sTableName, mpColumns);
 		//	endTime = TC_TimeProvider::getInstance()->getNowMs();
-		//	Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+		//	Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,"DCache."+sDbName+"_"+sTableName,mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 		//	DB_LOG<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|insert|"<<endTime-beginTime<<endl;
 		//	mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		//	return iRet;
@@ -350,7 +350,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 					   if(g_bTypeErrorRepair)
 						   return eDbSucc;
 					   LOG->error() <<"MKDbOperator::replace type error INT but value=" << it->second.value << endl;
-					   return eDbJceDecodeError;
+					   return eDbDecodeError;
 				   }
 				}
 				mpColumns[it->first] = make_pair(DT2FT(it->second.type), it->second.value);
@@ -361,7 +361,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 			optDBTpye = "replace";
 			iRet = mysql->replaceRecord(sDbName + "." + sTableName, mpColumns);
 			endTime = TC_TimeProvider::getInstance()->getNowMs();
-			Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+			Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 			LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|replace|"<<endTime-beginTime<<endl;
 			mysqlErrCounter[mysqlNum]->finishInvoke(false);
 			return iRet;
@@ -373,7 +373,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 		LOG->error() << ex.what() << endl;
 		//db_error->report(1);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_EXCE,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_EXCE,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		iRet = eDbError;
 		string strTmp = ex.what();
@@ -390,7 +390,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
         LOG->error() << ex.what() << endl;
 
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_TIMEOUT,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(true);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
 		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|replace|"<<endTime-beginTime<<endl;
@@ -407,7 +407,7 @@ taf::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpda
 	return iRet;
 }
 
-taf::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &vtCond)
+tars::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &vtCond)
 {
 	int iRet = eDbUnknownError;
 	string sTableName;
@@ -430,7 +430,7 @@ taf::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &v
 		LOG->debug() <<"delete sql:" <<tmp << endl;
 		iRet = mysql->deleteRecord(sDbName + "." + sTableName, tmp);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_SUCC,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
 		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|delete|"<<endTime-beginTime<<endl;
 		mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		return iRet;
@@ -440,7 +440,7 @@ taf::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &v
 		LOG->error() << mysql->getLastSQL() << endl;
 		LOG->error() << ex.what() << endl;
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_EXCE,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_EXCE,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(false);
 		//db_error->report(1);
 		iRet = eDbError;
@@ -452,7 +452,7 @@ taf::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &v
 		mysqlErrCounter[mysqlNum]->finishInvoke(true);
 		//db_error_timeout->report(1);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, taf::StatReport::STAT_TIMEOUT,endTime-beginTime);
+		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
 		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|delete|"<<endTime-beginTime<<endl;
         iRet = eDbError;
 	}

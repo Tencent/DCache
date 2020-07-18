@@ -4,7 +4,7 @@
 #include "util/tc_common.h"
 #include "Globe.h"
 
-using namespace taf;
+using namespace tars;
 struct CheckMysqlTimeoutInfo;
 
 class MysqlTimeOutHandle : public TC_ThreadMutex 

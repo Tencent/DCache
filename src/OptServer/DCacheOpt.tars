@@ -224,6 +224,7 @@ struct ReleaseInfo
     7 require int status = 0;       //发布线程状态管理，前台不用填写。
     8 optional string errmsg;
     9 optional string ostype;
+    10 optional int percent = 0;    //发布进度
 };
 
 struct CacheServerInfo

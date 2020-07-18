@@ -7,10 +7,10 @@ void DefaultTableNameGen::initialize(const string &sConf)
 {
 	TC_Config tcConf;
 	tcConf.parseFile(sConf);
-	_iPostfixLen = TC_Common::strto<unsigned int>(tcConf["/taf/table/<PostfixLen>"]);
-	_div = TC_Common::strto<int>(tcConf["/taf/table/<Div>"]);
-	_sTablePrefix = tcConf["/taf/table/<TableNamePrefix>"];
-	string sHashForLocateDB = tcConf.get("/taf/<isHashForLocateDB>", "N");
+	_iPostfixLen = TC_Common::strto<unsigned int>(tcConf["/tars/table/<PostfixLen>"]);
+	_div = TC_Common::strto<int>(tcConf["/tars/table/<Div>"]);
+	_sTablePrefix = tcConf["/tars/table/<TableNamePrefix>"];
+	string sHashForLocateDB = tcConf.get("/tars/<isHashForLocateDB>", "N");
 	_isHashForLocateDB = (sHashForLocateDB=="Y" || sHashForLocateDB=="y")?true:false;
 }
 
@@ -63,11 +63,11 @@ void DefaultDbConnGen::initialize(const string &sConf)
 {
 	TC_Config tcConf;
 	tcConf.parseFile(sConf);
-	map<string,string> connInfo = tcConf.getDomainMap("/taf/Connection");
-	_conTimeOut = TC_Common::strto<int>(tcConf.get("/taf/db_conn/<conTimeOut>","3"));
-	_queryTimeOut = TC_Common::strto<int>(tcConf.get("/taf/db_conn/<queryTimeOut>","3"));
+	map<string,string> connInfo = tcConf.getDomainMap("/tars/Connection");
+	_conTimeOut = TC_Common::strto<int>(tcConf.get("/tars/db_conn/<conTimeOut>","3"));
+	_queryTimeOut = TC_Common::strto<int>(tcConf.get("/tars/db_conn/<queryTimeOut>","3"));
 
-    string sTimeoutRetry = tcConf.get("/taf/<timeoutRetry>","N");
+    string sTimeoutRetry = tcConf.get("/tars/<timeoutRetry>","N");
     bool bTimeoutRetry;
     if((sTimeoutRetry == "y") || (sTimeoutRetry == "Y"))
         bTimeoutRetry = true;
@@ -76,8 +76,8 @@ void DefaultDbConnGen::initialize(const string &sConf)
 
     //主从cdb读写标记
     _writeFlag = _readFlag = 0;
-    string sReadFlag = tcConf.get("/taf/<readAble>","m");
-    string sWriteFlag = tcConf.get("/taf/<writeAble>","m");
+    string sReadFlag = tcConf.get("/tars/<readAble>","m");
+    string sWriteFlag = tcConf.get("/tars/<writeAble>","m");
 
     vector<string> vFlag = TC_Common::sepstr<string>(sReadFlag, "|");
     for(unsigned int i = 0; i < vFlag.size(); i++)
@@ -112,7 +112,7 @@ void DefaultDbConnGen::initialize(const string &sConf)
 	}
 
     _mpMysql.push_back(map<string, TC_Mysql*>());
-    connInfo = tcConf.getDomainMap("/taf/ConnectionSlave");
+    connInfo = tcConf.getDomainMap("/tars/ConnectionSlave");
     for(map<string,string>::iterator it=connInfo.begin(); it != connInfo.end(); it++)
 	{
 		vector<string> vtDB = TC_Common::sepstr<string>(it->second, ";", true);
@@ -123,7 +123,7 @@ void DefaultDbConnGen::initialize(const string &sConf)
 		LOG->debug()<<it->second<< endl;
 	}
 	
-	map<string,string> _mpConnTmp = tcConf.getDomainMap("/taf/DataBase");
+	map<string,string> _mpConnTmp = tcConf.getDomainMap("/tars/DataBase");
 	for(map<string,string>::iterator it=_mpConnTmp.begin(); it != _mpConnTmp.end(); it++)
 	{
 		vector<string> vtNum = TC_Common::sepstr<string>(it->first, "-", true);
@@ -152,18 +152,18 @@ void DefaultDbConnGen::initialize(const string &sConf)
 		}
 		else
 		{
-			LOG->error() <<"/taf/DataBase type error  [0-9] or 0"<< endl;
+			LOG->error() <<"/tars/DataBase type error  [0-9] or 0"<< endl;
 		    assert(false);
 		}
 	}
-	_iPostfixLen = TC_Common::strto<unsigned int>(tcConf["/taf/db_conn/<PostfixLen>"]);
-	_iPos = TC_Common::strto<unsigned int>(tcConf["/taf/db_conn/<PosInKey>"]);
-	_div = TC_Common::strto<int>(tcConf["/taf/db_conn/<Div>"]);
-	_sDbPrefix = tcConf["/taf/db_conn/<DbPrefix>"];
-	string sHashForLocateDB = tcConf.get("/taf/<isHashForLocateDB>", "N");
+	_iPostfixLen = TC_Common::strto<unsigned int>(tcConf["/tars/db_conn/<PostfixLen>"]);
+	_iPos = TC_Common::strto<unsigned int>(tcConf["/tars/db_conn/<PosInKey>"]);
+	_div = TC_Common::strto<int>(tcConf["/tars/db_conn/<Div>"]);
+	_sDbPrefix = tcConf["/tars/db_conn/<DbPrefix>"];
+	string sHashForLocateDB = tcConf.get("/tars/<isHashForLocateDB>", "N");
 	_isHashForLocateDB = (sHashForLocateDB=="Y" || sHashForLocateDB=="y")?true:false;
-	_retryDBInterval = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<retryDBInterval>","300"));
-	_failTimeFobid = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<failTimeFobid>","10"));
+	_retryDBInterval = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<retryDBInterval>","300"));
+	_failTimeFobid = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<failTimeFobid>","10"));
 }
 
 TC_Mysql* DefaultDbConnGen::getDbConn(const string &k, const string &opType, string &sDbName,string &mysqlNum)
@@ -357,64 +357,132 @@ bool sortByTag(const FieldInfo &v1,const FieldInfo &v2)
 {
    return v1.tag<v2.tag;
 }
-size_t HashRawString(const string &key){    const char *ptr= key.c_str();    size_t key_length = key.length();    uint32_t value= 0;
-    while (key_length--)     {        value += *ptr++;        value += (value << 10);        value ^= (value >> 6);    }    value += (value << 3);    value ^= (value >> 11);    value += (value << 15); 
-    return value == 0 ? 1 : value;}
+size_t HashRawString(const string &key)
+{
+    const char *ptr= key.c_str();
+    size_t key_length = key.length();
+    uint32_t value= 0;
+
+    while (key_length--) 
+    {
+        value += *ptr++;
+        value += (value << 10);
+        value ^= (value >> 6);
+    }
+
+    value += (value << 3);
+    value ^= (value >> 11);
+    value += (value << 15); 
+
+    return value == 0 ? 1 : value;
+}
 bool IsDigit(const string &key)
 {
-	string::const_iterator iter = key.begin();
-	
-    if(key.empty())
-    {
-        return false;
-    }
-	size_t length = key.size();
-	size_t count = 0;
+	string::const_iterator iter = key.begin();
+
+	
+
+    if(key.empty())
+
+    {
+
+        return false;
+
+    }
+
+	size_t length = key.size();
+
+	size_t count = 0;
+
 	//是否找到小数点 
-	bool bFindNode = false;
-	bool bFirst = true;
-    while(iter != key.end())
-    {
-		if(bFirst)
-		{
-		   if(!::isdigit(*iter))
-		   {
-			   if(*iter!=45)
-			   {
-				   return false;
-			   }
-			   else if(length==1)
-			   {
-				   return false;
-			   }
-			   
-		   }
-		}
-		else
-		{
-			if (!::isdigit(*iter))
-			{
-				if(*iter==46)
-				{
-					if( (!bFindNode) && (count!=(length-1)) )
-					{
-						bFindNode = true;
-					}
-					else
-					{
-						return false;
-					}
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
-        ++iter;
-		count++;
-		bFirst = false;
-    }
+	bool bFindNode = false;
+
+	bool bFirst = true;
+
+    while(iter != key.end())
+
+    {
+
+		if(bFirst)
+
+		{
+
+		   if(!::isdigit(*iter))
+
+		   {
+
+			   if(*iter!=45)
+
+			   {
+
+				   return false;
+
+			   }
+
+			   else if(length==1)
+
+			   {
+
+				   return false;
+
+			   }
+
+			   
+
+		   }
+
+		}
+
+		else
+
+		{
+
+			if (!::isdigit(*iter))
+
+			{
+
+				if(*iter==46)
+
+				{
+
+					if( (!bFindNode) && (count!=(length-1)) )
+
+					{
+
+						bFindNode = true;
+
+					}
+
+					else
+
+					{
+
+						return false;
+
+					}
+
+				}
+
+				else
+
+				{
+
+					return false;
+
+				}
+
+			}
+
+		}
+
+        ++iter;
+
+		count++;
+
+		bFirst = false;
+
+    }
+
     return true;
 }
 

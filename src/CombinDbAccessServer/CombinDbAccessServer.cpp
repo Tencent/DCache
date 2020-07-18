@@ -1,13 +1,13 @@
 #include "CombinDbAccessServer.h"
 #include "DbAccessImp.h"
-#include "WDbAccessImp.h"
+// #include "WDbAccessImp.h"
 //#include "util/tc_atomic.h"
 #include "Globe.h"
 #include "MysqlTimeOutHandle.h"
 
 using namespace std;
 using namespace DCache;
-using namespace taf;
+using namespace tars;
 
 //PropertyReportPtr db_error;
 //PropertyReportPtr db_error_timeout;
@@ -28,26 +28,26 @@ CombinDbAccessServer::initialize()
 	//...
 	addConfig(ServerConfig::ServerName + ".conf");
 	addServant<DbAccessImp>(ServerConfig::Application + "." + ServerConfig::ServerName + ".DbAccessObj");
-	addServant<WDbAccessImp>(ServerConfig::Application + "." + ServerConfig::ServerName + ".WDbAccessObj");
+	// addServant<WDbAccessImp>(ServerConfig::Application + "." + ServerConfig::ServerName + ".WDbAccessObj");
 	
-	TAF_ADD_ADMIN_CMD_NORMAL("ver", CombinDbAccessServer::showVer);
+	TARS_ADD_ADMIN_CMD_NORMAL("ver", CombinDbAccessServer::showVer);
 	
 	TC_Config tcConf;
 	tcConf.parseFile(ServerConfig::BasePath + ServerConfig::ServerName + ".conf");
 
-	g_mkSizelimit = TC_Common::strto<unsigned int>(tcConf.get("/taf/<mkSizeLimit>","20000"));
-	string strTypeErrorRepair = tcConf.get("/taf/<typeErrorRepair>","N");
+	g_mkSizelimit = TC_Common::strto<unsigned int>(tcConf.get("/tars/<mkSizeLimit>","20000"));
+	string strTypeErrorRepair = tcConf.get("/tars/<typeErrorRepair>","N");
 	g_bTypeErrorRepair = (strTypeErrorRepair == "Y" || strTypeErrorRepair == "y")? true : false;
 	checkTimeoutInfoPtr = new CheckMysqlTimeoutInfo();
-	checkTimeoutInfoPtr->checkTimeoutInterval = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<checkTimeoutInterval>","30"));
-	checkTimeoutInfoPtr->frequenceFailInvoke = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<frequenceFailInvoke>","10"));
-	checkTimeoutInfoPtr->minTimeoutInvoke = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<minTimeoutInvoke>","5"));
-	checkTimeoutInfoPtr->radio = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<radio>","30"));
-	checkTimeoutInfoPtr->tryTimeInterval = TC_Common::strto<unsigned int>(tcConf.get("/taf/db_conn/<tryTimeInterval>","30"));
+	checkTimeoutInfoPtr->checkTimeoutInterval = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<checkTimeoutInterval>","30"));
+	checkTimeoutInfoPtr->frequenceFailInvoke = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<frequenceFailInvoke>","10"));
+	checkTimeoutInfoPtr->minTimeoutInvoke = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<minTimeoutInvoke>","5"));
+	checkTimeoutInfoPtr->radio = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<radio>","30"));
+	checkTimeoutInfoPtr->tryTimeInterval = TC_Common::strto<unsigned int>(tcConf.get("/tars/db_conn/<tryTimeInterval>","30"));
 	checkTimeoutInfoPtr->check();
 
     //读取主db
-	map<string,string> connInfo = tcConf.getDomainMap("/taf/Connection");
+	map<string,string> connInfo = tcConf.getDomainMap("/tars/Connection");
 	for(map<string,string>::iterator itr=connInfo.begin();itr!=connInfo.end();itr++)
 	{
 		vector<string> tmpVec = TC_Common::sepstr<string>(itr->second,";");
@@ -59,7 +59,7 @@ CombinDbAccessServer::initialize()
 	}
 
     //读取从db
-    connInfo = tcConf.getDomainMap("/taf/ConnectionSlave");
+    connInfo = tcConf.getDomainMap("/tars/ConnectionSlave");
 	for(map<string,string>::iterator itr=connInfo.begin();itr!=connInfo.end();itr++)
 	{
 		vector<string> tmpVec = TC_Common::sepstr<string>(itr->second,";");

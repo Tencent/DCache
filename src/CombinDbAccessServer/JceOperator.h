@@ -3,13 +3,14 @@
 //#include "StringUtil.h"
 #include "util/tc_common.h"
 #include <string>
-#include "wup-linux-c++/Jce.h"
+// #include "wup-linux-c++/Jce.h"
+#include "tup/Tars.h"
 /*
  * 封装jce编码二进制流
  */
 
 using namespace std;
-using namespace taf;
+using namespace tars;
 
 class JceEncode
 {
@@ -46,7 +47,7 @@ public:
 	void write(const string &s, uint8_t tag, string type);
 
 private:
-	JceOutputStream<BufferWriter> m_osk;
+	TarsOutputStream<BufferWriter> m_osk;
 };
 
 /*

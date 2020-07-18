@@ -18,7 +18,6 @@ using namespace std;
 
 TC_ThreadLock ExpandThread::_lock;
 
-
 void ExpandThread::init(const string &sConf)
 {
     _tcConf.parseFile(sConf);
@@ -175,19 +174,19 @@ void* ExpandThread::Run(void* arg)
             }
             else
             {
-                usleep(1000000);
+                sleep(1);
             }
 
         }
         catch (const std::exception &ex)
         {
             TLOGERROR(FUN_LOG << "check expand status catch exception:" << ex.what() << endl);
-            usleep(1000000);
+            sleep(1);
         }
         catch (...)
         {
             TLOGERROR(FUN_LOG << "check expand status catch unkown exception" << endl);
-            usleep(1000000);
+            sleep(1);
         }
     }
 
