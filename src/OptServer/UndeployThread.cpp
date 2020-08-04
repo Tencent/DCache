@@ -37,7 +37,7 @@ void UndeployThread::init(const string &sConf)
 
 void UndeployThread::run()
 {
-    pthread_detach(pthread_self());
+    // pthread_detach(pthread_self());
 
     time_t tLastCheck = 0;
 
@@ -62,7 +62,16 @@ void UndeployThread::run()
 
 void UndeployThread::terminate()
 {
-    _terminate = true;
+    {
+        TC_ThreadLock::Lock lock(*this);
+
+        _terminate = true;
+
+        notifyAll();
+    }
+
+    getThreadControl().join();
+
 }
 
 void UndeployThread::doUndeploy(time_t tLastCheck)

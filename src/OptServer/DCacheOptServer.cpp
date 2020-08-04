@@ -51,7 +51,6 @@ void DCacheOptServer::initialize()
     _uninstallRequestQueueManager.setRelationDbMysql(relationDbConf);
     _uninstallRequestQueueManager.setCacheBackupPath(conf.get("/Main/Uninstall<BakPath>", "/usr/local/app"));
 
-
     // 初始化 transfer 线程
     _transferThread.init(sConf);
     _transferThread.createThread();
@@ -83,17 +82,17 @@ UninstallRequestQueueManager* DCacheOptServer::uninstallRequestQueueManager()
 
 void DCacheOptServer::destroyApp()
 {
-    TLOGDEBUG("DCacheOptServer::destroyApp ok" << endl);
+   _releaseRequestQueueManager.terminate();
 
-    _releaseRequestQueueManager.terminate();
+   _uninstallRequestQueueManager.terminate();
 
-    _uninstallRequestQueueManager.terminate();
+   _transferThread.terminate();
 
-    _transferThread.terminate();
+   _expandThread.terminate();
 
-    _expandThread.terminate();
+   _undeployThread.terminate();
 
-    _undeployThread.terminate();
+   sleep(3);
 }
 
 /////////////////////////////////////////////////////////////////

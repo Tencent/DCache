@@ -55,6 +55,7 @@ public:
     };
     typedef tars::TC_AutoPtr<RouterInfo> RouterInfoPtr;
 
+    static void creatDBAccessTableThread(const string &dbIp, const string &dbUser, const string &dbPwd, const int dbPort, const string &dbName, const string &tableSql, const int number, bool bReplace);
 public:
     DCacheOptImp(){}
 
@@ -205,6 +206,12 @@ public:
     virtual tars::Int32 getServerConfigItemList(const ServerConfigReq & configReq, ConfigRsp & configRsp, tars::TarsCurrentPtr current);
 
     virtual tars::Int32 queryProperptyData(const DCache::QueryPropReq & req,vector<DCache::QueryResult> &rsp,tars::TarsCurrentPtr current);
+
+    int creatDBAccessTable(const string &serverName, const vector<DCache::RecordParam> & vtModuleRecord, const DCache::DBAccessConf & conf, bool bReplace, string &err);
+
+    virtual tars::Int32 installDBAccess(const InstallDbAccessReq &req, InstallDbAccessRsp &rsp, tars::CurrentPtr current);
+
+    virtual int loadCacheApp(vector<CacheApp> &cacheApps, tars::CurrentPtr current);
 
 private:
 
@@ -386,6 +393,12 @@ private:
 
     int getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& groupName, long& groupPageNo, string& errmsg);
 
+    int createDBAccessConf(int type, bool isSerializatedconst, const vector<DCache::RecordParam> & vtModuleRecord, const DCache::DBAccessConf & conf, string &result, string &err);
+
+    int tarsServerConf(const string &appName, const string &serverName, const vector<string> &vServerIp, const string &templateName, const string &templateDetail, bool bReplace, string &err);
+
+    int getShmKey(size_t &shmKey);
+
 private:
 
     TC_Config _tcConf;
@@ -396,6 +409,9 @@ private:
     AdminRegPrx     _adminproxy;
 
     PropertyPrx     _propertyPrx;
+
+    //专门用于建表建库的线程池
+    TC_ThreadPool _tpool;
 
     //dcache 关系变量
     map<string, string> _relationDBInfo;

@@ -31,6 +31,22 @@ using namespace std;
 #define MAX_ROUTER_PAGE_NUM 429496
 #define TOTAL_ROUTER_PAGE_NUM 429497
 
+std::function<void(const string, const string, const string, const int, const string, const string, const int, bool)> dbaccessFun = std::bind(DCacheOptImp::creatDBAccessTableThread, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8);
+
+//由于dbaccess安装数据库表改成异步，通过这个全局变量获取安装错误信息
+string g_dbaccessError;
+//dbaccess安装数据库表的互斥锁
+TC_ThreadLock g_dbaccessLock;
+
+//升级opt服务
+#define CREATE_DBACCESS_CONF "CREATE TABLE `t_dbaccess_app` (   \
+  `id` int(11) NOT NULL AUTO_INCREMENT, \
+  `dbaccess_name` varchar(128) NOT NULL DEFAULT '', \
+  `app_name` varchar(64) NOT NULL DEFAULT '',  \
+  PRIMARY KEY (`id`),   \
+  UNIQUE KEY `ro_app` (`dbaccess_name`,`app_name`)  \
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; "
+
 extern DCacheOptServer g_app;
 
 void DCacheOptImp::initialize()
@@ -56,14 +72,17 @@ void DCacheOptImp::initialize()
 
     _propertyPrx = _communicator->stringToProxy<PropertyPrx>(_tcConf.get("/Main/<PropertyObj>", "DCache.PropertyServer.PropertyObj"));
 
+	_tpool.init(2);
+	_tpool.start();
+
     TLOGDEBUG(FUN_LOG << "initialize succ" << endl);
 }
 
 //////////////////////////////////////////////////////
 void DCacheOptImp::destroy()
 {
-    _mysqlTarsDb.disconnect();
-    TLOGDEBUG("DCacheOptImp::destroyApp ok" << endl);
+    // _mysqlTarsDb.disconnect();
+    // TLOGDEBUG("DCacheOptImp::destroyApp ok" << endl);
 }
 
 /*
@@ -148,6 +167,564 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
     {
         instalRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch execption:") + ex.what();
         TLOGERROR(FUN_LOG << instalRsp.errMsg << endl);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int DCacheOptImp::tarsServerConf(const string &appName, const string &serverName, const vector<string> &vServerIp, const string &templateName, const string &templateDetail, bool bReplace, string &err)
+{
+	try
+	{
+		int iHostConfigId;
+		//插入配置文件信息
+		if (insertTarsConfigFilesTable(serverName, serverName.substr(7) + ".conf", "", templateDetail, 2, iHostConfigId, bReplace, err) != 0 )
+			return -1;
+
+		if (insertTarsHistoryConfigFilesTable(iHostConfigId, templateDetail, bReplace, err) != 0)
+			return -1;
+
+		for (unsigned int i = 0; i < vServerIp.size(); i++)
+		{
+			string serverIp = vServerIp[i];
+
+			//配置obj信息
+			LOG->debug() << "get DBAccess Server port" << endl;
+			uint16_t iDbAccessObjPort = getPort(serverIp);
+			// uint16_t iWDbAccessObjPort = getPort(serverIp);
+			// if (0 == iDbAccessObjPort || 0 == iWDbAccessObjPort)
+			if (0 == iDbAccessObjPort) 
+			{
+				LOG->error() << "failed to get port for " << serverName << "_" << serverIp << "|" << iDbAccessObjPort << endl;
+				//return -1; 非致命错误,不需要停止
+			} //获取PORT失败
+			LOG->debug() << "success for getting DBAccess Server. DbAccessObjport:" << iDbAccessObjPort << endl;
+
+			if (insertTarsServerTable("DCache", serverName, serverIp, templateName, "", "", false, bReplace, err) != 0)
+				return -1;
+
+			string sDBAccessServant = serverName + ".DbAccessObj";
+			string sDBAccessEndpoint = "tcp -h " + serverIp + " -t 60000 -p " + TC_Common::tostr(getPort(serverIp, iDbAccessObjPort));
+			if (insertServantTable("DCache", serverName.substr(7), serverIp, sDBAccessServant, sDBAccessEndpoint, "5", bReplace, err) != 0)
+				return -1;
+
+			// string sWDBAccessServant = serverName + ".WDbAccessObj";
+			// string sWDBAccessEndpoint = "tcp -h " + serverIp + " -t 60000 -p " + TC_Common::tostr(getPort(serverIp, iWDbAccessObjPort));
+			// if (insertServantTable("DCache", serverName.substr(7), serverIp, sWDBAccessServant, sWDBAccessEndpoint, "5", bReplace, err) != 0)
+			// 	return -1;
+
+			//insertServerGroupRelation(serverName, string("DbAccessServer"), bReplace);
+			LOG->debug() << "insert DBAccess info to taf table success" << endl;
+		}
+	}
+	catch (exception &ex)
+	{
+		LOG->error() << "[DCacheOptImp::tafServerConf] error! " << ex.what() << endl;
+		err = ex.what();
+		return -2;
+	}
+
+	return 0;
+
+}
+
+int DCacheOptImp::createDBAccessConf(int type, bool isSerializatedconst, const vector<DCache::RecordParam> & vtModuleRecord, const DCache::DBAccessConf & conf, string &result, string &err)
+{
+	//判断主key是否数字
+	string isHashForLocateDB;
+	if (conf.isDigital == true)
+		isHashForLocateDB = "N";
+	else
+		isHashForLocateDB = "Y";
+
+	string configFile = "";
+	//增加taf标签
+	configFile += "<tars>\n";
+	configFile += "    #主从机读写配置 m|s\n";
+	configFile += "    #readAble = m\n";
+	configFile += "    #writeAble = m\n";
+	configFile += "    #dcache是一期还是二期的\n";
+	configFile += "    CacheType = " + TC_Common::tostr(type) + "\n";
+	configFile += "    #如果key为非数字，可以通过hash算法把字符串转批为数字\n";
+	configFile += "    isHashForLocateDB = " + isHashForLocateDB + "\n";
+
+	//二期这个参数可以不写
+	if (KVCACHE == type)
+	{
+		string isSerializated;
+		if (isSerializatedconst)
+			isSerializated = "Y";
+		else
+			isSerializated = "N";
+
+		string mKey = "";
+		string record = "";
+
+		int recordIndex = 0;
+		for (unsigned int i = 0; i < vtModuleRecord.size(); i++)
+		{
+			if (vtModuleRecord[i].keyType == "mkey")
+            {
+				mKey = vtModuleRecord[i].fieldName;
+            }
+			else if (vtModuleRecord[i].keyType == "value")
+			{
+				record += "            " + vtModuleRecord[i].fieldName + "=" + TC_Common::tostr(recordIndex) + "|" + vtModuleRecord[i].dataType + "|" + vtModuleRecord[i].property + "|" + vtModuleRecord[i].defaultValue + "\n";
+				recordIndex++;
+			}
+		}
+
+		if (mKey.size() == 0)
+		{
+			err =  "[DCacheOptImp::createDBAccessConf] error, main key miss!";
+			LOG->error() << err << endl;
+			return -1;
+		}
+
+		configFile += "    #一期需要配置，二期请忽略<sigKey>配置\n";
+		configFile += "    <sigKey>\n";
+		configFile += "        #主key字段名\n";
+		configFile += "        KeyNameInDB = " + mKey + "\n";
+		configFile += "        #value是否有序列化存储\n";
+		configFile += "        isSerializated = " + isSerializated + "\n";
+		configFile += "        #序列化存储的字段结构定义，如果非序列化，此处写vale的字段名即可\n";
+		configFile += "        <record>\n";
+		configFile += record;
+		configFile += "        </record>\n";
+		configFile += "    </sigKey>\n";
+	}
+
+	/**
+	 * 分表
+	 * part_table 1  10 100 1000
+	 * PostfixLen 1  1  2   3
+	 * Div        1  10 100 1000
+	 */
+	int part_table = conf.tableNum;
+	int tablePostfixLen = 1;
+	if (part_table == 1) {
+		tablePostfixLen = 1;
+	} else if (part_table == 10) {
+		tablePostfixLen = 1;
+	} else if (part_table == 100) {
+		tablePostfixLen = 2;
+	} else if (part_table == 1000) {
+		tablePostfixLen = 3;
+	}
+	configFile += "    <table>\n";
+	configFile += "        #判断表名后缀的key尾的长度，表名后缀=key.substr(key.length() - PostfixLen) % Div\n";
+	configFile += "        PostfixLen = " + TC_Common::tostr(tablePostfixLen) + "\n";
+	configFile += "        #表名前缀\n";
+	configFile += "        TableNamePrefix  =   " + conf.tablePrefix + "\n";
+	configFile += "        #判断表名后缀命名的模数\n";
+	configFile += "        Div = " + TC_Common::tostr(part_table) + "\n";
+	configFile += "    </table>\n";
+
+	/**
+	 * 分库
+	 * part_table 1  10 100 1000
+	 * PosInKey   (tablePostfixLen + dbPostfixLen)
+	 * PostfixLen 1  1  2   3
+	 * Div        10 1  1   1
+	 */
+
+	int part_db = conf.DBNum;
+	unsigned int dbPostfixLen = 1;
+	int Div = 10;
+	if (part_db == 1) {
+		dbPostfixLen = 1;
+		Div = 10;
+	} else if (part_db == 10) {
+		dbPostfixLen = 1;
+		Div = 1;
+	} else if (part_db == 100) {
+		dbPostfixLen = 2;
+		Div = 1;
+	} else if (part_db == 1000) {
+		dbPostfixLen = 3;
+		Div = 1;
+	}
+
+	configFile += "    <db_conn>\n";
+	configFile += "        #判断数据连接配置\n";
+	configFile += "        #从key倒数第几位开始\n";
+	configFile += "        PosInKey = " + TC_Common::tostr(tablePostfixLen + dbPostfixLen) + "\n";
+	configFile += "        #从开始位向右截取key一定长度的数字，库名后缀=key.substr(key.length() - PostfixLen) / Div\n";
+	configFile += "        PostfixLen = " + TC_Common::tostr(dbPostfixLen) + "\n";
+	configFile += "        #数据连接配置节名称前缀\n";
+	configFile += "        DbPrefix  =  " + conf.DBPrefix + "\n";
+	configFile += "        #判断数据库后缀命名的除数\n";
+	configFile += "        Div = " + TC_Common::tostr(Div) + "\n";
+	configFile += "        #连接超时时间,单位s，默认1秒\n";
+	configFile += "        #conTimeOut=\n";
+	configFile += "        #查询超时时间,单位s，默认1秒\n";
+	configFile += "        #queryTimeOut=\n";
+	configFile += "        #屏蔽后多久尝试重连,单位s，默认300秒\n";
+	configFile += "        #retryDBInterval=\n";
+	configFile += "        #检查超时的时间片，单位s,默认60\n";
+	configFile += "        #checkTimeoutInterval=\n";
+	configFile += "        #连续超时次数，默认10\n";
+	configFile += "        #frequenceFailInvoke=\n";
+	configFile += "        #最小失败次数  到达该值后 才开始检查radio，默认5\n";
+	configFile += "        #minTimeoutInvoke=\n";
+	configFile += "        #失败比例到达多少会屏蔽,默认30,单位%\n";
+	configFile += "        #radio=\n";
+	configFile += "    </db_conn>\n";
+
+
+	//计算出每个实例下对应几个DB
+	int tableInstance = conf.vDBInfo.size();
+	int db_size = part_db / tableInstance;
+
+	string connectionStr;
+	string dataBaseStr;
+
+	for (int j = 0; j < tableInstance; j++)
+	{
+		connectionStr += string("        ") + TC_Common::tostr(j) + "	=	" + conf.vDBInfo[j].ip + "; " + conf.vDBInfo[j].user + "; " + conf.vDBInfo[j].pwd + "; " + conf.vDBInfo[j].charset + "; " + conf.vDBInfo[j].port + "\n";
+
+		if (j == 0) {
+			string db_base_size = "";
+			if (part_db == 1) {
+				db_base_size = "0";
+			} else if (part_db == 10) {
+				db_base_size = "0";
+			} else if (part_db == 100) {
+				db_base_size = "00";
+			} else if (part_db == 1000) {
+				db_base_size = "000";
+			}
+			string sEnd = TC_Common::tostr(db_size - 1);
+			while (sEnd.size() < dbPostfixLen)
+			{
+				sEnd = string("0").append(sEnd);
+			}
+
+			dataBaseStr += string("        [") + TC_Common::tostr(db_base_size) + "-" +  sEnd + "] = " + TC_Common::tostr(j) + "\n";
+		} else {
+			string sBegin = TC_Common::tostr(db_size * j);
+			while (sBegin.size() < dbPostfixLen)
+			{
+				sBegin = string("0").append(sBegin);
+			}
+
+			string sEnd = TC_Common::tostr(db_size * (j + 1) - 1 );
+			while (sEnd.size() < dbPostfixLen)
+			{
+				sEnd = string("0").append(sEnd);
+			}
+			dataBaseStr += string("        [") + sBegin + "-" +  sEnd + "] = " + TC_Common::tostr(j) + "\n";
+		}
+	}
+
+	configFile += "    <Connection>\n";
+	configFile += "        # 连接编号; host; user; pass; charset; dbport\n";
+	configFile += connectionStr;
+	configFile += "    </Connection>\n";
+	configFile += "    <DataBase>\n";
+	configFile += "        # DataBase编号; DataBase所在的连接编号\n";
+	configFile += dataBaseStr;
+	configFile += "    </DataBase>\n";
+	configFile += "</tars>";
+
+	result = configFile;
+
+	return 0;
+}
+
+
+int DCacheOptImp::creatDBAccessTable(const string &serverName, const vector<DCache::RecordParam> & vtModuleRecord, const DCache::DBAccessConf & conf, bool bReplace, string &err)
+{
+	try
+	{
+		//用于插入t_dbaccess_cdb表的信息
+		string tableName;
+		string dbIP;
+
+		//生成表信息
+		string tableSql = "create table `" + conf.tablePrefix + "${NUM}` (";
+
+		for (unsigned int i = 0; i < vtModuleRecord.size(); i++)
+		{
+			tableSql += "`" + vtModuleRecord[i].fieldName + "` " + vtModuleRecord[i].DBType + " ";
+
+			if (vtModuleRecord[i].keyType == "mkey") //主键
+				tableSql += " NOT NULL ";
+
+			/*if(vtModuleRecord[i].dataType == "string")
+			    tableSql += " DEFAULT '" + vtModuleRecord[i].defaultValue + "' ";
+			else if(vtModuleRecord[i].defaultValue.size() == 0)
+			    tableSql += " DEFAULT 0";
+			else
+			    tableSql += " DEFAULT " + vtModuleRecord[i].defaultValue;*/
+
+			// tableSql += " COMMENT '" + vtModuleRecord[i].remark + "' ,";
+			tableSql += ", ";
+		}
+		//加入淘汰时间字段
+		tableSql += "`sDCacheExpireTime` int(16),";
+		//加入时间戳
+		tableSql += "`auto_updatetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,";
+
+		tableSql += "PRIMARY KEY (";
+		bool first = true;
+		for (unsigned int i = 0; i < vtModuleRecord.size(); i++)
+		{
+			if ((vtModuleRecord[i].keyType == "mkey") || (vtModuleRecord[i].keyType == "ukey"))
+			{
+				if (first)
+				{
+					tableSql += "`" + vtModuleRecord[i].fieldName + "`";
+					first = false;
+				}
+				else
+					tableSql += ",`" + vtModuleRecord[i].fieldName + "`";
+			}
+		}
+		tableSql += ")";
+
+		tableSql += ") ENGINE=" + conf.tableEngine + " CHARSET=" + conf.tableCharset;
+
+		unsigned int numPerDb = conf.DBNum / conf.vDBInfo.size();
+
+		unsigned int dbIndex = 0;
+
+		unsigned int dbIndexLen = 0;
+		switch (conf.DBNum)
+		{
+		case 1: dbIndexLen = 1; break;
+		case 10: dbIndexLen = 1; break;
+		case 100: dbIndexLen = 2; break;
+		case 1000: dbIndexLen = 3; break;
+		default: LOG->error() << "[DCacheOptImp::creatDBAccessTable] db number to much " << conf.DBNum << endl; return -1;
+		}
+
+		TC_LockT<TC_ThreadLock> lock(g_dbaccessLock);
+		g_dbaccessError.clear();
+
+		//开始创建数据库表
+		for (unsigned int i = 0; i < conf.vDBInfo.size(); i++)
+		{
+			for (unsigned int j = 0; j < numPerDb; j++)
+			{
+				string sNum = TC_Common::tostr(dbIndex);
+				dbIndex++;
+
+				//不够位数，前面补0
+				for (unsigned int k = sNum.size(); k < dbIndexLen; k++)
+					sNum = "0" + sNum;
+
+				string dbName = conf.DBPrefix + sNum;
+
+				//异步创建表
+				_tpool.exec(dbaccessFun, conf.vDBInfo[i].ip, conf.vDBInfo[i].user, conf.vDBInfo[i].pwd, TC_Common::strto<int>(conf.vDBInfo[i].port), dbName, tableSql, conf.tableNum, bReplace);
+
+				// dbIP = conf.vDBInfo[i].ip + "_" + conf.vDBInfo[i].port;
+
+				// tableName = dbName + "_";
+
+				// unsigned int tableIndexLen = 0;
+				// switch (conf.tableNum)
+				// {
+				// case 1: tableIndexLen = 1; break;
+				// case 10: tableIndexLen = 1; break;
+				// case 100: tableIndexLen = 2; break;
+				// case 1000: tableIndexLen = 3; break;
+				// default: LOG->error() << "[DCacheOptImp::creatDBAccessTable] table number to much " << conf.tableNum << endl; return -1;
+				// }
+
+				// //创建表
+				// for (int k = 0; k < conf.tableNum; k++)
+				// {
+				// 	string sTableIndex = TC_Common::tostr(k);
+
+				// 	//表的位数不够，前面补0
+				// 	for (unsigned int n = sTableIndex.size(); n < tableIndexLen; n++)
+				// 		sTableIndex = "0" + sTableIndex;
+
+				// 	tableName += conf.tablePrefix + sTableIndex;
+
+				// 	//插入t_dbaccess_cdb
+				// 	if (insertDBAccessCDB(serverName, tableName, dbIP, bReplace) < 0)
+				// 	{
+				// 		err = "[DCacheOptImp::creatDBAccessTable] error! insert into t_dbaccess_cdb error!";
+				// 		LOG->error() << err << endl;
+				// 	}
+				// }
+			}
+		}
+
+		_tpool.waitForAllDone();
+		if (g_dbaccessError.size() != 0)
+		{
+			err = g_dbaccessError;
+			g_dbaccessError.clear();
+			LOG->error() << err << endl;
+			return -1;
+		}
+	}
+	catch (exception &ex)
+	{
+		LOG->error() << "[DCacheOptImp::creatDBAccessTable] exception: " << ex.what() << endl;
+		err = string("[creatDBAccessTable] exception: ") + ex.what();
+		return -1;
+	}
+	return 0;
+}
+
+void DCacheOptImp::creatDBAccessTableThread(const string &dbIp, const string &dbUser, const string &dbPwd, const int dbPort, const string &dbName, const string &tableSql, const int number, bool bReplace)
+{
+	TC_Mysql dbConn(dbIp, dbUser, dbPwd, "", "", dbPort);
+	dbConn.connect();
+
+	string sql;
+	string err;
+	try
+	{
+		//创建数据库
+		sql = "create database " + dbName;
+		dbConn.execute(sql);
+	}
+	catch (exception &ex) //数据库已经存在
+	{
+		err = ex.what();
+		LOG->error() << "[creatDBAccessTable] exception: " << err << endl;
+		if (bReplace && (err.find("database exists") != string::npos))
+			LOG->debug() << "dbName is exist! " << dbName << endl;
+		else
+		{
+			g_dbaccessError = string("[creatDBAccessTable] exception: ") + ex.what();
+			LOG->error() << g_dbaccessError << endl;
+			return;
+		}
+	}
+
+	sql = "use " + dbName;
+	dbConn.execute(sql);
+
+	unsigned int tableIndexLen = 0;
+	switch (number)
+	{
+	case 1: tableIndexLen = 1; break;
+	case 10: tableIndexLen = 1; break;
+	case 100: tableIndexLen = 2; break;
+	case 1000: tableIndexLen = 3; break;
+	default: g_dbaccessError = "[DCacheOptImp::creatDBAccessTable] table number to much!"; LOG->error() << g_dbaccessError << number << endl; return;
+	}
+
+	//创建表
+	for (int k = 0; k < number; k++)
+	{
+		string sTableIndex = TC_Common::tostr(k);
+
+		//表的位数不过，前面补0
+		for (unsigned int n = sTableIndex.size(); n < tableIndexLen; n++)
+			sTableIndex = "0" + sTableIndex;
+
+		sql = tableSql;
+
+		sql = TC_Common::replace(sql, "${NUM}", sTableIndex);
+
+		try
+		{
+			dbConn.execute(sql);
+		}
+		catch (exception &ex)
+		{
+			err = ex.what();
+			LOG->error() << "[creatDBAccessTable] exception: " << err << endl;
+			if (bReplace && (err.find("already exists") != string::npos))
+			{
+				LOG->debug() << "table is exist! " << sTableIndex << endl;
+				continue;
+			}
+			else
+			{
+				g_dbaccessError = string("[creatDBAccessTable] exception: ") + ex.what();
+				LOG->error() << g_dbaccessError << endl;
+				return;
+			}
+		}
+	}
+}
+
+tars::Int32 DCacheOptImp::installDBAccess(const InstallDbAccessReq &req, InstallDbAccessRsp &rsp, tars::CurrentPtr current)
+{
+	LOG->debug() << __FUNCTION__ << ":" << __LINE__ << "|" << req.writeToJsonString() << endl;
+
+	try
+	{
+		string serverConf;
+
+		//生成配置文件信息
+		if (createDBAccessConf(req.cacheType, req.isSerializated, req.vtModuleRecord, req.conf, serverConf, rsp.errMsg) != 0)
+		{
+			LOG->error() <<  "[DCacheOptImp::installDBAccess] create config data error!" << endl;
+			rsp.errMsg = "create config data error" + rsp.errMsg;
+			return -1;
+		}
+
+		LOG->debug() << serverConf << endl;
+
+		//插入tars数据库
+		if (tarsServerConf(req.appName, req.serverName, req.serverIp, req.serverTemplate, serverConf, req.replace, rsp.errMsg) < 0)
+		{
+			LOG->error() << "[DCacheOptImp::installDBAccess] insert tars db error!" << endl;
+			rsp.errMsg = "insert tars db error!" + rsp.errMsg;
+			return -2;
+		}
+
+		//插入dcache数据库
+		map<string, pair<TC_Mysql::FT, string> > m;
+
+		m["dbaccess_name"]     = make_pair(TC_Mysql::DB_STR, req.serverName);
+		m["app_name"]     = make_pair(TC_Mysql::DB_STR, req.appName);
+
+		_mysqlRelationDB.replaceRecord("t_dbaccess_app", m);
+
+		LOG->debug() << "[DCacheOptImp::installDBAccess] begin creatDBAccessTable!" << endl;
+		//创建数据库表
+		if (creatDBAccessTable(req.serverName.substr(7), req.vtModuleRecord, req.conf, req.replace, rsp.errMsg) != 0)
+		{
+			LOG->error() << "[DCacheOptImp::installDBAccess] insert create db table error!" << endl;
+			rsp.errMsg = "insert create db table error!" + rsp.errMsg;
+			return -3;
+		}
+	}
+	catch (const std::exception &ex)
+	{
+		rsp.errMsg = string("[DCacheOptImp::installDBAccess] ERROR :") + ex.what();
+		LOG->error() << rsp.errMsg << endl;
+		return -3;
+	}
+	LOG->debug() << "[DCacheOptImp::installDBAccess] complete!" << endl;
+	return 0;
+}
+
+int DCacheOptImp::getShmKey(size_t &shmKey)
+{
+    try
+    {
+        for(;;)
+        {
+            shmKey = 1141161986 + rand()%10000000;
+
+            string sql = "select t1.config_value as config_value from t_config_table as t1, t_config_item as t2 where t1.`item_id` = t2.`id` and t2.item='ShmKey' and t1.config_value = " + TC_Common::tostr(shmKey);
+
+            auto data = _mysqlRelationDB.queryRecord(sql);
+
+            if(data.size() == 0)
+            {
+                return 0;
+            }
+        }
+    }
+    catch(const std::exception &ex)
+    {
+        string errmsg = string("getShmKey catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -3254,12 +3831,21 @@ int DCacheOptImp::createKVCacheConf(const string &appName, const string &moduleN
         vector < map <string, string> > level2Vec;
 
         string hostShmSize = TC_Common::tostr(cacheHost[i].shmSize);
-        insertConfigItem2Vector("ShmSize", "Main/Cache", hostShmSize + "G", level2Vec);
+        insertConfigItem2Vector("ShmSize", "Main/Cache", hostShmSize + "M", level2Vec);
 
-        if (!cacheHost[i].shmKey.empty())
+        size_t shmKey = TC_Common::strto<size_t>(cacheHost[i].shmKey);
+        if(shmKey == 0)
         {
-            insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(cacheHost[i].shmKey), level2Vec);
+            if(getShmKey(shmKey) != 0)
+                return -1;
         }
+
+        insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(shmKey), level2Vec);
+
+        // if (!cacheHost[i].shmKey.empty())
+        // {
+        //     insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(cacheHost[i].shmKey), level2Vec);
+        // }
 
         if (insertConfigFilesTable(cacheHost[i].serverName, cacheHost[i].serverIp, 0, level2Vec, 2, bReplace, errmsg) != 0)
             return -1;
@@ -3441,7 +4027,7 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
         string level2_item_id;
 
         string hostShmSize = TC_Common::tostr(vtCacheHost[i].shmSize);
-        level3Map["config_value"] = hostShmSize + "G";
+        level3Map["config_value"] = hostShmSize + "M";
 
         level2_item = "ShmSize";
         level2_path = "Main/Cache";
@@ -3450,10 +4036,19 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
 
         level2Vec.push_back(level3Map);
 
-        if (!vtCacheHost[i].shmKey.empty())
+        size_t shmKey = TC_Common::strto<size_t>(vtCacheHost[i].shmKey);
+        if(shmKey == 0)
         {
-            insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(vtCacheHost[i].shmKey), level2Vec);
+            if(getShmKey(shmKey) != 0)
+                return -1;
         }
+
+        insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(shmKey), level2Vec);
+
+        // if (!vtCacheHost[i].shmKey.empty())
+        // {
+        //     insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(vtCacheHost[i].shmKey), level2Vec);
+        // }
 
         if (insertConfigFilesTable(vtCacheHost[i].serverName, vtCacheHost[i].serverIp, 0, level2Vec, 2, bReplace, errmsg) != 0)
             return -1;
@@ -4576,12 +5171,21 @@ int DCacheOptImp::expandCacheConf(const string &appName, const string &moduleNam
 
         string shmSize = TC_Common::tostr(vtCacheHost[i].shmSize);
 
-        insertConfigItem2Vector("ShmSize", "Main/Cache",  shmSize + "G", level3Vec);
+        insertConfigItem2Vector("ShmSize", "Main/Cache",  shmSize + "M", level3Vec);
 
-        if (!vtCacheHost[i].shmKey.empty())
+        size_t shmKey = TC_Common::strto<size_t>(vtCacheHost[i].shmKey);
+        if(shmKey == 0)
         {
-            insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(vtCacheHost[i].shmKey), level3Vec);
+            if(getShmKey(shmKey) != 0)
+                return -1;
         }
+
+        insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(shmKey), level3Vec);
+
+        // if (!vtCacheHost[i].shmKey.empty())
+        // {
+        //     insertConfigItem2Vector("ShmKey", "Main/Cache", TC_Common::tostr(vtCacheHost[i].shmKey), level3Vec);
+        // }
 
         if (insertConfigFilesTable(vtCacheHost[i].serverName, vtCacheHost[i].serverIp, 0, level3Vec, 2, bReplace, errmsg) != 0)
         {
@@ -6582,3 +7186,81 @@ int DCacheOptImp::getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& gro
     return -1;
 }
 
+
+int DCacheOptImp::loadCacheApp(vector<CacheApp> &cacheApp, tars::CurrentPtr current)
+{
+    try
+    {
+        map<string, CacheApp> mCacheApp;
+        string sql = "select router_name, app_name from t_router_app";
+        TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
+        for(size_t i = 0; i < data.size(); i++ )
+        {
+            mCacheApp[data[i]["app_name"]].name = data[i]["app_name"];
+            mCacheApp[data[i]["app_name"]].routerName = data[i]["router_name"].substr(7);
+        }
+
+        sql = "select proxy_name, app_name from t_proxy_app";
+        data = _mysqlRelationDB.queryRecord(sql);
+        for(size_t i = 0; i < data.size(); i++ )
+        {
+            mCacheApp[data[i]["app_name"]].name = data[i]["app_name"];
+            mCacheApp[data[i]["app_name"]].proxyName = data[i]["proxy_name"].substr(7);
+        }
+
+        sql = "select cache_name, router_name, module_name, app_name, group_name from t_cache_router";
+
+        data = _mysqlRelationDB.queryRecord(sql);
+        for(size_t i = 0; i < data.size(); i++ )
+        {
+            mCacheApp[data[i]["app_name"]].name = data[i]["app_name"];
+            mCacheApp[data[i]["app_name"]].cacheModules[data[i]["module_name"]].moduleName = data[i]["module_name"];
+
+            string cacheNode = data[i]["cache_name"];
+            if(cacheNode.find("-") != string::npos)
+            {
+                cacheNode = cacheNode.substr(0, cacheNode.find("-"));
+            }
+            else if(cacheNode.find("ServerBak") != string::npos)
+            {
+                cacheNode = TC_Common::replace(cacheNode, "ServerBak", "Server"); 
+            }
+
+            mCacheApp[data[i]["app_name"]].cacheModules[data[i]["module_name"]].cacheNode = cacheNode;
+            mCacheApp[data[i]["app_name"]].cacheModules[data[i]["module_name"]].cacheServer.push_back(data[i]["cache_name"]);
+        }
+
+        //如果表不存在, 则创建之, 兼容老版本
+		sql = "select * from information_schema.tables where table_schema ='" + _relationDBInfo["dbname"] + "' and table_name = 't_dbaccess_app' limit 1";
+		data = _mysqlRelationDB.queryRecord(sql);
+		if(data.size() == 0)
+		{
+            _mysqlRelationDB.execute(CREATE_DBACCESS_CONF);
+        }
+
+        sql = "select dbaccess_name, app_name from t_dbaccess_app";
+
+        data = _mysqlRelationDB.queryRecord(sql);
+        for(size_t i = 0; i < data.size(); i++ )
+        {
+            string dbAccessServer = data[i]["dbaccess_name"].substr(7);
+            string moduleName = dbAccessServer.substr(0, dbAccessServer.size() - string("DbAccessServer").size());
+
+            mCacheApp[data[i]["app_name"]].cacheModules[moduleName].dbAccessServer = dbAccessServer;
+        }
+
+        for(auto e : mCacheApp)
+        {
+            cacheApp.push_back(e.second); 
+        }
+
+        return 0;
+    }
+    catch (const std::exception &ex)
+    {
+        string errmsg = string("get cache app catch exception:") + ex.what();
+        TLOGERROR(FUN_LOG << errmsg << endl);
+    }
+
+    return -1;
+}

@@ -55,7 +55,19 @@ struct DBInfo
     2 require string pwd;       //密码
     3 require string port;      //端口
     4 require string charset;   //字符集
-    5 require string dbName;    //数据库名
+//    5 require string dbName;    //数据库名
+};
+
+struct DBAccessConf
+{
+    0 require bool isDigital;       //主key是否数字
+    1 require int DBNum;            //分库数量
+    2 require string DBPrefix;      //数据库前缀
+    3 require int tableNum;         //分表数量
+    4 require string tablePrefix;   //表前缀
+    5 require string tableEngine;   //表引擎
+    6 require string tableCharset;  //表字符集
+    7 require vector<DBInfo> vDBInfo;//DB实例信息
 };
 
 struct RouterParam
@@ -148,8 +160,8 @@ struct RecordParam
     3 require string property;      //字段属性，require/optional
     4 require string defaultValue;  //字段默认值
     5 require int maxLen;           //string类型的字段最大长度
+	6 require string DBType;		//数据库字段类型
 };
-
 
 struct RouterConsistRes
 {
@@ -212,6 +224,7 @@ struct ReleaseInfo
     7 require int status = 0;       //发布线程状态管理，前台不用填写。
     8 optional string errmsg;
     9 optional string ostype;
+    10 optional int percent = 0;    //发布进度
 };
 
 struct CacheServerInfo
@@ -549,6 +562,21 @@ struct CacheServerListRsp
     2 require DCacheType cacheType;
 };
 
+struct CacheModule
+{
+    0 require string moduleName;
+    1 require string cacheNode;
+    2 require vector<string> cacheServer;    
+    3 optional string dbAccessServer;
+};
+
+struct CacheApp
+{
+    0 require string name;
+    1 require string proxyName;
+    2 require string routerName;
+    3 require map<string, CacheModule> cacheModules;
+};
 
 /*
 * 配置中心
@@ -603,6 +631,24 @@ struct QueryResult
     1 require string serverName;    //服务名 DCache.xxx，服务名为空表示result是模块所有服务合并数据
     2 require string date;          //e.g. 20190508
     3 require vector<QueryProp> data;
+};
+
+struct InstallDbAccessReq
+{
+    0 require string appName;
+    1 require string serverName;
+    2 require vector<string> serverIp;
+    3 require string serverTemplate; 
+    4 require bool isSerializated; 
+    5 require vector<RecordParam> vtModuleRecord; 
+    6 require DBAccessConf conf; 
+    7 require bool replace = false;
+    8 require DCacheType cacheType;
+};
+
+struct InstallDbAccessRsp
+{
+    0 require string errMsg;
 };
 
 interface DCacheOpt
@@ -755,6 +801,19 @@ interface DCacheOpt
     */
     int queryProperptyData(QueryPropReq req, out vector<QueryResult> rsp);
 
+    /*
+	 *安装DBAccess
+	 *参数说明：
+	 *@param InstallDbAccessReq 应用名
+	 *@param rsp
+	 *返回值：0 成功，其他失败
+	 */
+    int installDBAccess(InstallDbAccessReq req, out InstallDbAccessRsp rsp);
+
+    /**
+     * 加载所有的cache module
+     */
+    int loadCacheApp(out vector<CacheApp> cacheApps);
   };
 
 };

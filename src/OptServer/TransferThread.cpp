@@ -176,19 +176,19 @@ void* TransferThread::Run(void* arg)
             }
             else
             {
-                usleep(1000000);
+                sleep(1);
             }
 
         }
         catch (const std::exception &ex)
         {
             TLOGERROR(FUN_LOG << "check transfer state catch exception:" << ex.what() << endl);
-            usleep(1000000);
+            sleep(1);
         }
         catch (...)
         {
             TLOGERROR(FUN_LOG << "check transfer state catch unkown exception" << endl);
-            usleep(1000000);
+            sleep(1);
         }
     }
 

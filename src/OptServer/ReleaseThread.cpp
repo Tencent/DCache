@@ -247,7 +247,7 @@ void ReleaseThread::doReleaseRequest(ReleaseRequest* request)
     _queueManager->setProgressRecord(request->requestId, 0, RELEASE_FAILED, errmsg);
 }
 
-int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errmsg)
+int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
 {
     string resultStr;
 
@@ -287,6 +287,8 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errmsg)
             return -1;
         }
 
+        serverInfo.percent = patchInfo.iPercent;
+
         if (!patchInfo.bPatching && patchInfo.iPercent == 100)
         {
             TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
@@ -297,7 +299,7 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errmsg)
             TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
         }
 
-        usleep(100000);
+        sleep(1);
     }
 
     TLOGDEBUG(FUN_LOG << "patch server successfully" << endl);
@@ -315,7 +317,7 @@ int ReleaseThread::releaseServer(ReleaseInfo serverInfo, string & errmsg)
     while(1)
     {
         //等待启动
-        sleep(10);
+        sleep(1);
 
         tars::ServerStateDesc state;
         iRet = _adminproxy->getServerState("DCache", req.servername, req.nodename, state, resultStr);

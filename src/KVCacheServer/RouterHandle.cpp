@@ -611,7 +611,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
         }
         if (iPageNo > transferingInfo.toPageNo)
         {
-            if (!param->setFinish())
+            if (param->setFinish())
             {
                 RouterClient::async_response_fromTransferDo(current, 0);
             }
