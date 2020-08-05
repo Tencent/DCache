@@ -40,7 +40,7 @@ function LOG_INFO()
 	echo -e "\033[32m$msg \033[0m"  	
 }
 
-if [ $# -lt 10 ]; then
+if [ $# -lt 12 ]; then
     echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN NODE_IP";
     exit 1
 fi

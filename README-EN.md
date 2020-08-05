@@ -10,6 +10,7 @@ There are many teams int Tencent that use DCache, and the total number of daily 
 * Distributed storage with good scalability.
 * An LRU cache, support expiration mechanism and data persistence.
 * With a perfect platform for maintaining and monitoring. 
+* The business does not need to interact with MySQL directly. DCache will automatically write data to DB
 
 ## Supported operating systems
 
