@@ -7,7 +7,7 @@ option(TARS_SSL "option for ssl" OFF)
 option(TARS_HTTP2 "option for http2" OFF)
 
 set(TARS_TOOL_FLAG "--with-tars")
-set(TARS_WEB_HOST "http://127.0.0.1:4001")
+set(TARS_WEB_HOST "http://127.0.0.1:3000")
 
 if(WIN32)
     include (c:\\tars\\cpp\\makefile\\tars-tools.cmake)
@@ -20,5 +20,4 @@ link_directories(/usr/local/tars/cpp/thirdparty/lib)
 
 add_subdirectory(src)
 add_subdirectory(test)
-add_subdirectory(mysql-tool)
 

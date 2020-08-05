@@ -11,6 +11,8 @@ Cache通过以下两种方式实现数据持久化：
 > * [相关配置](#3)
 > * [部署dbaccess服务](#4)
 
+**注意DCache平台>=2.1.1版本, 是不需要你创建DbAccess的, 平台会自动创建DbAccess, 并且完成和mysql的通讯, 如果你希望自定义相关功能, 则需要自己实现DbAccess服务**
+
 ## <a id = "1"></a> 1. 提供MySQL DB实例和数据表
 
 **step1: 提供MySQL DB实例**
@@ -32,8 +34,6 @@ Cache通过以下两种方式实现数据持久化：
 dbaccess服务是DCache访问MySQL的代理，在dbaccess服务中通过访问MySQL从而实现数据的持久化。要求阅读本节的读者已经掌握开发一个tars服务的基本流程。
 
 在DCache的源码中已经提供了一个简洁版的[dbaccess服务](https://github.com/Tencent/DCache/tree/master/src/DbAccess/example)，读者可参考并完善(接口声明文件[DbAccess.tars](https://github.com/Tencent/DCache/blob/master/src/DbAccess/example/DbAccess.tars)请勿修改，DbAccess服务必须实现该文件中的接口)，然后编译生成发布包。
-
-
 
 
 ## <a id = "3"></a> 3. 相关配置

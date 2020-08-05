@@ -1,0 +1,22 @@
+{
+    "application": "DCache",
+    "server_name": "PropertyServer",
+    "node_name": "host_ip",
+    "server_type": "taf_cpp",
+    "template_name": "DCache.Cache",
+    "enable_set": false,
+    "set_name": "",
+    "set_area": "",
+    "set_group": "",
+    "adapters": [{
+        "obj_name": "PropertyObj",
+        "bind_ip": "host_ip",
+        "port": "11773",
+        "port_type": "tcp",
+        "protocol": "tars",
+        "thread_num": 5,
+        "max_connections": 100000,
+        "queuecap": 50000,
+        "queuetimeout": 20000
+    }]
+}
