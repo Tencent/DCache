@@ -46,7 +46,7 @@ function LOG_INFO()
 #输入参数: tars数据库地址, dcache数据库地址
 
 if [ $# -lt 10 ]; then
-    echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN";
+    echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN NODE_IP";
     exit 1
 fi
 
@@ -61,6 +61,7 @@ DCACHE_MYSQL_PASSWORD=$8
 CREATE=$9
 WEB_HOST=${10}
 WEB_TOKEN=${11}
+NODE_IP=${12}
 
 if [ "$CREATE" != "true" ]; then
 	CREATE="false"
@@ -87,6 +88,7 @@ LOG_DEBUG "CREATE:                  "${CREATE}
 LOG_DEBUG "WEB_HOST:                "${WEB_HOST}
 LOG_DEBUG "WEB_TOKEN:               "${WEB_TOKEN}
 LOG_DEBUG "WORKDIR:                 "${WORKDIR}
+LOG_DEBUG "NODE_IP:                 "${NODE_IP}
 LOG_DEBUG "===<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< print config info finish.\n";
 
 cmake .. -DTARS_WEB_HOST=${WEB_HOST} -DTARS_TOKEN=${WEB_TOKEN}
@@ -103,10 +105,77 @@ function exec_dcache()
     return $ret
 }
 
+function build_server_adapter()
+{
+    LOG_INFO "===>install DCacheOptServer:";
+    sed -i "s/dcache_host/$NODE_IP/g" assets_tmp/DCacheOptServer.json
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/DCacheOptServer.json
+    echo
+    LOG_DEBUG
+
+    LOG_INFO "===>install DCacheConfigServer:";
+    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/ConfigServer.json
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/ConfigServer.json
+    echo
+    LOG_DEBUG
+
+    LOG_INFO "===>install PropertyServer:";
+    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/PropertyServer.json
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/PropertyServer.json
+    echo
+    LOG_DEBUG
+}
+
+function update_conf()
+{
+    sed -i "s/dcache_host/$DCACHE_MYSQL_IP/g" $1
+    sed -i "s/dcache_user/$DCACHE_MYSQL_USER/g" $1
+    sed -i "s/dcache_port/$DCACHE_MYSQL_PORT/g" $1
+    sed -i "s/dcache_pass/$DCACHE_MYSQL_PASSWORD/g" $1
+
+    sed -i "s/tars_host/$TARS_MYSQL_IP/g" $1
+    sed -i "s/tars_user/$TARS_MYSQL_USER/g" $1
+    sed -i "s/tars_port/$TARS_MYSQL_PORT/g" $1
+    sed -i "s/tars_pass/$TARS_MYSQL_PASSWORD/g" $1
+}
+
+function build_server_conf()
+{
+    LOG_INFO "===>install DCacheOptServer.conf:";
+	update_conf config_tmp/DCacheOptServer.conf
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/add_config_file?ticket=${WEB_TOKEN} -d@config_tmp/DCacheOptServer.conf
+    echo
+    LOG_DEBUG
+
+    LOG_INFO "===>install ConfigServer.conf:";
+	update_conf config_tmp/ConfigServer.conf
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/add_config_file?ticket=${WEB_TOKEN} -d@config_tmp/ConfigServer.conf
+    echo
+    LOG_DEBUG
+
+    LOG_INFO "===>install PropertyServer.conf:";
+	update_conf config_tmp/PropertyServer.conf
+    curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/add_config_file?ticket=${WEB_TOKEN} -d@config_tmp/PropertyServer.conf
+    echo
+    LOG_DEBUG
+
+}
+
+
+cp -rf ../deploy/config config_tmp
+cp -rf ../deploy/assets assets_tmp
+
+build_server_adapter
+
+build_server_conf
+
+rm -rf config_tmp
+rm -rf assets_tmp
+
 if [ "${CREATE}" == "true" ]; then 
-exec_dcache "create database db_dcache_relation"
-exec_dcache "create database db_dcache_property"
-mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation_create.sql
+	exec_dcache "create database db_dcache_relation"
+	exec_dcache "create database db_dcache_property"
+	mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation_create.sql
 fi
 
 #上传发布包
@@ -143,8 +212,8 @@ curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheSe
 
 echo 
 
-cp -rf ../deploy/config config_tmp
+# cp -rf ../deploy/config config_tmp
 
-bin/mysql-tool --config=config_tmp --dcache_host=${DCACHE_MYSQL_IP}  --dcache_user=${DCACHE_MYSQL_USER} --dcache_port=${DCACHE_MYSQL_PORT} --dcache_pass=${TARS_MYSQL_PASSWORD} --tars_host=${TARS_MYSQL_IP} --tars_user=${TARS_MYSQL_USER} --tars_port=${TARS_MYSQL_PORT} --tars_pass=${TARS_MYSQL_PASSWORD}
+# bin/mysql-tool --config=config_tmp --dcache_host=${DCACHE_MYSQL_IP}  --dcache_user=${DCACHE_MYSQL_USER} --dcache_port=${DCACHE_MYSQL_PORT} --dcache_pass=${TARS_MYSQL_PASSWORD} --tars_host=${TARS_MYSQL_IP} --tars_user=${TARS_MYSQL_USER} --tars_port=${TARS_MYSQL_PORT} --tars_pass=${TARS_MYSQL_PASSWORD}
 
-rm -rf config_tmp
+# rm -rf config_tmp
