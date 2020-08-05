@@ -40,11 +40,6 @@ function LOG_INFO()
 	echo -e "\033[32m$msg \033[0m"  	
 }
 
-#手工创建: DCacheOptServer/ConfigServer/PropertyServer
-
-#yum install mysql
-#输入参数: tars数据库地址, dcache数据库地址
-
 if [ $# -lt 10 ]; then
     echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN NODE_IP";
     exit 1
@@ -108,7 +103,7 @@ function exec_dcache()
 function build_server_adapter()
 {
     LOG_INFO "===>install DCacheOptServer:";
-    sed -i "s/dcache_host/$NODE_IP/g" assets_tmp/DCacheOptServer.json
+    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/DCacheOptServer.json
     curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/DCacheOptServer.json
     echo
     LOG_DEBUG
@@ -212,8 +207,3 @@ curl ${WEB_HOST}/api/upload_patch_package?ticket=${WEB_TOKEN} -Fsuse=@MKVCacheSe
 
 echo 
 
-# cp -rf ../deploy/config config_tmp
-
-# bin/mysql-tool --config=config_tmp --dcache_host=${DCACHE_MYSQL_IP}  --dcache_user=${DCACHE_MYSQL_USER} --dcache_port=${DCACHE_MYSQL_PORT} --dcache_pass=${TARS_MYSQL_PASSWORD} --tars_host=${TARS_MYSQL_IP} --tars_user=${TARS_MYSQL_USER} --tars_port=${TARS_MYSQL_PORT} --tars_pass=${TARS_MYSQL_PASSWORD}
-
-# rm -rf config_tmp
