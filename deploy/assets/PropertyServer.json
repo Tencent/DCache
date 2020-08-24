@@ -2,7 +2,7 @@
     "application": "DCache",
     "server_name": "PropertyServer",
     "node_name": "host_ip",
-    "server_type": "taf_cpp",
+    "server_type": "tars_cpp",
     "template_name": "DCache.Cache",
     "enable_set": false,
     "set_name": "",
