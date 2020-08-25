@@ -170,7 +170,7 @@ rm -rf assets_tmp
 if [ "${CREATE}" == "true" ]; then 
 	exec_dcache "create database db_dcache_relation"
 	exec_dcache "create database db_dcache_property"
-	mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation_create.sql
+	mysql -h${DCACHE_MYSQL_IP}  -u${DCACHE_MYSQL_USER} -P${DCACHE_MYSQL_PORT} -p${DCACHE_MYSQL_PASSWORD} --default-character-set=utf8mb4 db_dcache_relation < ../deploy/sql/db_dcache_relation.sql
 fi
 
 #上传发布包
