@@ -4595,6 +4595,7 @@ int DCacheOptImp::insertTarsServerTableWithIdcGroup(const string &sApp, const st
         m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
         m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
         m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
+        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
 
         // 这里默认开启IDC分组
         m["enable_group"] = make_pair(TC_Mysql::DB_STR,(enableGroup)?"Y":"N");//是否启用IDC分组
@@ -4650,6 +4651,7 @@ int DCacheOptImp::insertTarsServerTable(const string &sApp, const string &sServe
         m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
         m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
         m["enable_group"]   = make_pair(TC_Mysql::DB_STR, (enableGroup)?"Y":"N");//是否启用IDC分组
+        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
 
         if (bReplace)
             _mysqlTarsDb.replaceRecord("t_server_conf", m);
