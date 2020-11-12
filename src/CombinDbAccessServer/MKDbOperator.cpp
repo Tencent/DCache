@@ -250,8 +250,8 @@ tars::Int32 MKDbOperator::select(const string &mainKey, const string &field, con
 		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(true);
 		//db_error_timeout->report(1);
-		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|select timeout|"<<endTime-beginTime<<endl;;
+		// endTime = TC_TimeProvider::getInstance()->getNowMs();
+		// LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|select timeout|"<<endTime-beginTime<<endl;;
         iRet = eDbError;
 	}
 	catch(std::exception &ex)
@@ -392,8 +392,8 @@ tars::Int32 MKDbOperator::replace(const string &mainKey, const map<string, DbUpd
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
 		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
 		mysqlErrCounter[mysqlNum]->finishInvoke(true);
-		endTime = TC_TimeProvider::getInstance()->getNowMs();
-		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|replace|"<<endTime-beginTime<<endl;
+		// endTime = TC_TimeProvider::getInstance()->getNowMs();
+		// LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|replace|"<<endTime-beginTime<<endl;
 		//db_error_timeout->report(1);
         iRet = eDbError;
 	}
@@ -453,7 +453,7 @@ tars::Int32 MKDbOperator::del(const string &mainKey, const vector<DbCondition> &
 		//db_error_timeout->report(1);
 		endTime = TC_TimeProvider::getInstance()->getNowMs();
 		Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_TIMEOUT,endTime-beginTime);
-		LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|delete|"<<endTime-beginTime<<endl;
+		// LOG->debug()<<mysqlNum<<"|"<<sDbName<<"|"<<sTableName<<"|delete|"<<endTime-beginTime<<endl;
         iRet = eDbError;
 	}
 	catch(std::exception &ex)

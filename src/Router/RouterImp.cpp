@@ -90,7 +90,7 @@ void RouterImp::initialize()
 
     std::string obj = ServerConfig::Application + "." + ServerConfig::ServerName + ".RouterObj";
     std::string adapter = obj + "Adapter";
-    TC_Endpoint ep = Application::getEpollServer()->getBindAdapter(adapter)->getEndpoint();
+    TC_Endpoint ep = g_app.getEpollServer()->getBindAdapter(adapter)->getEndpoint();
     _selfObj = obj + "@" + ep.toString();
 }
 
