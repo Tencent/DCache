@@ -11447,6 +11447,8 @@ namespace DCache
             {
                 // 当前主key链中有正在分配的block，跳过
                 iAddr = mainKey.getHeadPtr()->_iGetPrev;
+                MainKey tmp(this, iAddr);                                                                
+                mainKey = tmp;
             }
             if (iAddr == 0)
             {
