@@ -4,6 +4,7 @@
     "node_name": "host_ip",
     "server_type": "tars_cpp",
     "template_name": "DCache.Cache",
+    "setting_state": "active",
     "enable_set": false,
     "set_name": "",
     "set_area": "",
