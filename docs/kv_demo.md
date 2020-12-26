@@ -1,3 +1,5 @@
+# 本文以 KV 为例说明。
+
 本文档对如何在 C++业务代码中使用 DCache 进行说明，并提供示例代码。
 
 ## 准备工作
@@ -24,7 +26,14 @@
 
   - 模块类型：`KV`
   - 模块名：`testKvModule`
-  - 代理 servant 名：`DCache.testProxyServer.ProxyObj`
+  - # 代理 servant 名：`DCache.testProxyServer.ProxyObj`
+    可以把 KV 模块当作 Tars 框架上已经发布的一个服务，像调用普通服务那样调用 KV 接口。
+
+关于 KV 接口，请参考 [接口描述](proxy_api_guide.md)
+
+具体流程如下：
+
+- 创建的 KV 信息如下： - 模块类型：`KV` - 模块名：`testKvModule` - 代理 servant 名：`DCache.testProxyServer.ProxyObj`
 
 - 需要包含的头文件：
 
@@ -42,9 +51,10 @@ using namespace DCache;
 ```cpp
 Communicator comm;
 ProxyPrx prx;
-string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; # 更换为实际地址
+
+string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; // 更换为实际地址
 comm.setProperty("locator", locator);
-comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); # 更换为实际的proxy servant
+comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); // 更换为实际的proxy servant
 ```
 
 - 调用接口：
