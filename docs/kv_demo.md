@@ -1,27 +1,30 @@
-本文档对如何在C++业务代码中使用DCache进行说明，并提供示例代码。
+本文档对如何在 C++业务代码中使用 DCache 进行说明，并提供示例代码。
 
 ## 准备工作
-请确保你已经安装并成功部署了TarsCpp开发环境、DCache服务和相关模块。
+
+请确保你已经安装并成功部署了 TarsCpp 开发环境、DCache 服务和相关模块。
 
 相关内容可参考：[环境安装](install.md)
 
-本文以KV为例说明。
+本文以 KV 为例说明。
 
 成功发布模块后，如下图所示：
 
 ![安装成功](images/install_kv_succ.png)
 
 ## 开发流程
-可以把KV模块当作Tars框架上已经发布的一个服务，像调用普通服务那样调用KV接口。
 
-关于KV接口，请参考 [接口描述](proxy_api_guide.md)
+可以把 KV 模块当作 Tars 框架上已经发布的一个服务，像调用普通服务那样调用 KV 接口。
+
+关于 KV 接口，请参考 [接口描述](proxy_api_guide.md)
 
 具体流程如下：
 
-- 创建的KV信息如下：
-    - 模块类型：`KV`
-    - 模块名：`testKvModule`
-    - 代理servant名：`DCache.testProxyServer.ProxyObj`
+- 创建的 KV 信息如下：
+
+  - 模块类型：`KV`
+  - 模块名：`testKvModule`
+  - 代理 servant 名：`DCache.testProxyServer.ProxyObj`
 
 - 需要包含的头文件：
 
@@ -39,9 +42,9 @@ using namespace DCache;
 ```cpp
 Communicator comm;
 ProxyPrx prx;
-string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; // 更换为实际地址
+string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; # 更换为实际地址
 comm.setProperty("locator", locator);
-comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); // 更换为实际的proxy servant
+comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); # 更换为实际的proxy servant
 ```
 
 - 调用接口：
@@ -118,20 +121,21 @@ if (ret != ET_SUCC)
 ```
 
 ## 编译环境
-业务代码需要的头文件位于DCache目录内，可以直接把DCache目录放在`/usr/local/include`下。
 
-也可以在Makefile中指定头文件路径。
+业务代码需要的头文件位于 DCache 目录内，可以直接把 DCache 目录放在`/usr/local/include`下。
 
-Makefile示例如下：
+也可以在 Makefile 中指定头文件路径。
+
+Makefile 示例如下：
 
 ```makefile
 #-----------------------------------------------------------------------
 
 APP       := test
 TARGET    := demo
-CONFIG    := 
+CONFIG    :=
 STRIP_FLAG:= N
-TARS2CPP_FLAG:= 
+TARS2CPP_FLAG:=
 
 # 根据DCache实际路径填写
 INCLUDE   += -I/usr/local/tars/DCache/src/Proxy -I/usr/local/tars/DCache/src/TarsComm
