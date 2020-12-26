@@ -39,9 +39,9 @@ using namespace DCache;
 ```cpp
 Communicator comm;
 ProxyPrx prx;
-string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; # 更换为实际地址
+string locator = "tars.tarsregistry.QueryObj@tcp -h 192.168.1.2 -p 17890"; // 更换为实际地址
 comm.setProperty("locator", locator);
-comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); # 更换为实际的proxy servant
+comm.stringToProxy("DCache.testProxyServer.ProxyObj", prx); // 更换为实际的proxy servant
 ```
 
 - 调用接口：
