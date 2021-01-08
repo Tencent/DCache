@@ -49,7 +49,7 @@ DCache(>=2.1.1) 支持脚本一站式部署服务!
 进入build目录(必须在build下执行)
 ```
 cd build
-../deploy/install.sh TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD WEB_HOST WEB_TOKEN NODE_IP
+../deploy/install.sh TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE WEB_HOST WEB_TOKEN NODE_IP
 ```
 
 注意:
@@ -61,6 +61,7 @@ cd build
 - DCACHE_MYSQL_PORT: dcache数据库的port
 - DCACHE_MYSQL_USER: dcache数据库的user
 - DCACHE_MYSQL_PASSWORD: dcache数据库的密码
+- CREATE: 是否重新建表，`true` 表示重新创建 DCache 表，`false` 表示不创建
 - WEB_HOST: TARS web平台地址
 - WEB_TOKEN: TARS web平台token(需要进入web平台, 用户中心上, 创建一个Token)
 - NODE_IP: 公共服务部署节点IP, 部署完成后, 你可以在web平台扩容到多台节点机上
