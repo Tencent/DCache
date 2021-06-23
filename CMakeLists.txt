@@ -18,6 +18,8 @@ endif()
 include_directories(/usr/local/tars/cpp/thirdparty/include)
 link_directories(/usr/local/tars/cpp/thirdparty/lib)
 link_libraries(pthread)
+link_libraries(dl)
+
 
 add_subdirectory(src)
 add_subdirectory(test)
