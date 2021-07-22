@@ -660,7 +660,7 @@ map<string, ServerInfo> DbHandle::getDBServerList()
 
     string sSql =
         "select a.id, a.server_name, a.ip, a.binlog_port, a.cache_port, "
-        "a.routerclient_port, a.idc_area, a.status, b.module_name, b.server_status, b.group_name "
+        "a.routeclient_port, a.idc_area, a.status, b.module_name, b.server_status, b.group_name "
         "from t_router_server as a, t_router_group as b where a.server_name = b.server_name";
     TC_Mysql::MysqlData sqlData = _mysql->queryRecord(sSql);
     map<string, ServerInfo> mServers;
@@ -691,7 +691,7 @@ map<string, ServerInfo> DbHandle::getDBServerList(const string &moduleName)
 
     string sSql =
         "select a.id, a.server_name, a.ip, a.binlog_port, a.cache_port, "
-        "a.routerclient_port, a.idc_area, a.status, b.module_name, b.server_status, "
+        "a.routeclient_port, a.idc_area, a.status, b.module_name, b.server_status, "
         "b.group_name from t_router_server as a, t_router_group as b where a.server_name "
         "= b.server_name and b.module_name = '" +
         moduleName + "'";
