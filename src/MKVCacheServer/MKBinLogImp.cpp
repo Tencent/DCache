@@ -592,7 +592,7 @@ tars::Int32 MKBinLogImp::getLogCompressWithPart(const DCache::BinLogReq &req, DC
                                     {
                                         line = sEncode.EncodeSet(mKey, uKey, value._value, iExpireTime, bDirty);
                                     }
-                                    else if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY || iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA || TC_Multi_HashMap_Malloc::RT_DATA_DEL)
+                                    else if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY || iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA || iRet == TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                                     {
                                         line = sEncode.EncodeErase(mKey, uKey);
                                     }

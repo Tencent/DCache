@@ -4396,7 +4396,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
                             {
                                 int iDelRet = g_HashMap.delSetBit(mk, uk, time(NULL));
 
-                                if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) || (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
+                                if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                                 {
                                     TLOGERROR("MKWCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
