@@ -23,7 +23,7 @@ CREATE TABLE `t_router_server` (
   `ip` varchar(15) NOT NULL,
   `binlog_port` int(11) NOT NULL,
   `cache_port` int(11) NOT NULL,
-  `routeclient_port` int(11) NOT NULL,
+  `routerclient_port` int(11) NOT NULL,
   `idc_area`   varchar(10) NOT NULL DEFAULT 'sz',
   `remark` varchar(255) default NULL,
   `modify_time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
@@ -37,7 +37,7 @@ CREATE TABLE `t_router_server` (
 -- ip，服务器IP
 -- binlog_port，BinLog servant对象App.ServerName.BinLogObj的服务端口
 -- cache_port，Cache servant对象App.ServerName.CacheObj的服务端口
--- routeclient_port，RouterClient servant对象App.ServerName.RouterClientObj的服务端口
+-- routerclient_port，RouterClient servant对象App.ServerName.RouterClientObj的服务端口
 
 
 --3、服务器组配置表

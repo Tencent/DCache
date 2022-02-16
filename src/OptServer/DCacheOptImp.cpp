@@ -3211,7 +3211,7 @@ int DCacheOptImp::createRouterDBConf(const RouterParam &param, string &errmsg)
                             + string(" (") + t_ID + string(",'ip','ip','服务器IP','1','1','1','0','0',2,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
                             + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','1','0','0','1',7,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
                             + string(" (") + t_ID + string(",'remark','remark','备注','1','1','1','0','1',6,400,0,10,1,'','','" )+ t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'routeclient_port','routeclient_port','RouterClientObj服务端口','1','1','1','0','0',5,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
+                            + string(" (") + t_ID + string(",'routerclient_port','routerclient_port','RouterClientObj服务端口','1','1','1','0','0',5,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
                             + string(" (") + t_ID + string(",'server_name','server_name','服务器名','1','1','1','0','0',1,400,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
                             + string(" (") + t_ID + string(",'idc_area','idc_area','IDC地区','1','1','1','0','0',0,150,0,15,4,'','sz|深圳;bj|北京;sh|上海;nj|南京;hk|香港;cd|成都','") + t_sPostTime + string("','dcache_init_fields.sh')");
                     }
