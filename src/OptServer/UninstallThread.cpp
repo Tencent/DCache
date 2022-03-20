@@ -77,7 +77,7 @@ void UninstallRequestQueueManager::push_back(const UninstallRequest & request)
     {
         std::string sException = "reduplicate uninstall request:" + request.requestId;
 
-        TLOGERROR(FUN_LOG << "reduplicate uninstall request id:" << request.requestId << "|exception:" << sException << endl);
+        TLOG_ERROR(FUN_LOG << "reduplicate uninstall request id:" << request.requestId << "|exception:" << sException << endl);
         throw TC_Exception(sException);
     }
 
@@ -107,7 +107,7 @@ void UninstallRequestQueueManager::addUninstallRecord(const string &sRequestId)
     map<string, UninstallStatus>::iterator it = _uninstallingProgress.find(sRequestId);
     if (it != _uninstallingProgress.end())
     {
-        TLOGERROR(FUN_LOG << "request id:" << sRequestId << " is uninstalling" << endl);
+        TLOG_ERROR(FUN_LOG << "request id:" << sRequestId << " is uninstalling" << endl);
         return;
     }
 
@@ -125,7 +125,7 @@ void UninstallRequestQueueManager::setUninstallRecord(const string &sRequestId, 
     map<string, UninstallStatus>::iterator it = _uninstallingProgress.find(sRequestId);
     if (it == _uninstallingProgress.end())
     {
-        TLOGERROR(FUN_LOG << "request id:" << sRequestId << " no found" << endl);
+        TLOG_ERROR(FUN_LOG << "request id:" << sRequestId << " no found" << endl);
         return;
     }
 
@@ -141,7 +141,7 @@ UninstallStatus UninstallRequestQueueManager::getUninstallRecord(const string & 
     map<string, UninstallStatus>::iterator it = _uninstallingProgress.find(sRequestId);
     if (it == _uninstallingProgress.end())
     {
-        TLOGERROR(FUN_LOG << "request id:" << sRequestId << " no found" << endl);
+        TLOG_ERROR(FUN_LOG << "request id:" << sRequestId << " no found" << endl);
         throw runtime_error("request id:" + sRequestId + " no found");
     }
 
@@ -155,7 +155,7 @@ void UninstallRequestQueueManager::deleteUninstallRecord(const string &sRequestI
     map<string, UninstallStatus>::iterator it = _uninstallingProgress.find(sRequestId);
     if (it == _uninstallingProgress.end())
     {
-        TLOGDEBUG(FUN_LOG << "request has been deleted|request id:" << sRequestId << endl);
+        TLOG_DEBUG(FUN_LOG << "request has been deleted|request id:" << sRequestId << endl);
         return;
     }
 
@@ -211,11 +211,11 @@ void UninstallThread::run()
         }
         catch (exception& e)
         {
-            TLOGERROR(FUN_LOG << "catch exception:" << e.what() << endl);
+            TLOG_ERROR(FUN_LOG << "catch exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR(FUN_LOG << "catch unkown exception" << endl);
+            TLOG_ERROR(FUN_LOG << "catch unkown exception" << endl);
         }
     }
 }
@@ -227,13 +227,13 @@ void UninstallThread::terminate()
 
 void UninstallThread::setTarsDbMysql(TC_DBConf &dbConf)
 {
-    TLOGDEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
+    TLOG_DEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
     _mysqlTarsDb.init(dbConf);
 }
 
 void UninstallThread::setRelationDbMysql(TC_DBConf &dbConf)
 {
-    TLOGDEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
+    TLOG_DEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
     _mysqlRelationDb.init(dbConf);
 }
 
@@ -244,7 +244,7 @@ void UninstallThread::setCacheBackupPath(const string & sCacheBakPath)
 
 void UninstallThread::doUninstallRequest(UninstallRequest & request)
 {
-    TLOGDEBUG(FUN_LOG << "request id:" << request.requestId << "|request type:" << request.info.unType << endl);
+    TLOG_DEBUG(FUN_LOG << "request id:" << request.requestId << "|request type:" << request.info.unType << endl);
     string errmsg("");
     try
     {
@@ -257,7 +257,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
 
             errmsg = string("get router db info failed, errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
 
             return;
         }
@@ -320,7 +320,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             if (ret < 0)
             {
                 errmsg = "get router info failed|cache server name:" + uninstallInfo.serverName;
-                TLOGERROR(FUN_LOG << errmsg<< endl);
+                TLOG_ERROR(FUN_LOG << errmsg<< endl);
 
                 _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
                 return;
@@ -338,12 +338,12 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
     catch(exception &ex)
     {
         errmsg = string("do uninstall request catch exception:") + ex.what() + "|request id:" + request.requestId;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch(...)
     {
         errmsg = string("do uninstall request catch unknown exception|request id:") + request.requestId;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     _queueManager->setUninstallRecord(request.requestId, 0, UNINSTALL_FAILED, errmsg);
@@ -358,7 +358,7 @@ int UninstallThread::getRouterInfo(TC_Mysql &mysqlRelationDb, const string &sFul
         TC_Mysql::MysqlData data = mysqlRelationDb.queryRecord(sSql);
         if (data.size() != 1)
         {
-            TLOGERROR(FUN_LOG << "query from t_cache_router no find cache server name:" << sFullCacheServer << endl);
+            TLOG_ERROR(FUN_LOG << "query from t_cache_router no find cache server name:" << sFullCacheServer << endl);
             return -1;
         }
 
@@ -367,7 +367,7 @@ int UninstallThread::getRouterInfo(TC_Mysql &mysqlRelationDb, const string &sFul
     }
     catch(const TarsException& ex)
     {
-        TLOGERROR(FUN_LOG << "operate relation db.t_cache_router catch exception:" << ex.what()<< endl);
+        TLOG_ERROR(FUN_LOG << "operate relation db.t_cache_router catch exception:" << ex.what()<< endl);
         return -1;
     }
 
@@ -398,11 +398,11 @@ void UninstallThread::reloadRouterConfByModuleFromDB(const string &moduleName, c
             _adminproxy->notifyServer("DCache", routerNameVec[1], *pos, "router.reloadRouterByModule " + moduleName, sResult);
         }
 
-        TLOGDEBUG(FUN_LOG << "notify router server reloadRouterByModule success" << endl);
+        TLOG_DEBUG(FUN_LOG << "notify router server reloadRouterByModule success" << endl);
     }
     catch(const TarsException& ex)
     {
-        TLOGERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
     }
 }
 
@@ -428,18 +428,18 @@ int UninstallThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbI
         else
         {
             errmsg = string("not find router db config in relation db table t_cache_router|app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("get router db info from relation db t_cache_router table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get router db info from relation db t_cache_router table catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;

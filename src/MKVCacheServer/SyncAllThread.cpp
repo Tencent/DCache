@@ -21,7 +21,7 @@ void SyncAllThread::init(const string &sConf)
     _syncTime = TC_Common::strto<int>(_tcConf["/Main/Cache<SyncTime>"]);
 
 
-    TLOGDEBUG("SyncAllThread::init succ" << endl);
+    TLOG_DEBUG("SyncAllThread::init succ" << endl);
 }
 
 void SyncAllThread::reload()
@@ -30,7 +30,7 @@ void SyncAllThread::reload()
 
     _syncTime = TC_Common::strto<int>(_tcConf["/Main/Cache<SyncTime>"]);
 
-    TLOGDEBUG("SyncAllThread::reload succ" << endl);
+    TLOG_DEBUG("SyncAllThread::reload succ" << endl);
 }
 
 void SyncAllThread::createThread()
@@ -65,13 +65,13 @@ void* SyncAllThread::Run(void* arg)
             int iRet = pthis->syncData(tSync);
             if (iRet == TC_Multi_HashMap_Malloc::RT_OK)
             {
-                TLOGDEBUG("SyncAllThread::Run SyncAll data Succ" << endl);
+                TLOG_DEBUG("SyncAllThread::Run SyncAll data Succ" << endl);
                 break;
             }
         }
         catch (const std::exception & ex)
         {
-            TLOGERROR("SyncAllThread::Run exception: " << ex.what() << endl);
+            TLOG_ERROR("SyncAllThread::Run exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             break;
         }

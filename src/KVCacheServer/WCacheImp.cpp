@@ -115,7 +115,7 @@ void WCacheImp::initialize()
 
     TARS_ADD_ADMIN_CMD_NORMAL("reload", WCacheImp::reloadConf);
 
-    TLOGDEBUG("WCacheImp::initialize Succ, _hitIndex:" << _hitIndex << endl);
+    TLOG_DEBUG("WCacheImp::initialize Succ, _hitIndex:" << _hitIndex << endl);
 }
 
 //////////////////////////////////////////////////////
@@ -136,7 +136,7 @@ bool WCacheImp::reloadConf(const string& command, const string& params, string& 
 
     _saveOnlyKey = (_tcConf["/Main/Cache<SaveOnlyKey>"] == "Y" || _tcConf["/Main/Cache<SaveOnlyKey>"] == "y") ? true : false;
     _readDB = (_tcConf["/Main/DbAccess<ReadDbFlag>"] == "Y" || _tcConf["/Main/DbAccess<ReadDbFlag>"] == "y") ? true : false;
-    TLOGDEBUG("WCacheImp::reloadConf Succ" << endl);
+    TLOG_DEBUG("WCacheImp::reloadConf Succ" << endl);
     result = "SUCC";
 
     return true;
@@ -145,7 +145,7 @@ bool WCacheImp::reloadConf(const string& command, const string& params, string& 
 
 tars::Int32 WCacheImp::setKV(const DCache::SetKVReq &req, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("[WCacheImp::" << __FUNCTION__ << "]|" << req.moduleName << "|"
+    TLOG_DEBUG("[WCacheImp::" << __FUNCTION__ << "]|" << req.moduleName << "|"
               << req.data.keyItem << "|" << (int)req.data.version << "|" << req.data.dirty
               << "|" << req.data.expireTimeSecond << endl);
     int iRet = setStringKey(req.moduleName, req.data.keyItem, req.data.value,
@@ -158,13 +158,13 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("WCacheImp::setKVBatch: ServerType is not Master" << endl);
+        TLOG_ERROR("WCacheImp::setKVBatch: ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
     if (req.moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("WCacheImp::setKVBatch: moduleName error" << endl);
+        TLOG_ERROR("WCacheImp::setKVBatch: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -183,7 +183,7 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
             size_t iKeyLength = keyItem.length();
             if (iKeyLength > _maxKeyLengthInDB)
             {
-                TLOGERROR("WCacheImp::setKVBatch: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
+                TLOG_ERROR("WCacheImp::setKVBatch: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 keyResult[keyItem] = SET_ERROR;
                 continue;
@@ -194,7 +194,7 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
                 int iPageNo = g_route_table.getPageNo(keyItem);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("WCacheImp::setKVBatch: " << keyItem << " forbid set" << endl);
+                    TLOG_ERROR("WCacheImp::setKVBatch: " << keyItem << " forbid set" << endl);
                     keyResult[keyItem] = SET_ERROR;
                     continue;
                 }
@@ -204,8 +204,8 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
             if (!g_route_table.isMySelf(keyItem))
             {
                 //返回模块错误
-                TLOGERROR("WCacheImp::setKVBatch: " << keyItem << " is not in self area" << endl);
-                TLOGERROR(g_route_table.toString() << endl);
+                TLOG_ERROR("WCacheImp::setKVBatch: " << keyItem << " is not in self area" << endl);
+                TLOG_ERROR(g_route_table.toString() << endl);
                 map<string, string>& context = current->getContext();
                 //API直连模式，返回增量更新路由
                 if (VALUE_YES == context[GET_ROUTE])
@@ -227,7 +227,7 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
                     int ret = RouterHandle::getInstance()->getUpdateServant(vtKeys, vtIndex, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                     else
                     {
@@ -259,18 +259,18 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
             {
                 if (iRet == TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                 {
-                    TLOGERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << "|ver mismatch" << endl);
+                    TLOG_ERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << "|ver mismatch" << endl);
                     keyResult[keyItem] = SET_DATA_VER_MISMATCH;
                 }
                 else if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
                 {
-                    TLOGERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << "|no memory" << endl);
+                    TLOG_ERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << "|no memory" << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     keyResult[keyItem] = SET_ERROR;
                 }
                 else
                 {
-                    TLOGERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << endl);
+                    TLOG_ERROR("WCacheImp::setKVBatch hashmap.set(" << keyItem << ") error:" << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     keyResult[keyItem] = SET_ERROR;
                 }
@@ -279,14 +279,14 @@ tars::Int32 WCacheImp::setKVBatch(const DCache::SetKVBatchReq &req, DCache::SetK
         }
         catch (const std::exception & ex)
         {
-            TLOGERROR("WCacheImp::setKVBatch exception: " << ex.what() << " , key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::setKVBatch exception: " << ex.what() << " , key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             keyResult[keyItem] = SET_ERROR;
             continue;
         }
         catch (...)
         {
-            TLOGERROR("WCacheImp::setKVBatch unkown_exception, key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::setKVBatch unkown_exception, key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             keyResult[keyItem] = SET_ERROR;
             continue;
@@ -325,13 +325,13 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("WCacheImp::insertKV: ServerType is not Master" << endl);
+            TLOG_ERROR("WCacheImp::insertKV: ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::insertKV: moduleName error" << endl);
+            TLOG_ERROR("WCacheImp::insertKV: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -341,7 +341,7 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
             int iPageNo = g_route_table.getPageNo(keyItem);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("WCacheImp::insertKV: " << keyItem << " forbid set" << endl);
+                TLOG_ERROR("WCacheImp::insertKV: " << keyItem << " forbid set" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -350,8 +350,8 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
         if (!g_route_table.isMySelf(keyItem))
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::insertKV: " << keyItem << " is not in self area" << endl);
-            TLOGERROR(g_route_table.toString() << endl);
+            TLOG_ERROR("WCacheImp::insertKV: " << keyItem << " is not in self area" << endl);
+            TLOG_ERROR(g_route_table.toString() << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -362,7 +362,7 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
                 int ret = RouterHandle::getInstance()->getUpdateServant(keyItem, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -380,14 +380,14 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
         if (iRet == TC_HashMapMalloc::RT_OK)
         {
             g_app.gstat()->hit(_hitIndex);
-            TLOGERROR("WCacheImp::insertKV: " << keyItem << " forbid set key has exist" << endl);
+            TLOG_ERROR("WCacheImp::insertKV: " << keyItem << " forbid set key has exist" << endl);
             return ET_DATA_EXIST;
         }
         else if (iRet == TC_HashMapMalloc::RT_NO_DATA)
         {
             if (_existDB && _readDB)
             {
-                TLOGDEBUG("WCacheImp::insertKV async db in insertKV, key = " << keyItem << endl);
+                TLOG_DEBUG("WCacheImp::insertKV async db in insertKV, key = " << keyItem << endl);
 
                 current->setResponse(false);
                 BatchParamPtr pParam = new BatchParam();
@@ -401,7 +401,7 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
 
                 if (iRet != TC_HashMapMalloc::RT_OK)
                 {
-                    TLOGERROR("WCacheImp::insertKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
+                    TLOG_ERROR("WCacheImp::insertKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
                     if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                     {
                         if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
@@ -439,7 +439,7 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
 
             if (iRet != TC_HashMapMalloc::RT_OK)
             {
-                TLOGERROR("WCacheImp::insertKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
+                TLOG_ERROR("WCacheImp::insertKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
                 if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                 {
                     if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
@@ -472,26 +472,26 @@ tars::Int32 WCacheImp::insertKV(const DCache::SetKVReq &req, tars::TarsCurrentPt
         }
         else
         {
-            TLOGERROR("WCacheImp::insertKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::insertKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("WCacheImp::insertKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::insertKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("WCacheImp::insertKV exception: " << ex.what() << " , key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::insertKV exception: " << ex.what() << " , key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("WCacheImp::insertKV unkown_exception, key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::insertKV unkown_exception, key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -514,20 +514,20 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
         size_t iKeyLength = keyItem.size();
         if (iKeyLength > _maxKeyLengthInDB)
         {
-            TLOGERROR("WCacheImp::updateKV: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
+            TLOG_ERROR("WCacheImp::updateKV: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_PARAM_TOO_LONG;
         }
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("WCacheImp::updateKV: ServerType is not Master" << endl);
+            TLOG_ERROR("WCacheImp::updateKV: ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::updateKV: moduleName error" << endl);
+            TLOG_ERROR("WCacheImp::updateKV: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -537,7 +537,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
             int iPageNo = g_route_table.getPageNo(keyItem);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("WCacheImp::updateKV: " << keyItem << " forbid set" << endl);
+                TLOG_ERROR("WCacheImp::updateKV: " << keyItem << " forbid set" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -546,8 +546,8 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
         if (!g_route_table.isMySelf(keyItem))
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::updateKV: " << keyItem << " is not in self area" << endl);
-            TLOGERROR(g_route_table.toString() << endl);
+            TLOG_ERROR("WCacheImp::updateKV: " << keyItem << " is not in self area" << endl);
+            TLOG_ERROR(g_route_table.toString() << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -558,7 +558,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
                 int ret = RouterHandle::getInstance()->getUpdateServant(keyItem, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -571,7 +571,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
 
         if (!IsDigit(value))
         {
-            TLOGERROR("[WCacheImp::updateKV] update value is not digit! " << value << endl);
+            TLOG_ERROR("[WCacheImp::updateKV] update value is not digit! " << value << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -602,7 +602,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
         {
             if (_existDB && _readDB)
             {
-                TLOGDEBUG("WCacheImp::updateKV async db, key = " << keyItem << endl);
+                TLOG_DEBUG("WCacheImp::updateKV async db, key = " << keyItem << endl);
 
                 DbAccessCBParam::UpdateCBParam param;
                 param.current = current;
@@ -620,7 +620,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("WCacheImp::updateKV: async select db, mainKey = " << keyItem << endl);
+                        TLOG_DEBUG("WCacheImp::updateKV: async select db, mainKey = " << keyItem << endl);
                         DbAccessPrxCallbackPtr cb = new DbAccessCallback(current, keyItem, _binlogFile, _saveOnlyKey, false, _isRecordBinLog, _isRecordKeyBinLog, "updateEx", pCBParam);
                         //异步调用DBAccess
                         _dbaccessPrx->async_get(cb, keyItem);
@@ -629,7 +629,7 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
                     }
                     else
                     {
-                        TLOGDEBUG("WCacheImp::updateKV: set into cbparam, mainKey = " << keyItem << endl);
+                        TLOG_DEBUG("WCacheImp::updateKV: set into cbparam, mainKey = " << keyItem << endl);
                         return 1;
                     }
                 }
@@ -650,25 +650,25 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
                     }
                     else if (iRet == TC_HashMapMalloc::RT_ONLY_KEY || iRet == TC_HashMapMalloc::RT_NO_DATA)
                     {
-                        TLOGDEBUG("WCacheImp::updateKV RT_ONLY_KEY, key = " << keyItem << endl);
+                        TLOG_DEBUG("WCacheImp::updateKV RT_ONLY_KEY, key = " << keyItem << endl);
                         g_app.gstat()->hit(_hitIndex);
                         return ET_NO_DATA;
                     }
                     else if (iRet == TC_HashMapMalloc::RT_DATA_EXPIRED)
                     {
-                        TLOGDEBUG("WCacheImp::updateKV RT_DATA_EXPIRED, key = " << keyItem << endl);
+                        TLOG_DEBUG("WCacheImp::updateKV RT_DATA_EXPIRED, key = " << keyItem << endl);
                         g_app.gstat()->hit(_hitIndex);
                         return ET_NO_DATA;
                     }
                     else if (iRet == TC_HashMapMalloc::RT_DATATYPE_ERR || iRet == TC_HashMapMalloc::RT_DECODE_ERR)
                     {
-                        TLOGERROR("[WCacheImp::updateStringEx] RT_DATATYPE_ERR, key = " << keyItem << endl);
+                        TLOG_ERROR("[WCacheImp::updateStringEx] RT_DATATYPE_ERR, key = " << keyItem << endl);
                         g_app.gstat()->hit(_hitIndex);
                         return ET_PARAM_OP_ERR;
                     }
                     else
                     {
-                        TLOGERROR("WCacheImp::updateKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
+                        TLOG_ERROR("WCacheImp::updateKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -679,38 +679,38 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
         }
         else if (iRet == TC_HashMapMalloc::RT_ONLY_KEY)
         {
-            TLOGDEBUG("WCacheImp::updateKV RT_ONLY_KEY, key = " << keyItem << endl);
+            TLOG_DEBUG("WCacheImp::updateKV RT_ONLY_KEY, key = " << keyItem << endl);
             g_app.gstat()->hit(_hitIndex);
             return ET_NO_DATA;
         }
         else if (iRet == TC_HashMapMalloc::RT_DATA_EXPIRED)
         {
-            TLOGDEBUG("WCacheImp::updateKV RT_DATA_EXPIRED, key = " << keyItem << endl);
+            TLOG_DEBUG("WCacheImp::updateKV RT_DATA_EXPIRED, key = " << keyItem << endl);
             g_app.gstat()->hit(_hitIndex);
             return ET_NO_DATA;
         }
         else if (iRet == TC_HashMapMalloc::RT_DATATYPE_ERR || iRet == TC_HashMapMalloc::RT_DECODE_ERR)
         {
-            TLOGERROR("[WCacheImp::updateKV] RT_DATATYPE_ERR, key = " << keyItem << endl);
+            TLOG_ERROR("[WCacheImp::updateKV] RT_DATATYPE_ERR, key = " << keyItem << endl);
             g_app.gstat()->hit(_hitIndex);
             return ET_PARAM_OP_ERR;
         }
         else if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
         {
-            TLOGERROR("[WCacheImp::updateKV] RT_NO_MEMORY, key = " << keyItem << endl);
+            TLOG_ERROR("[WCacheImp::updateKV] RT_NO_MEMORY, key = " << keyItem << endl);
             g_app.gstat()->hit(_hitIndex);
             return ET_MEM_FULL;
         }
         else
         {
-            TLOGERROR("WCacheImp::updateKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::updateKV hashmap.get(" << keyItem << ") error:" << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
 
         if (iRet != TC_HashMapMalloc::RT_OK)
         {
-            TLOGERROR("WCacheImp::updateKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::updateKV hashmap.set(" << keyItem << ") error:" << iRet << endl);
             if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
             {
                 g_app.ppReport(PPReport::SRP_EX, 1);
@@ -722,19 +722,19 @@ tars::Int32 WCacheImp::updateKV(const DCache::UpdateKVReq &req, DCache::UpdateKV
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("WCacheImp::updateKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::updateKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("WCacheImp::updateKV exception: " << ex.what() << " , key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::updateKV exception: " << ex.what() << " , key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("WCacheImp::updateKV unkown_exception, key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::updateKV unkown_exception, key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -764,13 +764,13 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("WCacheImp::eraseKV: ServerType is not Master" << endl);
+            TLOG_ERROR("WCacheImp::eraseKV: ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::eraseKV: moduleName error" << endl);
+            TLOG_ERROR("WCacheImp::eraseKV: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -778,7 +778,7 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
         if (!g_route_table.isMySelf(keyItem))
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::eraseKV: " << keyItem << " is not in self area" << endl);
+            TLOG_ERROR("WCacheImp::eraseKV: " << keyItem << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -789,7 +789,7 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
                 int ret = RouterHandle::getInstance()->getUpdateServant(keyItem, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -804,7 +804,7 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
 
         if (iRet == TC_HashMapMalloc::RT_DIRTY_DATA)
         {
-            TLOGERROR("WCacheImp::eraseKV: " << keyItem << " failed, it is dirty data" << iRet << endl);
+            TLOG_ERROR("WCacheImp::eraseKV: " << keyItem << " failed, it is dirty data" << iRet << endl);
             return ET_ERASE_DIRTY_ERR;
         }
 
@@ -817,7 +817,7 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
         else if (iRet != TC_HashMapMalloc::RT_OK && iRet != TC_HashMapMalloc::RT_NO_DATA
                  && iRet != TC_HashMapMalloc::RT_ONLY_KEY)
         {
-            TLOGERROR("WCacheImp::eraseKV hashmap.erase(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::eraseKV hashmap.erase(" << keyItem << ") error:" << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -841,19 +841,19 @@ tars::Int32 WCacheImp::eraseKV(const DCache::RemoveKVReq &req, tars::TarsCurrent
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("WCacheImp::eraseKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::eraseKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("WCacheImp::eraseKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::eraseKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("WCacheImp::eraseKV unkown exception, key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::eraseKV unkown exception, key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -866,13 +866,13 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("WCacheImp::eraseKVBatch: ServerType is not Master" << endl);
+        TLOG_ERROR("WCacheImp::eraseKVBatch: ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
     if (req.moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("WCacheImp::eraseKVBatch: moduleName error" << endl);
+        TLOG_ERROR("WCacheImp::eraseKVBatch: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -888,7 +888,7 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
             if (!g_route_table.isMySelf(keyItem))
             {
                 //返回模块错误
-                TLOGERROR("WCacheImp::eraseKVBatch: " << keyItem << " is not in self area" << endl);
+                TLOG_ERROR("WCacheImp::eraseKVBatch: " << keyItem << " is not in self area" << endl);
                 map<string, string>& context = current->getContext();
                 //API直连模式，返回增量更新路由
                 if (VALUE_YES == context[GET_ROUTE])
@@ -907,7 +907,7 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
                     int ret = RouterHandle::getInstance()->getUpdateServantKey(vtKeys, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                     else
                     {
@@ -922,7 +922,7 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
 
             if (iRet == TC_HashMapMalloc::RT_DIRTY_DATA)
             {
-                TLOGERROR("WCacheImp::eraseKVBatch: " << keyItem << " failed, it is dirty data" << iRet << endl);
+                TLOG_ERROR("WCacheImp::eraseKVBatch: " << keyItem << " failed, it is dirty data" << iRet << endl);
                 rsp.keyResult[keyItem] = DEL_ERROR;
                 continue;
             }
@@ -933,7 +933,7 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
             {
                 if (iRet == TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                 {
-                    TLOGDEBUG("WCacheImp::eraseKVBatch hashmap.erase(" << keyItem << ") error:" << iRet << endl);
+                    TLOG_DEBUG("WCacheImp::eraseKVBatch hashmap.erase(" << keyItem << ") error:" << iRet << endl);
                     rsp.keyResult[keyItem] = DEL_DATA_VER_MISMATCH;
                     continue;
                 }
@@ -943,7 +943,7 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
                 }
                 else
                 {
-                    TLOGERROR("WCacheImp::eraseKVBatch hashmap.erase(" << keyItem << ") error:" << iRet << endl);
+                    TLOG_ERROR("WCacheImp::eraseKVBatch hashmap.erase(" << keyItem << ") error:" << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     rsp.keyResult[keyItem] = DEL_ERROR;
                     continue;
@@ -972,13 +972,13 @@ tars::Int32 WCacheImp::eraseKVBatch(const DCache::RemoveKVBatchReq &req, DCache:
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("WCacheImp::eraseKVBatch exception: " << ex.what() << ", key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::eraseKVBatch exception: " << ex.what() << ", key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
         catch (...)
         {
-            TLOGERROR("WCacheImp::eraseKVBatch unkown exception, key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::eraseKVBatch unkown exception, key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -995,19 +995,19 @@ tars::Int32 WCacheImp::delKV(const DCache::RemoveKVReq &req, tars::TarsCurrentPt
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("WCacheImp::delKV: ServerType is not Master" << endl);
+            TLOG_ERROR("WCacheImp::delKV: ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::delKV: moduleName error" << endl);
+            TLOG_ERROR("WCacheImp::delKV: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
         if (g_route_table.isTransfering(keyItem))
         {
-            TLOGERROR("WCacheImp::delKV: " << keyItem << " forbid del" << endl);
+            TLOG_ERROR("WCacheImp::delKV: " << keyItem << " forbid del" << endl);
             return ET_FORBID_OPT;
         }
 
@@ -1015,7 +1015,7 @@ tars::Int32 WCacheImp::delKV(const DCache::RemoveKVReq &req, tars::TarsCurrentPt
         if (!g_route_table.isMySelf(keyItem))
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::delKV: " << keyItem << " is not in self area" << endl);
+            TLOG_ERROR("WCacheImp::delKV: " << keyItem << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1026,7 +1026,7 @@ tars::Int32 WCacheImp::delKV(const DCache::RemoveKVReq &req, tars::TarsCurrentPt
                 int ret = RouterHandle::getInstance()->getUpdateServant(keyItem, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1046,7 +1046,7 @@ tars::Int32 WCacheImp::delKV(const DCache::RemoveKVReq &req, tars::TarsCurrentPt
         else if (iRet != TC_HashMapMalloc::RT_OK && iRet != TC_HashMapMalloc::RT_NO_DATA
                  && iRet != TC_HashMapMalloc::RT_ONLY_KEY)
         {
-            TLOGERROR("WCacheImp::delKV hashmap.del(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::delKV hashmap.del(" << keyItem << ") error:" << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -1081,19 +1081,19 @@ tars::Int32 WCacheImp::delKV(const DCache::RemoveKVReq &req, tars::TarsCurrentPt
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("WCacheImp::delKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::delKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("WCacheImp::delKV exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::delKV exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("WCacheImp::delKV unkown exception, key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::delKV unkown exception, key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1106,7 +1106,7 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
     if (req.moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("WCacheImp::delKVBatch: moduleName error" << endl);
+        TLOG_ERROR("WCacheImp::delKVBatch: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -1124,7 +1124,7 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
             if (!g_route_table.isMySelf(keyItem))
             {
                 //返回模块错误
-                TLOGERROR("WCacheImp::delKVBatch: " << keyItem << " is not in self area" << endl);
+                TLOG_ERROR("WCacheImp::delKVBatch: " << keyItem << " is not in self area" << endl);
                 map<string, string>& context = current->getContext();
                 //API直连模式，返回增量更新路由
                 if (VALUE_YES == context[GET_ROUTE])
@@ -1143,7 +1143,7 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
                     int ret = RouterHandle::getInstance()->getUpdateServantKey(vtKeys, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                     else
                     {
@@ -1156,7 +1156,7 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
 
             if (g_route_table.isTransfering(keyItem))
             {
-                TLOGERROR("WCacheImp::delKVBatch: " << keyItem << " forbid del" << endl);
+                TLOG_ERROR("WCacheImp::delKVBatch: " << keyItem << " forbid del" << endl);
                 return ET_FORBID_OPT;
             }
 
@@ -1176,25 +1176,25 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
             }
             else if (iRet == TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
             {
-                TLOGDEBUG("WCacheImp::delKVBatch hashmap.del ret:" << iRet << endl);
+                TLOG_DEBUG("WCacheImp::delKVBatch hashmap.del ret:" << iRet << endl);
                 rsp.keyResult[keyItem] = DEL_DATA_VER_MISMATCH;
             }
             else
             {
-                TLOGERROR("WCacheImp::delKVBatch hashmap.del error:" << iRet << endl);
+                TLOG_ERROR("WCacheImp::delKVBatch hashmap.del error:" << iRet << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 rsp.keyResult[keyItem] = DEL_ERROR;
             }
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("WCacheImp::delKVBatch exception: " << ex.what() << ", key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::delKVBatch exception: " << ex.what() << ", key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
         catch (...)
         {
-            TLOGERROR("WCacheImp::delKVBatch unkown exception, key = " << keyItem << endl);
+            TLOG_ERROR("WCacheImp::delKVBatch unkown exception, key = " << keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -1210,7 +1210,7 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
             if (pParam->bEnd)
                 return ET_SYS_ERR;
 
-            TLOGDEBUG("WCacheImp::delKVBatch async db, key = " << delDBKey[i] << endl);
+            TLOG_DEBUG("WCacheImp::delKVBatch async db, key = " << delDBKey[i] << endl);
 
             DbAccessPrxCallbackPtr cb = new DbAccessCallback(current, delDBKey[i], _binlogFile, true, _isRecordBinLog, _isRecordKeyBinLog, pParam);
             try
@@ -1220,14 +1220,14 @@ tars::Int32 WCacheImp::delKVBatch(const DCache::RemoveKVBatchReq &req, DCache::R
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("CacheImp::delKVBatch exception: " << ex.what() << ", key = " << delDBKey[i] << endl);
+                TLOG_ERROR("CacheImp::delKVBatch exception: " << ex.what() << ", key = " << delDBKey[i] << endl);
                 pParam->bEnd = true;
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_SYS_ERR;
             }
             catch (...)
             {
-                TLOGERROR("CacheImp::delKVBatch unkown exception, key = " << delDBKey[i] << endl);
+                TLOG_ERROR("CacheImp::delKVBatch unkown exception, key = " << delDBKey[i] << endl);
                 pParam->bEnd = true;
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_SYS_ERR;
@@ -1278,20 +1278,20 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
         size_t iKeyLength = keyItem.size();
         if (iKeyLength > _maxKeyLengthInDB)
         {
-            TLOGERROR("WCacheImp::setStringKey: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
+            TLOG_ERROR("WCacheImp::setStringKey: " << keyItem << " keylength:" << iKeyLength << "limit:" << _maxKeyLengthInDB << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_PARAM_TOO_LONG;
         }
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("WCacheImp::setStringKey: ServerType is not Master" << endl);
+            TLOG_ERROR("WCacheImp::setStringKey: ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::setStringKey: moduleName error" << endl);
+            TLOG_ERROR("WCacheImp::setStringKey: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -1301,7 +1301,7 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
             int iPageNo = g_route_table.getPageNo(keyItem);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("WCacheImp::setStringKey: " << keyItem << " forbid set" << endl);
+                TLOG_ERROR("WCacheImp::setStringKey: " << keyItem << " forbid set" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -1310,8 +1310,8 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
         if (!g_route_table.isMySelf(keyItem))
         {
             //返回模块错误
-            TLOGERROR("WCacheImp::setStringKey: " << keyItem << " is not in self area" << endl);
-            TLOGERROR(g_route_table.toString() << endl);
+            TLOG_ERROR("WCacheImp::setStringKey: " << keyItem << " is not in self area" << endl);
+            TLOG_ERROR(g_route_table.toString() << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1322,7 +1322,7 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
                 int ret = RouterHandle::getInstance()->getUpdateServant(keyItem, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1354,15 +1354,15 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
         }
         if (iRet != TC_HashMapMalloc::RT_OK)
         {
-            TLOGERROR("WCacheImp::setStringKey hashmap.set(" << keyItem << ") error:" << iRet << endl);
+            TLOG_ERROR("WCacheImp::setStringKey hashmap.set(" << keyItem << ") error:" << iRet << endl);
             if (iRet == TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
             {
-                TLOGERROR("set failed : data version mismatch !" << endl);
+                TLOG_ERROR("set failed : data version mismatch !" << endl);
                 return ET_DATA_VER_MISMATCH;
             }
             else if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
             {
-                TLOGERROR("set failed : no memory!" << endl);
+                TLOG_ERROR("set failed : no memory!" << endl);
                 return ET_MEM_FULL;
             }
             else
@@ -1374,19 +1374,19 @@ tars::Int32 WCacheImp::setStringKey(const std::string & moduleName, const std::s
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("WCacheImp::setStringKey exception: " << ex.what() << ", key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::setStringKey exception: " << ex.what() << ", key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("WCacheImp::setStringKey exception: " << ex.what() << " , key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::setStringKey exception: " << ex.what() << " , key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("WCacheImp::setStringKey unkown_exception, key = " << keyItem << endl);
+        TLOG_ERROR("WCacheImp::setStringKey unkown_exception, key = " << keyItem << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }

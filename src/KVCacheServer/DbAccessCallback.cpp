@@ -43,7 +43,7 @@ DbAccessCBParamPtr CBQueue::getCBParamPtr(const string &mainKey, bool &isCreate)
         if (tNow - it->second->getCreateTime() > _timeout)
         {
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
-            TLOGERROR("CBQueue::getCBParamPtr: " << mainKey << " timeout, erase it" << endl);
+            TLOG_ERROR("CBQueue::getCBParamPtr: " << mainKey << " timeout, erase it" << endl);
             _keyParamQueue.erase(mainKey);
             p = new DbAccessCBParam(mainKey);
             p->setStatus(DbAccessCBParam::INIT);
@@ -67,7 +67,7 @@ void CBQueue::erase(const string &mainKey)
 
 void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, tars::Int32 iExpireTime)
 {
-    //TLOGDEBUG("DbAccessCallback::callback_get return iret = " << ret << " , key = " << _key << endl);
+    //TLOG_DEBUG("DbAccessCallback::callback_get return iret = " << ret << " , key = " << _key << endl);
     try
     {
         if (ret == eDbSucc)
@@ -100,7 +100,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                     {
                         GetKVRsp rsp;
                         Cache::async_response_getKV(_current, ET_NO_DATA, rsp);
-                        TLOGDEBUG("DbAccessCallback::callback_get data expired, return ET_NO_DATA , key = " << _key << endl);
+                        TLOG_DEBUG("DbAccessCallback::callback_get data expired, return ET_NO_DATA , key = " << _key << endl);
                     }
                     else
                     {
@@ -209,7 +209,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                             }
                         }
 
-                        TLOGERROR("DbAccessCallback::callback_getString hashmap.set(" << _key << ") error:" << iRet << endl);
+                        TLOG_ERROR("DbAccessCallback::callback_getString hashmap.set(" << _key << ") error:" << iRet << endl);
                         if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                         {
                             g_app.ppReport(PPReport::SRP_EX, 1);
@@ -248,7 +248,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                         }
                         else
                         {
-                            TLOGERROR("DbAccessCallback::callback_get hashmap.set(" << _key << ") error:" << iRet << endl);
+                            TLOG_ERROR("DbAccessCallback::callback_get hashmap.set(" << _key << ") error:" << iRet << endl);
                             if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                             {
                                 g_app.ppReport(PPReport::SRP_EX, 1);
@@ -259,7 +259,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
             }
             catch (const TarsException & ex)
             {
-                TLOGERROR("DbAccessCallback::callback_get exception: " << ex.what() << ", key = " << _key << endl);
+                TLOG_ERROR("DbAccessCallback::callback_get exception: " << ex.what() << ", key = " << _key << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -290,7 +290,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                     int iRet = g_sHashMap.set(_key, _value, _dirty, _expireTimeSecond);
                     if (iRet != TC_HashMapMalloc::RT_OK)
                     {
-                        TLOGERROR("CacheImp::addStringKey callbacke" << _key << ") error:" << iRet << endl);
+                        TLOG_ERROR("CacheImp::addStringKey callbacke" << _key << ") error:" << iRet << endl);
                         if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                         {
                             if (iRet == TC_HashMapMalloc::RT_NO_MEMORY)
@@ -354,7 +354,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                     int iRet = g_sHashMap.set(_key, 1);
                     if (iRet != TC_HashMapMalloc::RT_OK)
                     {
-                        TLOGERROR("DbAccessCallback::callback_get hashmap.set(" << _key << ") error:" << iRet << endl);
+                        TLOG_ERROR("DbAccessCallback::callback_get hashmap.set(" << _key << ") error:" << iRet << endl);
                         if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                         {
                             g_app.ppReport(PPReport::SRP_EX, 1);
@@ -383,7 +383,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                 }
                 catch (const TarsException & ex)
                 {
-                    TLOGERROR("DbAccessCallback::callback_get exception: " << ex.what() << ", key = " << _key << endl);
+                    TLOG_ERROR("DbAccessCallback::callback_get exception: " << ex.what() << ", key = " << _key << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
             }
@@ -424,19 +424,19 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
                     g_cbQueue.erase(_cbParam->getMainKey());
                 }
             }
-            TLOGERROR("DbAccessCallback::callback_getString error: ret = " << ret << endl);
+            TLOG_ERROR("DbAccessCallback::callback_getString error: ret = " << ret << endl);
             g_app.ppReport(PPReport::SRP_DB_ERR, 1);
         }
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("DbAccessCallback::callback_getString exception: " << ex.what() << " , key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_getString exception: " << ex.what() << " , key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
     catch (...)
     {
-        TLOGERROR("DbAccessCallback::callback_getString unkown_exception, key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_getString unkown_exception, key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
@@ -445,7 +445,7 @@ void DbAccessCallback::callback_get(tars::Int32 ret, const std::string &value, t
 
 void DbAccessCallback::callback_get_exception(tars::Int32 ret)
 {
-    TLOGERROR("DbAccessCallback::callback_get_exception ret =" << ret << ", key = " << _key << endl);
+    TLOG_ERROR("DbAccessCallback::callback_get_exception ret =" << ret << ", key = " << _key << endl);
     g_app.ppReport(PPReport::SRP_DB_EX, 1);
 
     try
@@ -486,13 +486,13 @@ void DbAccessCallback::callback_get_exception(tars::Int32 ret)
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("DbAccessCallback::callback_get_exception exception: " << ex.what() << " , key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_get_exception exception: " << ex.what() << " , key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
     catch (...)
     {
-        TLOGERROR("DbAccessCallback::callback_get_exception unkown_exception, key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_get_exception unkown_exception, key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
@@ -501,14 +501,14 @@ void DbAccessCallback::callback_get_exception(tars::Int32 ret)
 
 void DbAccessCallback::callback_del(tars::Int32 ret)
 {
-    TLOGDEBUG("DbAccessCallback::callback_del return iret = " << ret << " , key = " << _key << endl);
+    TLOG_DEBUG("DbAccessCallback::callback_del return iret = " << ret << " , key = " << _key << endl);
     try
     {
         if (ret == eDbSucc || ret == eDbRecordNotExist)
         {
             if (_batchReq)
             {
-                TLOGDEBUG("DbAccessCallback::callback_del batch" << endl);
+                TLOG_DEBUG("DbAccessCallback::callback_del batch" << endl);
                 if (_pDelParam->bEnd)
                     return;
 
@@ -579,19 +579,19 @@ void DbAccessCallback::callback_del(tars::Int32 ret)
                 WCache::async_response_delKV(_current, ET_DB_ERR);
             }
 
-            TLOGERROR("DbAccessCallback::callback_del error: ret = " << ret << endl);
+            TLOG_ERROR("DbAccessCallback::callback_del error: ret = " << ret << endl);
             g_app.ppReport(PPReport::SRP_DB_ERR, 1);
         }
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("DbAccessCallback::callback_del exception: " << ex.what() << " , key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_del exception: " << ex.what() << " , key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
     catch (...)
     {
-        TLOGERROR("DbAccessCallback::callback_del unkown_exception, key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_del unkown_exception, key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
@@ -599,7 +599,7 @@ void DbAccessCallback::callback_del(tars::Int32 ret)
 
 void DbAccessCallback::callback_del_exception(tars::Int32 ret)
 {
-    TLOGERROR("DbAccessCallback::callback_del_exception ret =" << ret << ", key = " << _key << endl);
+    TLOG_ERROR("DbAccessCallback::callback_del_exception ret =" << ret << ", key = " << _key << endl);
     g_app.ppReport(PPReport::SRP_DB_EX, 1);
 
     try
@@ -621,13 +621,13 @@ void DbAccessCallback::callback_del_exception(tars::Int32 ret)
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("DbAccessCallback::callback_del_exception exception: " << ex.what() << " , key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_del_exception exception: " << ex.what() << " , key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
     catch (...)
     {
-        TLOGERROR("DbAccessCallback::callback_del_exception unkown_exception, key = " << _key << endl);
+        TLOG_ERROR("DbAccessCallback::callback_del_exception unkown_exception, key = " << _key << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }

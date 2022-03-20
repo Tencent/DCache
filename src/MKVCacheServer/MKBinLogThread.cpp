@@ -55,7 +55,7 @@ void MKBinLogThread::init(const string &sConf)
     bool bReadDb = (_tcConf["/Main/DbAccess<ReadDbFlag>"] == "Y" || _tcConf["/Main/DbAccess<ReadDbFlag>"] == "y") ? true : false;
     if (bReadDb && _mkeyMaxDataCount > 0)
     {
-        TLOGERROR("MKBinLogThread::init error: dbflag is true and MkeyMaxDataCount>0 at the same time,,MkeyMaxDataCount's value is initialized to 0" << endl);
+        TLOG_ERROR("MKBinLogThread::init error: dbflag is true and MkeyMaxDataCount>0 at the same time,,MkeyMaxDataCount's value is initialized to 0" << endl);
         //重新设置为无数量限制
         _mkeyMaxDataCount = 0;
     }
@@ -68,7 +68,7 @@ void MKBinLogThread::init(const string &sConf)
     else
         _deleteDirty = true;
 
-    TLOGDEBUG("MKBinLogThread::init Succ" << endl);
+    TLOG_DEBUG("MKBinLogThread::init Succ" << endl);
 }
 
 void MKBinLogThread::reload()
@@ -84,7 +84,7 @@ void MKBinLogThread::reload()
     else
         _syncCompress = false;
 
-    TLOGDEBUG("MKBinLogThread::reload Succ" << endl);
+    TLOG_DEBUG("MKBinLogThread::reload Succ" << endl);
 }
 
 
@@ -148,7 +148,7 @@ void* MKBinLogThread::Run(void* arg)
 
                 if (pthis->_syncBinlogFile.empty())
                 {
-                    TLOGERROR("[BinLogThread::Run] getSyncPiont failed, file sync_point.data may be destroyed" << endl);
+                    TLOG_ERROR("[BinLogThread::Run] getSyncPiont failed, file sync_point.data may be destroyed" << endl);
                     assert(false);
                 }
                 bHaveGetSynPoint = true;
@@ -158,7 +158,7 @@ void* MKBinLogThread::Run(void* arg)
             string sTmpAddr = pthis->getBakSourceAddr();
             if (sTmpAddr != sAddr)
             {
-                TLOGDEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
+                TLOG_DEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
                 //切合后 重新设置同步点
                 if (!firstrGetPoint)
                 {
@@ -180,7 +180,7 @@ void* MKBinLogThread::Run(void* arg)
 
                     TC_ThreadLock::Lock lock(pthis->_lock);
 
-                    TLOGDEBUG("firstrGetPoint" << endl);
+                    TLOG_DEBUG("firstrGetPoint" << endl);
                     if (!pthis->_isKeySyncMode)
                     {
                         pthis->_syncBinlogFile = pthis->getServerName() + "_" + pthis->_binlogFile + "_" + pthis->_syncBinlogFile.substr(pthis->_syncBinlogFile.size() - 14, 14);
@@ -190,7 +190,7 @@ void* MKBinLogThread::Run(void* arg)
                         pthis->_syncBinlogFile = pthis->getServerName() + "_" + pthis->_binlogFile + "key_" + pthis->_syncBinlogFile.substr(pthis->_syncBinlogFile.size() - 14, 14);
                     }
                     pthis->_seek = 0;
-                    TLOGDEBUG("last type SLAVE:m_logfile" << pthis->_syncBinlogFile << endl);
+                    TLOG_DEBUG("last type SLAVE:m_logfile" << pthis->_syncBinlogFile << endl);
                     pthis->saveSyncPiont(pthis->_syncBinlogFile, pthis->_seek);
                 }
                 sAddr = sTmpAddr;
@@ -212,13 +212,13 @@ void* MKBinLogThread::Run(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[MKBinLogThread::Run] exception: " << ex.what() << endl);
+            TLOG_ERROR("[MKBinLogThread::Run] exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             usleep(100000);
         }
         catch (...)
         {
-            TLOGERROR("[MKBinLogThread::Run] unkown exception" << endl);
+            TLOG_ERROR("[MKBinLogThread::Run] unkown exception" << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             usleep(100000);
         }
@@ -235,7 +235,7 @@ void* MKBinLogThread::WriteData(void* arg)
 
     MKBinLogThread* pthis = (MKBinLogThread*)arg;
 
-    TLOGDEBUG("[MKBinLogThread::WriteData] running!" << endl);
+    TLOG_DEBUG("[MKBinLogThread::WriteData] running!" << endl);
 
     stBinlogDataPtr tmpBinlogData = NULL;
     while (pthis->isStart())
@@ -262,7 +262,7 @@ void* MKBinLogThread::WriteData(void* arg)
             //找不到数据要写就等待一下
             if (!found)
             {
-                //TLOGDEBUG("[MKBinLogThread::WriteData] queue empty!" << endl);
+                //TLOG_DEBUG("[MKBinLogThread::WriteData] queue empty!" << endl);
                 usleep(100000);
                 continue;
             }
@@ -279,14 +279,14 @@ void* MKBinLogThread::WriteData(void* arg)
                     bool bGzipOk = StringUtil::gzipUncompress(tmpBinlogData->sLogContent.c_str(), tmpBinlogData->sLogContent.length(), sUncompress);
                     if (!bGzipOk)
                     {
-                        TLOGERROR("[MKBinLogThread::WriteData] logContent gzip uncompress error" << endl);
+                        TLOG_ERROR("[MKBinLogThread::WriteData] logContent gzip uncompress error" << endl);
                         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                         pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                         continue;
                     }
                     if (!StringUtil::parseString(sUncompress, vLogContent))
                     {
-                        TLOGERROR("[MKBinLogThread::WriteData] logContent string parse error" << endl);
+                        TLOG_ERROR("[MKBinLogThread::WriteData] logContent string parse error" << endl);
                         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                         pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                         continue;
@@ -296,7 +296,7 @@ void* MKBinLogThread::WriteData(void* arg)
                 {
                     if (!StringUtil::parseString(tmpBinlogData->sLogContent, vLogContent))
                     {
-                        TLOGERROR("[MKBinLogThread::WriteData] logContent string parse error" << endl);
+                        TLOG_ERROR("[MKBinLogThread::WriteData] logContent string parse error" << endl);
                         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                         pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                         continue;
@@ -317,14 +317,14 @@ void* MKBinLogThread::WriteData(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[MKBinLogThread::WriteData] exception: " << ex.what() << endl);
+            TLOG_ERROR("[MKBinLogThread::WriteData] exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             if (tmpBinlogData)
                 pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
         }
         catch (...)
         {
-            TLOGERROR("[MKBinLogThread::WriteData] unkown exception" << endl);
+            TLOG_ERROR("[MKBinLogThread::WriteData] unkown exception" << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             if (tmpBinlogData)
                 pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
@@ -343,7 +343,7 @@ int MKBinLogThread::syncBinLog()
 
         if (_binlogDataQueue.size() >= _binlogQueueSize)
         {
-            TLOGDEBUG("[MKBinLogThread::syncBinLog] queue is full!" << endl);
+            TLOG_DEBUG("[MKBinLogThread::syncBinLog] queue is full!" << endl);
             return 0;
         }
 
@@ -373,7 +373,7 @@ int MKBinLogThread::syncBinLog()
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[MKBinLogThread::syncBinLog] getLog exception: " << ex.what() << endl);
+        TLOG_ERROR("[MKBinLogThread::syncBinLog] getLog exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -382,7 +382,7 @@ int MKBinLogThread::syncBinLog()
 
     if (tmpBinlogData->iRet != 0)
     {
-        TLOGERROR("[MKBinLogThread::syncBinLog] getLog error, iRet = " << tmpBinlogData->iRet << endl);
+        TLOG_ERROR("[MKBinLogThread::syncBinLog] getLog error, iRet = " << tmpBinlogData->iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -413,7 +413,7 @@ int MKBinLogThread::syncCompress()
 
         if (_binlogDataQueue.size() >= _binlogQueueSize)
         {
-            TLOGDEBUG("[MKBinLogThread::syncCompress] queue is full!" << endl);
+            TLOG_DEBUG("[MKBinLogThread::syncCompress] queue is full!" << endl);
             return 0;
         }
 
@@ -454,7 +454,7 @@ int MKBinLogThread::syncCompress()
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[MKBinLogThread::syncCompress] getLogCompress exception:" << ex.what() << endl);
+        TLOG_ERROR("[MKBinLogThread::syncCompress] getLogCompress exception:" << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         if (++iExCount >= 10)
         {
@@ -501,7 +501,7 @@ int MKBinLogThread::syncCompress()
 
     if (!checkSyncPoint(tmpBinlogData->curLogfile))
     {
-        TLOGERROR("[MKBinLogThread::syncCompress] point error" << tmpBinlogData->curLogfile << endl);
+        TLOG_ERROR("[MKBinLogThread::syncCompress] point error" << tmpBinlogData->curLogfile << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -509,7 +509,7 @@ int MKBinLogThread::syncCompress()
     //检测返回的数据是否分块
     if (rsp.isPart)
     {
-        TLOGERROR("[MKBinLogThread::syncCompress] get log transfer with part!" << endl);
+        TLOG_ERROR("[MKBinLogThread::syncCompress] get log transfer with part!" << endl);
         int iRet;
         int getLogTimes = 5;//最大循环次数，避免死循环
         while ((false == rsp.isEnd) && (getLogTimes-- > 0))
@@ -522,7 +522,7 @@ int MKBinLogThread::syncCompress()
             }
             catch (const TarsException & ex)
             {
-                TLOGERROR("[MKBinLogThread::syncCompress] getLogCompressWithPart exception:" << ex.what() << endl);
+                TLOG_ERROR("[MKBinLogThread::syncCompress] getLogCompressWithPart exception:" << ex.what() << endl);
                 return -1;
             }
 
@@ -537,7 +537,7 @@ int MKBinLogThread::syncCompress()
 
         if (getLogTimes <= 0)
         {
-            TLOGERROR("[MKBinLogThread::syncCompress] getLogCompressWithPart run too much!" << endl);
+            TLOG_ERROR("[MKBinLogThread::syncCompress] getLogCompressWithPart run too much!" << endl);
             return -1;
         }
     }
@@ -595,7 +595,7 @@ int MKBinLogThread::syncCompress()
         string tmpMasterServerName = getServerName();
         if (tmpBinlogData->curLogfile.substr(0, tmpMasterServerName.length()) != tmpMasterServerName)
         {
-            TLOGERROR("point error " << tmpBinlogData->curLogfile << " should be " << tmpMasterServerName << endl);
+            TLOG_ERROR("point error " << tmpBinlogData->curLogfile << " should be " << tmpMasterServerName << endl);
         }
 
         {
@@ -641,7 +641,7 @@ void MKBinLogThread::getSyncPiont(bool aferSwitch)
 
         if (!fin)
         {
-            TLOGERROR("open file: " << sFile << " error" << endl);
+            TLOG_ERROR("open file: " << sFile << " error" << endl);
             _syncBinlogFile = getServerName() + "_" + _tcConf["/Main/BinLog<LogFile>"];
             _seek = 0;
             return;
@@ -680,7 +680,7 @@ void MKBinLogThread::getSyncPiont(bool aferSwitch)
         if (fd < 0)
         {
             //要加告警
-            TLOGERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
+            TLOG_ERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return;
         }
@@ -705,7 +705,7 @@ void MKBinLogThread::saveSyncPiont(const string &logFile, const uint64_t seek)
 
     if (fd < 0)
     {
-        TLOGERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
+        TLOG_ERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return;
     }
@@ -728,7 +728,7 @@ string MKBinLogThread::getBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[MKBinLogThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[MKBinLogThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -746,7 +746,7 @@ string MKBinLogThread::getServerName()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[MKBinLogThread::getServerName] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[MKBinLogThread::getServerName] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -796,7 +796,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -831,7 +831,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                         && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                 }
                 else
                 {
@@ -866,7 +866,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                         && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                 }
                 else
                 {
@@ -891,7 +891,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -920,7 +920,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] binLog_set_mutil_formdb set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] binLog_set_mutil_formdb set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -943,7 +943,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -970,7 +970,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -997,7 +997,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1024,7 +1024,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1051,7 +1051,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1066,11 +1066,11 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
             value = encode.GetValue();
             while (true)
             {
-                TLOGDEBUG("[MKBinLogThread::wirteBinLog] " << encode.GetDirty() << endl);
+                TLOG_DEBUG("[MKBinLogThread::wirteBinLog] " << encode.GetDirty() << endl);
                 iRet = g_HashMap.addSet(mk, value, encode.GetExpireTime(), 0, encode.GetDirty(), TC_Multi_HashMap_Malloc::DELETE_FALSE);
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1088,7 +1088,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.delSetSetBit(mk, value, time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1105,7 +1105,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.delSetSetBit(mk, time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1124,7 +1124,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), encode.GetExpireTime(), 0, encode.GetDirty(), false, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1142,7 +1142,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), encode.GetExpireTime(), 0, encode.GetDirty(), true, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1160,7 +1160,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.delZSetSetBit(mk, value, time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1177,7 +1177,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.delZSetSetBit(mk, time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1201,7 +1201,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                     iRet = g_HashMap.delRangeZSetSetBit(mk, encode.GetScoreMin(), encode.GetScoreMax(), 0, time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1223,7 +1223,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1248,7 +1248,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1277,7 +1277,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1302,7 +1302,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1331,7 +1331,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1355,7 +1355,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1375,7 +1375,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 {
                     //严重错误
                     g_app.ppReport(PPReport::SRP_EX, 1);
-                    TLOGERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
+                    TLOG_ERROR("[MKDbAccessCallback::wirteBinLog] set error, ret = " << iRet << endl);
                 }
                 else
                 {
@@ -1394,7 +1394,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_HashMap.delZSetSetBit(mk, encode.GetOldValue(), time(NULL));
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("[MKBinLogThread::wirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[MKBinLogThread::wirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -1413,7 +1413,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
                     iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), _ExpireTime, 0, encode.GetDirty(), false, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[MKBinLogThread::wirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[MKBinLogThread::wirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -1425,7 +1425,7 @@ void MKBinLogThread::wirteBinLog(const vector<string>& logContent)
             }
             break;
         default:
-            TLOGERROR("[MKBinLogThread::wirteBinLog] Binlog format error, opt error" << endl);
+            TLOG_ERROR("[MKBinLogThread::wirteBinLog] Binlog format error, opt error" << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             break;
         }
@@ -1491,7 +1491,7 @@ bool MKBinLogThread::checkSyncPoint(const string & strSyncPoint)
 
 void MKBinLogThread::resetBuff(const string &logFile, const uint64_t seek)
 {
-    TLOGERROR("[MKBinLogThread::resetBuff] reset" << endl);
+    TLOG_ERROR("[MKBinLogThread::resetBuff] reset" << endl);
 
     TC_ThreadLock::Lock lock(_lock);
 

@@ -42,7 +42,7 @@ bool checkCondition(const vector<DCache::Condition> &vtCond, vector<DCache::Cond
             vector<string> vt = TC_Common::sepstr<string>(tmpCond.value, ":");
             if (vt.size() != 2)
             {
-                TLOGERROR("checkCondition: limit value error" << endl);
+                TLOG_ERROR("checkCondition: limit value error" << endl);
                 iRetCode = ET_PARAM_LIMIT_VALUE_ERR;
                 return false;
             }
@@ -54,7 +54,7 @@ bool checkCondition(const vector<DCache::Condition> &vtCond, vector<DCache::Cond
         map<string, int>::const_iterator it = fieldConfig.mpFieldType.find(tmpCond.fieldName);
         if (it == fieldConfig.mpFieldType.end())
         {
-            TLOGERROR("checkCondition: fileName not found! " << tmpCond.fieldName << endl);
+            TLOG_ERROR("checkCondition: fileName not found! " << tmpCond.fieldName << endl);
             iRetCode = ET_PARAM_NOT_EXIST;
             return false;
         }
@@ -74,7 +74,7 @@ bool checkCondition(const vector<DCache::Condition> &vtCond, vector<DCache::Cond
             vtValueCond.push_back(tmpCond);
             break;
         default:
-            TLOGERROR("checkCondition: field type error! " << it->first << " " << it->second << endl);
+            TLOG_ERROR("checkCondition: field type error! " << it->first << " " << it->second << endl);
             break;
         }
     }
@@ -143,20 +143,20 @@ bool checkValueCondition(const vector<DCache::Condition>& vtCond, vector<DCache:
             vector<string> vt = TC_Common::sepstr<string>(tmpCond.value, ":");
             if (vt.size() != 2)
             {
-                TLOGERROR("checkCondition: limit value error" << endl);
+                TLOG_ERROR("checkCondition: limit value error" << endl);
                 iRetCode = ET_PARAM_LIMIT_VALUE_ERR;
                 return false;
             }
             stLimit.iIndex = TC_Common::strto<size_t>(TC_Common::trim(vt[0]));
             stLimit.iCount = TC_Common::strto<size_t>(TC_Common::trim(vt[1]));
-            TLOGERROR("------ Has limit" << endl);
+            TLOG_ERROR("------ Has limit" << endl);
             continue;
         }
         map<string, int>::const_iterator filedExist = fieldConfig.mpFieldType.find(tmpCond.fieldName);
         if ((filedExist == fieldConfig.mpFieldType.end()) && (tmpCond.fieldName != SCOREVALUE))
         {
             bUnique = false;
-            TLOGERROR("Filed :" << tmpCond.fieldName << " not found!" << endl);
+            TLOG_ERROR("Filed :" << tmpCond.fieldName << " not found!" << endl);
             iRetCode = ET_PARAM_NOT_EXIST;
             return false;
         }
@@ -298,7 +298,7 @@ bool checkRecord(const DCache::Record &record, string &sMainKey, vector<DCache::
     const FieldConf &fieldConfig = g_app.gstat()->fieldconfig();
     if (record.mpRecord.empty())
     {
-        TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " mpRecord is empty" << endl);
+        TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " mpRecord is empty" << endl);
         iRetCode = ET_INPUT_PARAM_ERROR;
         return false;
     }
@@ -307,7 +307,7 @@ bool checkRecord(const DCache::Record &record, string &sMainKey, vector<DCache::
 
     if (record.mainKey.empty())
     {
-        TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " no mainkey field[" << fieldConfig.sMKeyName << "] found" << endl);
+        TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " no mainkey field[" << fieldConfig.sMKeyName << "] found" << endl);
         iRetCode = ET_PARAM_MISSING;
         return false;
     }
@@ -316,11 +316,11 @@ bool checkRecord(const DCache::Record &record, string &sMainKey, vector<DCache::
     for (size_t i = 0; i < fieldConfig.vtUKeyName.size(); ++i)
     {
         const string &sUKey = fieldConfig.vtUKeyName[i];
-        TLOGDEBUG(sUKey << endl);
+        TLOG_DEBUG(sUKey << endl);
         map<string, string>::const_iterator it = record.mpRecord.find(sUKey);
         if (record.mpRecord.end() == it)
         {
-            TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " no ukey field[" << sUKey << "] found" << endl);
+            TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " no ukey field[" << sUKey << "] found" << endl);
             iRetCode = ET_PARAM_MISSING;
             return false;
         }
@@ -356,14 +356,14 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
         if (it == mpValue.end())
         {
             iRetCode = ET_PARAM_MISSING;
-            TLOGERROR("checkSetValue not find uk: " << sUkey << endl);
+            TLOG_ERROR("checkSetValue not find uk: " << sUkey << endl);
             return false;
         }
 
         if (it->second.op != DCache::SET)
         {
             iRetCode = ET_PARAM_OP_ERR;
-            TLOGERROR("checkSetValue op not set: " << sUkey << endl);
+            TLOG_ERROR("checkSetValue op not set: " << sUkey << endl);
             return false;
         }
 
@@ -371,7 +371,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
             iRetCode = ET_SYS_ERR;
-            TLOGERROR("checkSetValue mpFieldInfo find error: " << sUkey << endl);
+            TLOG_ERROR("checkSetValue mpFieldInfo find error: " << sUkey << endl);
             return false;
         }
 
@@ -381,7 +381,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
             if (!IsDigit(it->second.value))
             {
                 iRetCode = ET_PARAM_DIGITAL_ERR;
-                TLOGERROR("checkSetValue int uk input error: " << it->second.value << endl);
+                TLOG_ERROR("checkSetValue int uk input error: " << it->second.value << endl);
                 return false;
             }
         }
@@ -393,7 +393,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
             if (int(iUkeyLength) > lengthInDB)
             {
                 iRetCode = ET_PARAM_TOO_LONG;
-                TLOGERROR("checkSetValue string uk:" << sUkey << " length:" << iUkeyLength << " lengthLimit:" << lengthInDB << endl);
+                TLOG_ERROR("checkSetValue string uk:" << sUkey << " length:" << iUkeyLength << " lengthLimit:" << lengthInDB << endl);
                 return false;
             }
         }
@@ -408,7 +408,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
             iRetCode = ET_SYS_ERR;
-            TLOGERROR("checkSetValue mpFieldInfo find error: " << sValue << endl);
+            TLOG_ERROR("checkSetValue mpFieldInfo find error: " << sValue << endl);
             return false;
         }
 
@@ -423,7 +423,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
             if (it->second.op != DCache::SET)
             {
                 iRetCode = ET_PARAM_OP_ERR;
-                TLOGERROR("checkSetValue op not set: " << sValue << endl);
+                TLOG_ERROR("checkSetValue op not set: " << sValue << endl);
                 return false;
             }
 
@@ -433,7 +433,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
                 if (!IsDigit(it->second.value))
                 {
                     iRetCode = ET_PARAM_DIGITAL_ERR;
-                    TLOGERROR("checkSetValue int value input error: " << it->second.value << endl);
+                    TLOG_ERROR("checkSetValue int value input error: " << it->second.value << endl);
                     return false;
                 }
             }
@@ -445,7 +445,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
                 if (int(iVkeyLength) > lengthInDB)
                 {
                     iRetCode = ET_PARAM_TOO_LONG;
-                    TLOGERROR("checkSetValue string vk:" << sValue << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
+                    TLOG_ERROR("checkSetValue string vk:" << sValue << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
                     return false;
                 }
             }
@@ -456,7 +456,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
     if (mpValue.size() != iCout)
     {
         iRetCode = ET_PARAM_NOT_EXIST;
-        TLOGERROR("checkSetValue error, mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
+        TLOG_ERROR("checkSetValue error, mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
         return false;
     }
 
@@ -476,14 +476,14 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
         if (it == mpValue.end())
         {
             iRetCode = ET_PARAM_MISSING;
-            TLOGERROR("checkSetValue not find uk: " << sUkeyName << endl);
+            TLOG_ERROR("checkSetValue not find uk: " << sUkeyName << endl);
             return false;
         }
 
         if (it->second.upDateValue.op != DCache::EQ)
         {
             iRetCode = ET_PARAM_OP_ERR;
-            TLOGERROR("checkSetValue uk op is not EQ: " << sUkeyName << endl);
+            TLOG_ERROR("checkSetValue uk op is not EQ: " << sUkeyName << endl);
             return false;
         }
 
@@ -491,7 +491,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
             iRetCode = ET_SYS_ERR;
-            TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+            TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
             return false;
         }
         //防止ukey类型为整形，但业务输入非数字
@@ -500,7 +500,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
             if (!IsDigit(it->second.upDateValue.value))
             {
                 iRetCode = ET_PARAM_DIGITAL_ERR;
-                TLOGERROR("checkSetValue int uk input error: " << it->second.upDateValue.value << endl);
+                TLOG_ERROR("checkSetValue int uk input error: " << it->second.upDateValue.value << endl);
                 return false;
             }
         }
@@ -513,7 +513,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
             if (int(iUkeyLength) > lengthInDB)
             {
                 iRetCode = ET_PARAM_TOO_LONG;
-                TLOGERROR("checkSetValue string uk:" << sUkeyName << " length:" << iUkeyLength << " lengthLimit:" << lengthInDB << endl);
+                TLOG_ERROR("checkSetValue string uk:" << sUkeyName << " length:" << iUkeyLength << " lengthLimit:" << lengthInDB << endl);
                 return false;
             }
         }
@@ -528,7 +528,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
             iRetCode = ET_SYS_ERR;
-            TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+            TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
             return false;
         }
 
@@ -549,7 +549,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
                 if (!IsDigit(it->second.upDateValue.value))
                 {
                     iRetCode = ET_PARAM_DIGITAL_ERR;
-                    TLOGERROR("checkSetValue int value input error: " << it->second.upDateValue.value << endl);
+                    TLOG_ERROR("checkSetValue int value input error: " << it->second.upDateValue.value << endl);
                     return false;
                 }
             }
@@ -562,7 +562,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
                 if (int(iVkeyLength) > lengthInDB)
                 {
                     iRetCode = ET_PARAM_TOO_LONG;
-                    TLOGERROR("checkSetValue string vk:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
+                    TLOG_ERROR("checkSetValue string vk:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
                     return false;
                 }
             }
@@ -584,7 +584,7 @@ bool checkSetValue(const map<string, UpdateFieldInfo> &mpValue, map<string, DCac
     if (mpValue.size() != iCout)
     {
         iRetCode = ET_PARAM_NOT_EXIST;
-        TLOGERROR("checkSetValue mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
+        TLOG_ERROR("checkSetValue mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
         return false;
     }
     return true;
@@ -603,7 +603,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
             iRetCode = ET_SYS_ERR;
-            TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+            TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
             return false;
         }
 
@@ -618,7 +618,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
             if (it->second.op != DCache::SET)
             {
                 iRetCode = ET_PARAM_OP_ERR;
-                TLOGERROR("checkSetValue op not SET, field:" << sValueName << endl);
+                TLOG_ERROR("checkSetValue op not SET, field:" << sValueName << endl);
                 return false;
             }
 
@@ -628,7 +628,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
                 if (!IsDigit(it->second.value))
                 {
                     iRetCode = ET_PARAM_DIGITAL_ERR;
-                    TLOGERROR("checkSetValue int value input error, field:" << sValueName << ", value:" << it->second.value << endl);
+                    TLOG_ERROR("checkSetValue int value input error, field:" << sValueName << ", value:" << it->second.value << endl);
                     return false;
                 }
             }
@@ -641,7 +641,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
                 if (int(iVkeyLength) > lengthInDB)
                 {
                     iRetCode = ET_PARAM_TOO_LONG;
-                    TLOGERROR("checkSetValue string vk overlength, field:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
+                    TLOG_ERROR("checkSetValue string vk overlength, field:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
                     return false;
                 }
             }
@@ -653,7 +653,7 @@ bool checkSetValue(const map<string, DCache::UpdateValue> &mpValue, map<string, 
     if (mpValue.size() != iCout)
     {
         iRetCode = ET_PARAM_NOT_EXIST;
-        TLOGERROR("checkSetValue mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
+        TLOG_ERROR("checkSetValue mpValue.size = " << mpValue.size() << ", iCout = " << iCout << endl);
         return false;
     }
 
@@ -689,7 +689,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, int &iRet
             if (itInfo == fieldConfig.mpFieldInfo.end())
             {
                 iRetCode = ET_SYS_ERR;
-                TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+                TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
                 return false;
             }
 
@@ -699,7 +699,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, int &iRet
                 if (!IsDigit(it->second.value))
                 {
                     iRetCode = ET_PARAM_DIGITAL_ERR;
-                    TLOGERROR("checkSetValue int value input error: " << it->second.value << endl);
+                    TLOG_ERROR("checkSetValue int value input error: " << it->second.value << endl);
                     return false;
                 }
             }
@@ -711,7 +711,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, int &iRet
                 if (int(iVkeyLength) > lengthInDB)
                 {
                     iRetCode = ET_PARAM_TOO_LONG;
-                    TLOGERROR("checkSetValue string vk:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
+                    TLOG_ERROR("checkSetValue string vk:" << sValueName << " length:" << iVkeyLength << " lengthLimit:" << lengthInDB << endl);
                     return false;
                 }
             }
@@ -749,7 +749,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, bool &bOn
             if (itInfo == fieldConfig.mpFieldInfo.end())
             {
                 iRetCode = ET_SYS_ERR;
-                TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+                TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
                 return false;
             }
 
@@ -759,7 +759,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, bool &bOn
                 if (!IsDigit(it->second.value))
                 {
                     iRetCode = ET_PARAM_DIGITAL_ERR;
-                    TLOGERROR("checkSetValue int value input error: " << it->second.value << endl);
+                    TLOG_ERROR("checkSetValue int value input error: " << it->second.value << endl);
                     return false;
                 }
             }
@@ -771,7 +771,7 @@ bool checkUpdateValue(const map<string, DCache::UpdateValue> &mpValue, bool &bOn
                 if (int(iValueLength) > lengthInDB)
                 {
                     iRetCode = ET_PARAM_TOO_LONG;
-                    TLOGERROR("checkSetValue string vk:" << sValueName << " length:" << iValueLength << " lengthLimit:" << lengthInDB << endl);
+                    TLOG_ERROR("checkSetValue string vk:" << sValueName << " length:" << iValueLength << " lengthLimit:" << lengthInDB << endl);
                     return false;
                 }
             }
@@ -810,7 +810,7 @@ bool checkMK(const string & mkey, bool isInt, int &iRetCode)
         if (!IsDigit(mkey))
         {
             iRetCode = ET_PARAM_DIGITAL_ERR;
-            TLOGERROR("checkMK int mk input error: " << mkey << endl);
+            TLOG_ERROR("checkMK int mk input error: " << mkey << endl);
             return false;
         }
     }
@@ -819,7 +819,7 @@ bool checkMK(const string & mkey, bool isInt, int &iRetCode)
     if (itInfo == fieldConfig.mpFieldInfo.end())
     {
         iRetCode = ET_SYS_ERR;
-        TLOGERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
+        TLOG_ERROR(__FUNCTION__ << " mpFieldInfo find error" << endl);
         return false;
     }
 
@@ -831,7 +831,7 @@ bool checkMK(const string & mkey, bool isInt, int &iRetCode)
         if (int(iMkeyLength) > lengthInDB)
         {
             iRetCode = ET_PARAM_TOO_LONG;
-            TLOGERROR("checkMK mk:" << mkey << " length:" << iMkeyLength << " lengthLimit:" << lengthInDB << endl);
+            TLOG_ERROR("checkMK mk:" << mkey << " length:" << iMkeyLength << " lengthLimit:" << lengthInDB << endl);
             return false;
         }
     }
@@ -1823,7 +1823,7 @@ void setResult(const vector<string> &vtField, const string &mainKey, const vecto
                     mpFieldValue.insert(map<string, string>::value_type(sField, vDecode.read(itInfo->second.tag, itInfo->second.type, itInfo->second.defValue, itInfo->second.bRequire)));
                     break;
                 default:
-                    TLOGERROR("setResult find field name type error!" << endl);
+                    TLOG_ERROR("setResult find field name type error!" << endl);
                 }
             }
             else
@@ -1905,7 +1905,7 @@ void setResult(const vector<string> &vtField, const string &mainKey, TarsDecode 
                     mpFieldValue.insert(map<string, string>::value_type(sField, vDecode.read(itInfo->second.tag, itInfo->second.type, itInfo->second.defValue, itInfo->second.bRequire)));
                     break;
                 default:
-                    TLOGERROR("setResult find field name type error!" << endl);
+                    TLOG_ERROR("setResult find field name type error!" << endl);
                 }
             }
             else
@@ -1974,7 +1974,7 @@ void setResult(const vector<string> &vtField, const string &mainKey, TarsDecode 
                     mpFieldValue.insert(map<string, string>::value_type(sField, vDecode.read(itInfo->second.tag, itInfo->second.type, itInfo->second.defValue, itInfo->second.bRequire)));
                     break;
                 default:
-                    TLOGERROR("setResult find field name type error!" << endl);
+                    TLOG_ERROR("setResult find field name type error!" << endl);
                 }
             }
             else
@@ -2044,7 +2044,7 @@ void setResult(const vector<string> &vtField, const string &mainKey, TarsDecode 
                     mpFieldValue.insert(map<string, string>::value_type(sField, vDecode.read(itInfo->second.tag, itInfo->second.type, itInfo->second.defValue, itInfo->second.bRequire)));
                     break;
                 default:
-                    TLOGERROR("setResult find field name type error!" << endl);
+                    TLOG_ERROR("setResult find field name type error!" << endl);
                 }
             }
             else
@@ -2467,12 +2467,12 @@ int updateResult(const string &mk, const string &sOldValue, const map<std::strin
     string sNewValue = updateValue(mpValue, sOldValue);
     double score = updateScore(mpValue, iScore);
 
-    TLOGDEBUG("MKWCacheImp::updateZSet: g_HashMap.updateZSet, mainkey = " << mk << endl);
+    TLOG_DEBUG("MKWCacheImp::updateZSet: g_HashMap.updateZSet, mainkey = " << mk << endl);
 
     int iUpdateRet = g_HashMap.updateZSet(mk, sOldValue, sNewValue, score, iExpireTime, iVersion, bDirty, bOnlyScore);
     if (iUpdateRet != TC_Multi_HashMap_Malloc::RT_OK)
     {
-        TLOGERROR("g_HashMap.updateZSet error, ret = " << iUpdateRet << ", mainKey = " << mk << endl);
+        TLOG_ERROR("g_HashMap.updateZSet error, ret = " << iUpdateRet << ", mainKey = " << mk << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return -1;
     }
@@ -2592,7 +2592,7 @@ int updateResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, c
             {
                 return -2;
             }
-            TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.set error, ret = " << iSetRet << ",mainKey = " << mk << endl);
+            TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.set error, ret = " << iSetRet << ",mainKey = " << mk << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return -1;
         }
@@ -2720,7 +2720,7 @@ int delResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
 
                         if (iDelRet != TC_Multi_HashMap_Malloc::RT_OK && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                         {
-                            TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                            TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return -1;
                         }
@@ -2755,7 +2755,7 @@ int delResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
 
                     if (iDelRet != TC_Multi_HashMap_Malloc::RT_OK && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                        TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return -1;
                     }
@@ -2799,7 +2799,7 @@ int DelResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
                                 && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                                 && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                         {
-                            TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                            TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return -1;
                         }
@@ -2836,7 +2836,7 @@ int DelResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
                             && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                             && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                        TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return -1;
                     }
@@ -2884,7 +2884,7 @@ int DelResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
                                 && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                                 && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                         {
-                            TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                            TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return -1;
                         }
@@ -2923,7 +2923,7 @@ int DelResult(const string &mk, const vector<MultiHashMap::Value> &vtValue, cons
                             && iDelRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                             && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                        TLOG_ERROR("MKCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return -1;
                     }
@@ -3038,7 +3038,7 @@ int WriteBinLog::createBinLogFile(const string &path, bool isKeyBinLog)
         _keyBinlogFD = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
         if (_keyBinlogFD < 0)
         {
-            TLOGERROR("[WriteBinLog::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
+            TLOG_ERROR("[WriteBinLog::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
             return -1;
         }
     }
@@ -3051,7 +3051,7 @@ int WriteBinLog::createBinLogFile(const string &path, bool isKeyBinLog)
         _binlogFD = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
         if (_binlogFD < 0)
         {
-            TLOGERROR("[WriteBinLog::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
+            TLOG_ERROR("[WriteBinLog::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
             return -1;
         }
     }
@@ -3086,7 +3086,7 @@ void WriteBinLog::writeToFile(const string &content, const string &logFile)
         if (tmpn < iContentSize - n)
         {
             string error_str = "[WriteBinLog::writeToFile] write binlog " + logFile + " file error! " + TC_Common::tostr(errno);
-            TLOGERROR(error_str << endl);
+            TLOG_ERROR(error_str << endl);
             TARS_NOTIFY_ERROR(error_str);
         }
 

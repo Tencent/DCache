@@ -23,11 +23,11 @@ void ControlAckImp::initialize()
     }
     catch (exception &ex)
     {
-        TLOGERROR("ControlAckImp::initialize exception:" << ex.what() << endl);
+        TLOG_ERROR("ControlAckImp::initialize exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("ControlAckImp::initialize unknown exception." << endl);
+        TLOG_ERROR("ControlAckImp::initialize unknown exception." << endl);
     }
 
 }
@@ -36,7 +36,7 @@ tars::Int32 ControlAckImp::connectHb(tars::TarsCurrentPtr current)
 {
     if (g_app.gstat()->serverType() != MASTER)
     {
-        TLOGERROR("ControlAckImp::connectHb, server is not master. maybe downgrade." << endl);
+        TLOG_ERROR("ControlAckImp::connectHb, server is not master. maybe downgrade." << endl);
         return -1;
     }
 

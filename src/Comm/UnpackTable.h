@@ -27,7 +27,7 @@ extern int g_iSlaveFlag;//备机可读的轮询标志
 
 // 记录异常日志
 #define UNPACK_EXPLOG(e) \
-	TLOGERROR(__FILE__ << "|" << __FUNCTION__ \
+	TLOG_ERROR(__FILE__ << "|" << __FUNCTION__ \
 		<< "|" << __LINE__ << "|" << e << endl);
 
 // 捕捉异常
@@ -131,7 +131,7 @@ namespace DCache
             LocalRouterInfo(size_t Num)
             {
                 entry = new Entry[Num];
-                memset(entry, 0, sizeof(Entry) * Num);
+                // memset(entry, 0, sizeof(Entry) * Num);
             }
             ~LocalRouterInfo() { delete[] entry; }
 

@@ -1477,7 +1477,7 @@ public:
                 v._mkey = _mainKey;
 
                 sDirty = s.substr(curIndex, 1);
-                TLOGDEBUG("decode mk:" << _mainKey << " sDirty:" << sDirty << endl);
+                TLOG_DEBUG("decode mk:" << _mainKey << " sDirty:" << sDirty << endl);
                 if (sDirty == "3")
                 {
                     v._isDelete = DCache::TC_Multi_HashMap_Malloc::DELETE_TRUE;
@@ -1717,7 +1717,7 @@ public:
                 {
                     ifs.clear();
                     ifs.seekg(-8, ios::cur);
-                    TLOGERROR("GetOneLineBinLog parse binlog head error," << string(p, 8) << endl);
+                    TLOG_ERROR("GetOneLineBinLog parse binlog head error," << string(p, 8) << endl);
                     return -1;
                 }
             }

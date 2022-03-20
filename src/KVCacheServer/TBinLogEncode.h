@@ -324,7 +324,7 @@ public:
                 {
                     ifs.clear();
                     ifs.seekg(-8, ios::cur);
-                    TLOGERROR("GetOneLineBinLog parse binlog head error," << string(p, 8) << endl);
+                    TLOG_ERROR("GetOneLineBinLog parse binlog head error," << string(p, 8) << endl);
                     return -1;
                 }
             }

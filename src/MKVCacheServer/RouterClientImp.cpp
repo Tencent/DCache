@@ -43,7 +43,7 @@ void RouterClientImp::initialize()
     _transContent.reserve(20000);
     _hashmapValue.reserve(20000);
 
-    TLOGDEBUG("RouterClientImp::initialize Succ" << endl);
+    TLOG_DEBUG("RouterClientImp::initialize Succ" << endl);
 }
 
 void RouterClientImp::destroy()
@@ -91,7 +91,7 @@ tars::Int32 RouterClientImp::setRouterInfoForSwitch(const std::string & moduleNa
 tars::Int32
 RouterClientImp::helloBaby(tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("i am ok" << endl);
+    TLOG_DEBUG("i am ok" << endl);
     return 0;
 }
 tars::Int32 RouterClientImp::helleBabyByName(const std::string & serverName, tars::TarsCurrentPtr current)
@@ -100,7 +100,7 @@ tars::Int32 RouterClientImp::helleBabyByName(const std::string & serverName, tar
 }
 tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleName, const std::string & mainKey, const std::string & transContent, tars::Bool compress, tars::Bool full, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("RouterClientImp::setFroCompressTrans recv : " << mainKey << "|" << transContent.length() << "|" << compress << "|" << full << endl);
+    TLOG_DEBUG("RouterClientImp::setFroCompressTrans recv : " << mainKey << "|" << transContent.length() << "|" << compress << "|" << full << endl);
 
     _transContent.clear();
     _hashmapValue.clear();
@@ -109,12 +109,12 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTrans] ServerType is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTrans] ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (moduleName != _moduleName)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTrans] moduleName error" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTrans] moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -122,14 +122,14 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTrans] " << mainKey << " forbid trans" << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTrans] " << mainKey << " forbid trans" << endl);
                 return ET_FORBID_OPT;
             }
         }
 
         if (!g_route_table.isMySelf(mainKey))
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTrans] " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTrans] " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -154,7 +154,7 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
                 bool bGzipOk = StringUtil::gzipUncompress(transContent.c_str(), transContent.length(), sUncompress);
                 if (!bGzipOk)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTrans] transContent gzip uncompress error" << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTrans] transContent gzip uncompress error" << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -167,7 +167,7 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
 
             if (!bParseStrOk)
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTrans] transContent string parse error" << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTrans] transContent string parse error" << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_SYS_ERR;
             }
@@ -200,7 +200,7 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
 
             if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTrans] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTrans] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_KEY_AREA_ERR;
             }
@@ -217,13 +217,13 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTrans] exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTrans] exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTrans] unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTrans] unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -232,18 +232,18 @@ tars::Int32 RouterClientImp::setFroCompressTransEx(const std::string & moduleNam
 
 tars::Int32 RouterClientImp::setFroCompressTransOnlyKey(const std::string & moduleName, const vector<std::string> & mainKey, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("RouterClientImp::setFroCompressTransOnlyKey recv : " << mainKey.size() << endl);
+    TLOG_DEBUG("RouterClientImp::setFroCompressTransOnlyKey recv : " << mainKey.size() << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] ServerType is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (moduleName != _moduleName)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] moduleName error" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -255,14 +255,14 @@ tars::Int32 RouterClientImp::setFroCompressTransOnlyKey(const std::string & modu
                 int iPageNo = g_route_table.getPageNo(*it);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] " << *it << " forbid trans" << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] " << *it << " forbid trans" << endl);
                     return ET_FORBID_OPT;
                 }
             }
 
             if (!g_route_table.isMySelf(*it))
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] " << *it << " is not in self area" << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] " << *it << " is not in self area" << endl);
                 return ET_KEY_AREA_ERR;
             }
 
@@ -278,13 +278,13 @@ tars::Int32 RouterClientImp::setFroCompressTransOnlyKey(const std::string & modu
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTransOnlyKey] unkown exception, " << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTransOnlyKey] unkown exception, " << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -292,18 +292,18 @@ tars::Int32 RouterClientImp::setFroCompressTransOnlyKey(const std::string & modu
 }
 tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & moduleName, const std::string & mainKey, const std::string & transContent, tars::Char keyType, tars::Bool compress, tars::Bool full, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("RouterClientImp::setFroCompressTransWithType recv : " << mainKey << "|" << transContent.length() << "|" << compress << "|" << full << endl);
+    TLOG_DEBUG("RouterClientImp::setFroCompressTransWithType recv : " << mainKey << "|" << transContent.length() << "|" << compress << "|" << full << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTransWithType] ServerType is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (moduleName != _moduleName)
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTransWithType] moduleName error" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -311,14 +311,14 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTransWithType] " << mainKey << " forbid trans" << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] " << mainKey << " forbid trans" << endl);
                 return ET_FORBID_OPT;
             }
         }
 
         if (!g_route_table.isMySelf(mainKey))
         {
-            TLOGERROR("[RouterClientImp::setFroCompressTransWithType] " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -369,7 +369,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
                 bool bGzipOk = StringUtil::gzipUncompress(transContent.c_str(), transContent.length(), sUncompress);
                 if (!bGzipOk)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransWithType] transContent gzip uncompress error" << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] transContent gzip uncompress error" << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -382,7 +382,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
 
             if (!bParseStrOk)
             {
-                TLOGERROR("[RouterClientImp::setFroCompressTransWithType] transContent string parse error" << endl);
+                TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] transContent string parse error" << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_SYS_ERR;
             }
@@ -420,7 +420,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_KEY_AREA_ERR;
                 }
@@ -440,7 +440,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_KEY_AREA_ERR;
                 }
@@ -460,7 +460,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_KEY_AREA_ERR;
                 }
@@ -480,7 +480,7 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
+                    TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] hashmap set error, ret= " << iRet << ", mkey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_KEY_AREA_ERR;
                 }
@@ -499,13 +499,13 @@ tars::Int32 RouterClientImp::setFroCompressTransWithType(const std::string & mod
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTransWithType] exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setFroCompressTransWithType] unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("[RouterClientImp::setFroCompressTransWithType] unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -517,19 +517,19 @@ tars::Int32 RouterClientImp::cleanFromTransferData(const std::string & moduleNam
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不做迁移
-        TLOGERROR("[RouterClientImp::cleanFromTransferData] is not Master" << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData] is not Master" << endl);
         return 1;
     }
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("[RouterClientImp::cleanFromTransferData] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
         return 2;
     }
 
     if (fromPageNo > toPageNo)
     {
-        TLOGERROR("[RouterClientImp::cleanFromTransferData]range error! fromPageNo:" << fromPageNo << " toPageNo:" << toPageNo << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData]range error! fromPageNo:" << fromPageNo << " toPageNo:" << toPageNo << endl);
         return -1;
     }
 
@@ -545,7 +545,7 @@ int RouterClientImp::isReadyForSwitch(const std::string & moduleName, bool &bRea
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::isReadyForSwitch: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::isReadyForSwitch: moduleName error" << endl);
         return -1;
     }
 
@@ -554,7 +554,7 @@ int RouterClientImp::isReadyForSwitch(const std::string & moduleName, bool &bRea
     if (g_app.gstat()->isSlaveCreating() == true)
     {
         bReady = false;
-        TLOGERROR("RouterClientImp::isReadyForSwitch slaveCreating.. can't switch. " << endl);
+        TLOG_ERROR("RouterClientImp::isReadyForSwitch slaveCreating.. can't switch. " << endl);
     }
 
     return 0;
@@ -565,7 +565,7 @@ tars::Int32 RouterClientImp::notifyMasterDowngrade(const std::string & moduleNam
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::notifyMasterDowngrade: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::notifyMasterDowngrade: moduleName error" << endl);
         return -1;
     }
 
@@ -577,14 +577,14 @@ int RouterClientImp::disconnectFromMaster(const std::string & moduleName, tars::
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::disconnectFromMaster: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::disconnectFromMaster: moduleName error" << endl);
         return -1;
     }
 
     if (g_app.gstat()->serverType() == MASTER)
     {
         string err("RouterClientImp::disconnectFromMaster, server is master. error.");
-        TLOGERROR(err << endl);
+        TLOG_ERROR(err << endl);
         FDLOG("switch") << err << endl;
         return -1;
     }
@@ -619,7 +619,7 @@ void RouterClientImp::CleanDataFunctor::operator()(int pageNoStart, int pageNoEn
 
     if (count <= 0)
     {
-        TLOGERROR("[CleanDataFunctor::operator()] pageno error! " << pageNoStart << " " << pageNoEnd << endl);
+        TLOG_ERROR("[CleanDataFunctor::operator()] pageno error! " << pageNoStart << " " << pageNoEnd << endl);
         return;
     }
 

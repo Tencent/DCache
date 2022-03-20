@@ -55,7 +55,7 @@ void MKWCacheImp::initialize()
 
     if (_readDB && _mkeyMaxDataCount > 0)
     {
-        TLOGERROR("MKWCacheImp::initialize error: read db flag is true and MkeyMaxDataCount>0 at the same time,,MkeyMaxDataCount's value is initialized to 0" << endl);
+        TLOG_ERROR("MKWCacheImp::initialize error: read db flag is true and MkeyMaxDataCount>0 at the same time,,MkeyMaxDataCount's value is initialized to 0" << endl);
         //重新设置为无数量限制
         _mkeyMaxDataCount = 0;
     }
@@ -76,11 +76,11 @@ void MKWCacheImp::initialize()
 
     _mkIsInteger = (ConvertDbType(_fieldConf.mpFieldInfo[_fieldConf.sMKeyName].type) == INT) ? true : false;
     _hitIndex = g_app.gstat()->genHitIndex();
-    TLOGDEBUG("MKWCacheImp::initialize _hitIndex:" << _hitIndex << endl);
+    TLOG_DEBUG("MKWCacheImp::initialize _hitIndex:" << _hitIndex << endl);
 
     _mkeyMaxSelectCount = TC_Common::strto<size_t>(_tcConf.get("/Main<MKeyMaxBlockCount>", "20000"));
 
-    TLOGDEBUG("MKWCacheImp::initialize Succ" << endl);
+    TLOG_DEBUG("MKWCacheImp::initialize Succ" << endl);
 }
 
 //////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ bool MKWCacheImp::reloadConf(const string& command, const string& params, string
     _mkeyMaxDataCount = TC_Common::strto<size_t>(_tcConf.get("/Main/Cache<MkeyMaxDataCount>", "0"));
     if (_readDB && _mkeyMaxDataCount > 0)
     {
-        TLOGERROR("MKWCacheImp::reloadConf error: read db flag is true and MkeyMaxDataCount>0 at the same time,MkeyMaxDataCount's value is reset to 0" << endl);
+        TLOG_ERROR("MKWCacheImp::reloadConf error: read db flag is true and MkeyMaxDataCount>0 at the same time,MkeyMaxDataCount's value is reset to 0" << endl);
         result = "dbflag is true and MkeyMaxDataCount>0 at the same time,failed to set MkeyMaxDataCount and MkeyMaxDataCount's value is reset to 0";
         //重新设置为无数量限制
         _mkeyMaxDataCount = 0;
@@ -123,7 +123,7 @@ bool MKWCacheImp::reloadConf(const string& command, const string& params, string
         _deleteDirty = true;
 
     _mkeyMaxSelectCount = TC_Common::strto<size_t>(_tcConf.get("/Main<MKeyMaxBlockCount>", "20000"));
-    TLOGDEBUG("MKWCacheImp::reloadConf Succ" << endl);
+    TLOG_DEBUG("MKWCacheImp::reloadConf Succ" << endl);
     result = "SUCC";
 
     return true;
@@ -140,19 +140,19 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
 
     string sLogValue = FormatLog::tostr(mpValue);
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << (int)ver << "|" << dirty << "|" << replace << "|" << expireTimeSecond << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << (int)ver << "|" << dirty << "|" << replace << "|" << expireTimeSecond << endl);
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -160,7 +160,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid insert" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid insert" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -168,7 +168,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -179,7 +179,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -196,12 +196,12 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
         int iRetCode;
         if (!checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error, retcode = " << iRetCode << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error, retcode = " << iRetCode << endl);
             return iRetCode;
         }
         if (!checkSetValue(mpValue, mpUK, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error, retcode = " << iRetCode << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error, retcode = " << iRetCode << endl);
             return iRetCode;
         }
         TarsEncode uKeyEncode;
@@ -219,7 +219,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
         KeyLengthInDB += mainKey.size();
         if (KeyLengthInDB > _maxKeyLengthInDB)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_PARAM_TOO_LONG;
         }
@@ -292,7 +292,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
                         current->setResponse(false);
                         if (isCreate)
                         {
-                            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                             DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                             //异步调用DBAccess
                             asyncDbSelect(mainKey, cb);
@@ -301,7 +301,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
                         }
                         else
                         {
-                            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                             return 0;
                         }
                     }
@@ -326,7 +326,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
                         }
                         else if ((iGetRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY) && (iGetRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error, mainKey = " << mainKey << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error, mainKey = " << mainKey << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return ET_SYS_ERR;
                         }
@@ -339,7 +339,7 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
             }
             else
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.get error, ret = " << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.get error, ret = " << iRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 return ET_SYS_ERR;
             }
@@ -358,17 +358,17 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
         {
             if (iRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                 return ET_DATA_VER_MISMATCH;
             }
             else if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
                 return ET_MEM_FULL;
             }
             else
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 return ET_SYS_ERR;
             }
@@ -382,13 +382,13 @@ tars::Int32 MKWCacheImp::insertMKV(const DCache::InsertMKVReq &req, tars::TarsCu
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -400,18 +400,18 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
     const vector<InsertKeyValue> & vtKeyValue = req.data;
     map<tars::Int32, tars::Int32> & mpFailIndexReason = rsp.rspData;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << FormatLog::tostr(vtKeyValue) << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << FormatLog::tostr(vtKeyValue) << endl);
 
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error, input:" << req.moduleName << "!=" << _moduleName << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error, input:" << req.moduleName << "!=" << _moduleName << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -447,7 +447,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 int iPageNo = g_route_table.getPageNo(tmpKeyValue.mainKey);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " forbid insert" << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " forbid insert" << endl);
                     mpFailIndexReason[i] = ET_FORBID_OPT;
                     continue;
                 }
@@ -457,7 +457,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
             if (!g_route_table.isMySelf(tmpKeyValue.mainKey))
             {
                 //返回模块错误
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " is not in self area" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " is not in self area" << endl);
                 mpFailIndexReason[i] = ET_KEY_AREA_ERR;
 
                 //API直连模式，返回增量更新路由
@@ -466,7 +466,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                     int ret = RouterHandle::getInstance()->getUpdateServant(tmpKeyValue.mainKey, i, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                 }
                 continue;
@@ -477,7 +477,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
             int iRetCode;
             if (!checkSetValue(tmpKeyValue.mpValue, mpUK, mpJValue, iRetCode) || !checkMK(tmpKeyValue.mainKey, _mkIsInteger, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": input param error, mainKey = " << tmpKeyValue.mainKey << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": input param error, mainKey = " << tmpKeyValue.mainKey << endl);
                 mpFailIndexReason[i] = iRetCode;
                 continue;
             }
@@ -503,7 +503,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
             KeyLengthInDB += tmpKeyValue.mainKey.size();
             if (KeyLengthInDB > _maxKeyLengthInDB)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 mpFailIndexReason[i] = ET_PARAM_TOO_LONG;
                 continue;
@@ -572,7 +572,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap get error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap get error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     mpFailIndexReason[i] = ET_SYS_ERR;
                     continue;
@@ -592,17 +592,17 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
             {
                 if (iRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch, mainKey = " << tmpKeyValue.mainKey << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch, mainKey = " << tmpKeyValue.mainKey << endl);
                     mpFailIndexReason[i] = ET_DATA_VER_MISMATCH;
                 }
                 else if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory, mainKey = " << tmpKeyValue.mainKey << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory, mainKey = " << tmpKeyValue.mainKey << endl);
                     mpFailIndexReason[i] = ET_MEM_FULL;
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     mpFailIndexReason[i] = ET_SYS_ERR;
                 }
@@ -618,11 +618,11 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
         }
         catch (const exception& ex)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << tmpKeyValue.mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << tmpKeyValue.mainKey << endl);
         }
         catch (...)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << tmpKeyValue.mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << tmpKeyValue.mainKey << endl);
         }
         g_app.ppReport(PPReport::SRP_EX, 1);
         mpFailIndexReason[i] = ET_SYS_ERR;
@@ -650,7 +650,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
             {
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async insert db, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async insert db, mainKey = " << param.mk << endl);
                     try
                     {
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
@@ -660,11 +660,11 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                     }
                     catch (std::exception& ex)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << param.mk << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mainKey = " << param.mk << endl);
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
@@ -683,7 +683,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
                 }
             }
             else
@@ -721,7 +721,7 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 }
                 else if ((iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY) && (iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                     if ((--pParam->count) <= 0)
@@ -749,17 +749,17 @@ tars::Int32 MKWCacheImp::insertMKVBatch(const DCache::InsertMKVBatchReq &req, DC
                 {
                     if (iRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch, mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch, mainKey = " << param.mk << endl);
                         pParam->addFailIndexReason(param.iIndex, ET_DATA_VER_MISMATCH);
                     }
                     else if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory, mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory, mainKey = " << param.mk << endl);
                         pParam->addFailIndexReason(param.iIndex, ET_MEM_FULL);
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << ", mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iRet << ", mainKey = " << param.mk << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                     }
@@ -816,17 +816,17 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
     const vector<DCache::UpdateKeyValue> & vtKeyValue = req.data;
     map<tars::Int32, tars::Int32> &mpFailIndexReason = rsp.rspData;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << FormatLog::tostr(vtKeyValue) << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << FormatLog::tostr(vtKeyValue) << endl);
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error, input:" << req.moduleName << "!=" << _moduleName << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error, input:" << req.moduleName << "!=" << _moduleName << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -867,7 +867,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                 int iPageNo = g_route_table.getPageNo(tmpKeyValue.mainKey);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " forbid insert" << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " forbid insert" << endl);
                     mpFailIndexReason[i] = ET_FORBID_OPT;
                     continue;
                 }
@@ -877,7 +877,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
             if (!g_route_table.isMySelf(tmpKeyValue.mainKey))
             {
                 //返回模块错误
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " is not in self area" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << tmpKeyValue.mainKey << " is not in self area" << endl);
                 mpFailIndexReason[i] = ET_KEY_AREA_ERR;
 
                 //API直连模式，返回增量更新路由
@@ -886,7 +886,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     int ret = RouterHandle::getInstance()->getUpdateServant(tmpKeyValue.mainKey, i, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                 }
                 continue;
@@ -900,7 +900,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
             int iRetCode;
             if (!checkSetValue(tmpKeyValue.mpValue, mpUK, mpInsertValue, mpUpdateValue, tmpKeyValue.insert, iRetCode) || !checkMK(tmpKeyValue.mainKey, _mkIsInteger, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": input param error, mainKey = " << tmpKeyValue.mainKey << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": input param error, mainKey = " << tmpKeyValue.mainKey << endl);
                 mpFailIndexReason[i] = iRetCode;
                 continue;
             }
@@ -921,7 +921,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
             KeyLengthInDB += tmpKeyValue.mainKey.size();
             if (KeyLengthInDB > _maxKeyLengthInDB)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " keyLength > " << _maxKeyLengthInDB << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 mpFailIndexReason[i] = ET_PARAM_TOO_LONG;
                 continue;
@@ -954,12 +954,12 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                 {
                     if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                         mpFailIndexReason[i] = ET_DATA_VER_MISMATCH;
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         mpFailIndexReason[i] = ET_SYS_ERR;
                     }
@@ -1010,17 +1010,17 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                         {
                             if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                                 mpFailIndexReason[i] = ET_DATA_VER_MISMATCH;
                             }
                             else if (iSetRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
                                 mpFailIndexReason[i] = ET_MEM_FULL;
                             }
                             else
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 mpFailIndexReason[i] = ET_SYS_ERR;
                             }
@@ -1059,17 +1059,17 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     {
                         if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                             mpFailIndexReason[i] = ET_DATA_VER_MISMATCH;
                         }
                         else if (iSetRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
                             mpFailIndexReason[i] = ET_MEM_FULL;
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             mpFailIndexReason[i] = ET_SYS_ERR;
                         }
@@ -1086,7 +1086,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
             }
             else
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap get error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap get error, ret = " << iRet << ", mainKey = " << tmpKeyValue.mainKey << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 mpFailIndexReason[i] = ET_SYS_ERR;
             }
@@ -1094,11 +1094,11 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
         }
         catch (const exception& ex)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << tmpKeyValue.mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << tmpKeyValue.mainKey << endl);
         }
         catch (...)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << tmpKeyValue.mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << tmpKeyValue.mainKey << endl);
         }
         g_app.ppReport(PPReport::SRP_EX, 1);
         mpFailIndexReason[i] = ET_SYS_ERR;
@@ -1125,7 +1125,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
             {
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async update db, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async update db, mainKey = " << param.mk << endl);
                     try
                     {
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
@@ -1135,11 +1135,11 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     }
                     catch (std::exception& ex)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mainKey = " << param.mk << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mainKey = " << param.mk << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mainKey = " << param.mk << endl);
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
@@ -1158,7 +1158,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
                 }
             }
             else
@@ -1188,12 +1188,12 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                     {
                         if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                             pParam->addFailIndexReason(param.iIndex, ET_DATA_VER_MISMATCH);
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                         }
@@ -1252,17 +1252,17 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                         {
                             if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set ver mismatch" << endl);
                                 pParam->addFailIndexReason(param.iIndex, ET_DATA_VER_MISMATCH);
                             }
                             else if (iSetRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set no memory" << endl);
                                 pParam->addFailIndexReason(param.iIndex, ET_MEM_FULL);
                             }
                             else
                             {
-                                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
+                                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.set error, ret = " << iSetRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                             }
@@ -1316,7 +1316,7 @@ tars::Int32 MKWCacheImp::updateMKVBatch(const DCache::UpdateMKVBatchReq &req, DC
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.get(mk, uk, vData) error: " << iRet << ", mainKey = " << param.mk << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     pParam->addFailIndexReason(param.iIndex, ET_SYS_ERR);
                     if ((--pParam->count) <= 0)
@@ -1364,20 +1364,20 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
     string sLogValue = FormatLog::tostr(mpValue);
     string sLogCond = FormatLog::tostr(vtCond);
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -1385,7 +1385,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid update" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid update" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -1393,7 +1393,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1404,7 +1404,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1418,7 +1418,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
         int iRetCode;
         if (!checkUpdateValue(mpValue, iRetCode) || !checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": value param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": value param error" << endl);
             return iRetCode;
         }
 
@@ -1429,7 +1429,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
 
         if (!checkCondition(vtCond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": cond param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": cond param error" << endl);
             return iRetCode;
         }
 
@@ -1444,7 +1444,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
             int iRet = procUpdateUK(current, mainKey, mpValue, vtUKCond, vtValueCond, stLimit, ver, dirty, expireTimeSecond, iUpdateCount, insert);
             if (iRet < 0)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << "|failed|procUpdateUK error , ret =" << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << "|failed|procUpdateUK error , ret =" << iRet << endl);
                 return iRet;
             }
             else if (iRet == 1)
@@ -1455,7 +1455,7 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
             int iRet = procUpdateMK(current, mainKey, mpValue, vtUKCond, vtValueCond, stLimit, ver, dirty, expireTimeSecond, iUpdateCount);
             if (iRet < 0)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << "|failed|procUpdateMK error , ret =" << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)ver << "|" << dirty << "|" << expireTimeSecond << "|" << insert << "|failed|procUpdateMK error , ret =" << iRet << endl);
                 return iRet;
             }
             else if (iRet == 1)
@@ -1464,13 +1464,13 @@ tars::Int32 MKWCacheImp::updateMKV(const DCache::UpdateMKVReq &req, tars::TarsCu
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1489,20 +1489,20 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
     string sLogValue = FormatLog::tostr(mpValue);
     string sLogCond = FormatLog::tostr(vtCond);
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -1510,7 +1510,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid update" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid update" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -1518,7 +1518,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1529,7 +1529,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1543,7 +1543,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
         int iRetCode;
         if (!checkUpdateValue(mpValue, iRetCode) || !checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": value param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": value param error" << endl);
             return iRetCode;
         }
 
@@ -1554,7 +1554,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
 
         if (!checkCondition(vtCond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": cond param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": cond param error" << endl);
             return iRetCode;
         }
 
@@ -1569,7 +1569,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
             int iRet = procUpdateUKAtom(current, mainKey, mpValue, vtUKCond, vtValueCond, stLimit, dirty, expireTimeSecond, iUpdateCount);
             if (iRet < 0)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << "|failed|procUpdateUK error , ret =" << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << "|failed|procUpdateUK error , ret =" << iRet << endl);
                 return iRet;
             }
             else if (iRet == 1)
@@ -1580,7 +1580,7 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
             int iRet = procUpdateMKAtom(current, mainKey, mpValue, vtUKCond, vtValueCond, stLimit, dirty, expireTimeSecond, iUpdateCount);
             if (iRet < 0)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << "|failed|procUpdateMK error , ret =" << iRet << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogValue << "|" << sLogCond << "|" << dirty << "|" << expireTimeSecond << "|failed|procUpdateMK error , ret =" << iRet << endl);
                 return iRet;
             }
             else if (iRet == 1)
@@ -1589,13 +1589,13 @@ tars::Int32 MKWCacheImp::updateMKVAtom(const DCache::UpdateMKVAtomReq &req, tars
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1610,13 +1610,13 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -1624,7 +1624,7 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -1632,7 +1632,7 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1643,7 +1643,7 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1658,7 +1658,7 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
 
         if (iCheckRet == TC_Multi_HashMap_Malloc::RT_DIRTY_DATA)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, is dirty" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, is dirty" << endl);
             return ET_ERASE_DIRTY_ERR;
         }
 
@@ -1666,7 +1666,7 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -1681,13 +1681,13 @@ tars::Int32 MKWCacheImp::eraseMKV(const DCache::MainKeyReq &req, tars::TarsCurre
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1701,20 +1701,20 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
 
     string sLogCond = FormatLog::tostr(vtCond);
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogCond << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << "|" << sLogCond << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -1722,7 +1722,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid del" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid del" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -1730,7 +1730,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -1741,7 +1741,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, true, "", updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -1764,7 +1764,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
             int iRetCode;
             if (!checkCondition(vtCond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
                 return iRetCode;
             }
 
@@ -1773,7 +1773,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                 int iRet = procDelUK(current, mainKey, vtUKCond, vtValueCond, stLimit);
                 if (iRet < 0)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogCond << "|failed|procDelUK error, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogCond << "|failed|procDelUK error, ret = " << iRet << endl);
                     return iRet;
                 }
                 else if (iRet == 1)
@@ -1784,7 +1784,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                 int iRet = procDelMK(current, mainKey, vtUKCond, vtValueCond, stLimit);
                 if (iRet < 0)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogCond << "|failed|procDelMK error, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << mainKey << "|" << sLogCond << "|failed|procDelMK error, ret = " << iRet << endl);
                     return iRet;
                 }
                 else if (iRet == 1)
@@ -1801,7 +1801,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
         else
         {
             int iRet = g_HashMap.checkMainKey(mainKey);
-            TLOGDEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
+            TLOG_DEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
             if (_existDB  && _readDB && (iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA || iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA))
             {
                 MKDbAccessCBParam::DelCBParam param;
@@ -1817,7 +1817,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, keyType);
                         //异步调用DBAccess
                         asyncDbSelect(mainKey, cb);
@@ -1825,7 +1825,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                     }
                     else
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                         return 1;
                     }
                 }
@@ -1846,7 +1846,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             return ET_SYS_ERR;
                         }
@@ -1873,7 +1873,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
+                            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             return ET_SYS_ERR;
                         }
@@ -1894,7 +1894,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -1910,7 +1910,7 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
 
                 if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -1924,13 +1924,13 @@ tars::Int32 MKWCacheImp::delMKV(const DCache::DelMKVReq &req, tars::TarsCurrentP
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1942,18 +1942,18 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
     const vector<DCache::DelCondition> & vtCond = req.data;
     map<tars::Int32, tars::Int32> & mRet = rsp.rspData;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << vtCond.size() << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << vtCond.size() << endl);
 
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
     if (req.moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -1985,7 +1985,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                 int iPageNo = g_route_table.getPageNo(vtCond[i].mainKey);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << vtCond[i].mainKey << " forbid del" << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << vtCond[i].mainKey << " forbid del" << endl);
                     mRet[i] = DEL_ERROR;
                     continue;
                 }
@@ -1994,7 +1994,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
             if (!g_route_table.isMySelf(vtCond[i].mainKey))
             {
                 //返回模块错误
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << vtCond[i].mainKey << " is not in self area" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << vtCond[i].mainKey << " is not in self area" << endl);
                 mRet[i] = DEL_ERROR;
                 //API直连模式，返回增量更新路由
                 if (bGetRoute)
@@ -2002,7 +2002,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                     int ret = RouterHandle::getInstance()->getUpdateServant(vtCond[i].mainKey, i, true, "", updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                 }
                 continue;
@@ -2015,7 +2015,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
             int iRetCode;
             if (!checkCondition(vtCond[i].cond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
                 mRet[i] = DEL_ERROR;
                 continue;
             }
@@ -2026,7 +2026,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                 int iRet = procDelUKVer(current, vtCond[i].mainKey, vtUKCond, vtValueCond, stLimit, vtCond[i].ver, delCount);
                 if (iRet < 0)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << vtCond[i].mainKey << "|" << sLogCond << "|failed|procDelUK error, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << vtCond[i].mainKey << "|" << sLogCond << "|failed|procDelUK error, ret = " << iRet << endl);
                     mRet[i] = DEL_ERROR;
                     continue;
                 }
@@ -2056,7 +2056,7 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                 int iRet = procDelMKVer(current, vtCond[i].mainKey, vtUKCond, vtValueCond, stLimit, delCount);
                 if (iRet < 0)
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << vtCond[i].mainKey << "|" << sLogCond << "|failed|procDelMK error, ret = " << iRet << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << vtCond[i].mainKey << "|" << sLogCond << "|failed|procDelMK error, ret = " << iRet << endl);
                     continue;
                 }
                 else if (iRet == 1)
@@ -2082,13 +2082,13 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << vtCond[i].mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << vtCond[i].mainKey << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             mRet[i] = DEL_ERROR;
         }
         catch (...)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << vtCond[i].mainKey << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << vtCond[i].mainKey << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             mRet[i] = DEL_ERROR;
         }
@@ -2116,14 +2116,14 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << param.mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(param.mk, cb);
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << param.mk << endl);
                 }
             }
             else
@@ -2134,13 +2134,13 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                     int iRet = procDelUKVer(current, param.mk, param.vtUKCond, param.vtValueCond, param.stLimit, vtCond[i].ver, delCount);
                     if (iRet < 0)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << param.mk << "|failed|procDelUK error, ret = " << iRet << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << param.mk << "|failed|procDelUK error, ret = " << iRet << endl);
                         delParam->addFailIndexReason(mIndex[param.mk], DEL_ERROR);
                         continue;
                     }
                     else if (iRet == 1)
                     {
-                        TLOGERROR("[MKWCacheImp::" << __FUNCTION__ << "] del second error! " << mIndex[param.mk] << endl);
+                        TLOG_ERROR("[MKWCacheImp::" << __FUNCTION__ << "] del second error! " << mIndex[param.mk] << endl);
                         delParam->addFailIndexReason(mIndex[param.mk], DEL_ERROR);
                         continue;
                     }
@@ -2153,13 +2153,13 @@ tars::Int32 MKWCacheImp::delMKVBatch(const DCache::DelMKVBatchReq &req, DCache::
                     int iRet = procDelMKVer(current, param.mk, param.vtUKCond, param.vtValueCond, param.stLimit, delCount);
                     if (iRet < 0)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << "|" << param.mk << "|failed|procDelMK error, ret = " << iRet << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << "|" << param.mk << "|failed|procDelMK error, ret = " << iRet << endl);
                         delParam->addFailIndexReason(mIndex[param.mk], DEL_ERROR);
                         continue;
                     }
                     else if (iRet == 1)
                     {
-                        TLOGERROR("[MKWCacheImp::" << __FUNCTION__ << "] del second error! " << mIndex[param.mk] << endl);
+                        TLOG_ERROR("[MKWCacheImp::" << __FUNCTION__ << "] del second error! " << mIndex[param.mk] << endl);
                         delParam->addFailIndexReason(mIndex[param.mk], DEL_ERROR);
                         continue;
                     }
@@ -2189,20 +2189,20 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
     const vector<DCache::InsertKeyValue> & mpValue = req.data;
     bool bHead = req.atHead;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " bHead:" << bHead << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " bHead:" << bHead << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2210,7 +2210,7 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2218,7 +2218,7 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2232,12 +2232,12 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
             int iRetCode;
             if (!checkMK(mainKey, _mkIsInteger, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
                 return iRetCode;
             }
             if (!checkSetValue(mpValue[i].mpValue, mpJValue, iRetCode))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
                 return iRetCode;
             }
 
@@ -2257,7 +2257,7 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2270,13 +2270,13 @@ tars::Int32 MKWCacheImp::pushList(const DCache::PushListReq &req, tars::TarsCurr
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2288,20 +2288,20 @@ tars::Int32 MKWCacheImp::popList(const DCache::PopListReq &req, DCache::PopListR
     const std::string & mainKey = req.mainKey;
     bool bHead = req.atHead;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " bHead:" << bHead << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " bHead:" << bHead << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2309,7 +2309,7 @@ tars::Int32 MKWCacheImp::popList(const DCache::PopListReq &req, DCache::PopListR
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2317,7 +2317,7 @@ tars::Int32 MKWCacheImp::popList(const DCache::PopListReq &req, DCache::PopListR
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2331,7 +2331,7 @@ tars::Int32 MKWCacheImp::popList(const DCache::PopListReq &req, DCache::PopListR
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2354,13 +2354,13 @@ tars::Int32 MKWCacheImp::popList(const DCache::PopListReq &req, DCache::PopListR
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2375,20 +2375,20 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
     int64_t iPos = req.index;
     int iExpireTime = req.expireTime;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2396,7 +2396,7 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2404,7 +2404,7 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2414,12 +2414,12 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
         int iRetCode;
         if (!checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
         if (!checkSetValue(mpValue, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
@@ -2443,7 +2443,7 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2455,13 +2455,13 @@ tars::Int32 MKWCacheImp::replaceList(const DCache::ReplaceListReq &req, tars::Ta
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2474,20 +2474,20 @@ tars::Int32 MKWCacheImp::trimList(const DCache::TrimListReq &req, tars::TarsCurr
     int64_t iStart = req.startIndex;
     int64_t iEnd = req.endIndex;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2495,7 +2495,7 @@ tars::Int32 MKWCacheImp::trimList(const DCache::TrimListReq &req, tars::TarsCurr
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2503,7 +2503,7 @@ tars::Int32 MKWCacheImp::trimList(const DCache::TrimListReq &req, tars::TarsCurr
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2517,7 +2517,7 @@ tars::Int32 MKWCacheImp::trimList(const DCache::TrimListReq &req, tars::TarsCurr
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2529,13 +2529,13 @@ tars::Int32 MKWCacheImp::trimList(const DCache::TrimListReq &req, tars::TarsCurr
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2548,20 +2548,20 @@ tars::Int32 MKWCacheImp::remList(const DCache::RemListReq &req, tars::TarsCurren
     bool bHead = req.atHead;
     int64_t iCount = req.count;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2569,7 +2569,7 @@ tars::Int32 MKWCacheImp::remList(const DCache::RemListReq &req, tars::TarsCurren
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2577,7 +2577,7 @@ tars::Int32 MKWCacheImp::remList(const DCache::RemListReq &req, tars::TarsCurren
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2591,7 +2591,7 @@ tars::Int32 MKWCacheImp::remList(const DCache::RemListReq &req, tars::TarsCurren
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2605,13 +2605,13 @@ tars::Int32 MKWCacheImp::remList(const DCache::RemListReq &req, tars::TarsCurren
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2624,20 +2624,20 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
     const map<std::string, DCache::UpdateValue> & mpValue = req.value.data;
     int iExpireTime = req.value.expireTime;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2645,7 +2645,7 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2653,7 +2653,7 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2663,12 +2663,12 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
         int iRetCode;
         if (!checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
         if (!checkSetValue(mpValue, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
@@ -2690,7 +2690,7 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2702,13 +2702,13 @@ tars::Int32 MKWCacheImp::addSet(const DCache::AddSetReq &req, tars::TarsCurrentP
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2720,20 +2720,20 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
     const std::string & mainKey = req.mainKey;
     const vector<DCache::Condition> & vtCond = req.cond;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2741,7 +2741,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2749,7 +2749,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2759,13 +2759,13 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
         int iRetCode;
         if (!checkValueCondition(vtCond, vtValueCond, bunique, iRetCode))
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
         if (!bunique)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return ET_PARAM_MISSING;
         }
 
@@ -2789,7 +2789,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
         break;
         case TC_Multi_HashMap_Malloc::RT_ONLY_KEY:
         {
-            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_ONLY_KEY, mainKey = " << mainKey << endl);
+            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_ONLY_KEY, mainKey = " << mainKey << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
@@ -2813,7 +2813,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::SET_TYPE);
                         //异步调用DBAccess
                         asyncDbSelect(mainKey, cb);
@@ -2821,7 +2821,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
                     }
                     else
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                         return 1;
                     }
                 }
@@ -2840,7 +2840,7 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return ET_SYS_ERR;
                     }
@@ -2851,13 +2851,13 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
         break;
         case TC_Multi_HashMap_Malloc::RT_DATA_DEL:
         {
-            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_DATA_DEL, mainKey = " << mainKey << endl);
+            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_DATA_DEL, mainKey = " << mainKey << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
         default:
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2870,13 +2870,13 @@ tars::Int32 MKWCacheImp::delSet(const DCache::DelSetReq &req, tars::TarsCurrentP
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2890,20 +2890,20 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
     int iExpireTime = req.value.expireTime;
     double score = req.score;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " score:" << score << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << " score:" << score << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -2911,7 +2911,7 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -2919,7 +2919,7 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -2929,12 +2929,12 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
         int iRetCode;
         if (!checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
         if (!checkSetValue(mpValue, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
@@ -2953,12 +2953,12 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
 
         if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             return ET_MEM_FULL;
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -2970,13 +2970,13 @@ tars::Int32 MKWCacheImp::addZSet(const DCache::AddZSetReq &req, tars::TarsCurren
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2990,20 +2990,20 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
     int iExpireTime = req.value.expireTime;
     double score = req.scoreDiff;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -3011,7 +3011,7 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -3019,7 +3019,7 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -3029,12 +3029,12 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
         int iRetCode;
         if (!checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
         if (!checkSetValue(mpValue, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
@@ -3053,12 +3053,12 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
 
         if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             return ET_MEM_FULL;
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -3070,13 +3070,13 @@ tars::Int32 MKWCacheImp::incScoreZSet(const DCache::IncZSetScoreReq &req, tars::
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -3087,20 +3087,20 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
 {
     const std::string & mainKey = req.mainKey;
     const vector<DCache::Condition> & vtCond = req.cond;
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -3108,7 +3108,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -3116,7 +3116,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -3126,13 +3126,13 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
         int iRetCode;
         if (!checkValueCondition(vtCond, vtValueCond, bunique, iRetCode))
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error, ret = " << iRetCode << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error, ret = " << iRetCode << endl);
             return iRetCode;
         }
 
         if (!bunique)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return ET_PARAM_MISSING;
         }
 
@@ -3156,7 +3156,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
         break;
         case TC_Multi_HashMap_Malloc::RT_ONLY_KEY:
         {
-            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delZSetSetBit return RT_ONLY_KEY, mainKey = " << mainKey << endl);
+            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delZSetSetBit return RT_ONLY_KEY, mainKey = " << mainKey << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
@@ -3180,7 +3180,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                         //异步调用DBAccess
                         asyncDbSelect(mainKey, cb);
@@ -3188,7 +3188,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
                     }
                     else
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                         return 1;
                     }
                 }
@@ -3207,7 +3207,7 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return ET_SYS_ERR;
                     }
@@ -3218,13 +3218,13 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
         break;
         case TC_Multi_HashMap_Malloc::RT_DATA_DEL:
         {
-            TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_DATA_DEL, mainKey = " << mainKey << endl);
+            TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit return RT_DATA_DEL, mainKey = " << mainKey << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
         default:
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.delSetSetBit error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -3237,13 +3237,13 @@ tars::Int32 MKWCacheImp::delZSet(const DCache::DelZSetReq &req, tars::TarsCurren
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -3257,20 +3257,20 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
     double iMin = req.minScore;
     double iMax = req.maxScore;
 
-    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -3278,7 +3278,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -3286,7 +3286,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -3306,7 +3306,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                     //异步调用DBAccess
                     asyncDbSelect(mainKey, cb);
@@ -3314,7 +3314,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                    TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                     return 1;
                 }
             }
@@ -3337,7 +3337,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
+                    TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": error, ret = " << iRet << ", mainKey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -3358,7 +3358,7 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -3370,13 +3370,13 @@ tars::Int32 MKWCacheImp::delZSetByScore(const DCache::DelZSetByScoreReq &req, ta
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -3400,13 +3400,13 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不提供接口服务
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": ServerType is not Master" << endl);
             return ET_SERVER_TYPE_ERR;
         }
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         if (g_route_table.isTransfering(mainKey))
@@ -3414,7 +3414,7 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
             int iPageNo = g_route_table.getPageNo(mainKey);
             if (isTransSrc(iPageNo))
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " forbid erase" << endl);
                 return ET_FORBID_OPT;
             }
         }
@@ -3422,7 +3422,7 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -3431,7 +3431,7 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
         int iRetCode;
         if (!checkUpdateValue(mpValue, bOnlyScore, iRetCode) || !checkMK(mainKey, _mkIsInteger, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
@@ -3445,12 +3445,12 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
         bool bunique;
         if (!checkValueCondition(vtCond, vtValueCond, bunique, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": condition param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": condition param error" << endl);
             return iRetCode;
         }
         if (!bunique)
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": condition param error" << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": condition param error" << endl);
             return ET_PARAM_MISSING;
         }
 
@@ -3477,7 +3477,7 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
             int iUpdateRet = updateResult(mainKey, value, mpValue, vData._score, vData._iExpireTime, iExpireTime, iVersion, bDirty, bOnlyScore, _binlogFile, _keyBinlogFile, _recordBinLog, _recordKeyBinLog);
             if (iUpdateRet != 0)
             {
-                TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": update error" << endl);
+                TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": update error" << endl);
                 return ET_SYS_ERR;
             }
         }
@@ -3508,14 +3508,14 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": async select db, mainKey = " << mainKey << endl);
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                         //异步调用DBAccess
                         asyncDbSelect(mainKey, cb);
                     }
                     else
                     {
-                        TLOGDEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
+                        TLOG_DEBUG("MKWCacheImp::" << __FUNCTION__ << ": set into cbparam, mainKey = " << mainKey << endl);
                     }
                     return 0;
                 }
@@ -3545,13 +3545,13 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
                     }
                     else if (iGetRet != TC_Multi_HashMap_Malloc::RT_NO_DATA)
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.getZSet error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << ": g_HashMap.getZSet error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_NO_DATA;
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.getZSet error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
+                        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.getZSet error, ret = " << iGetRet << ", mainKey = " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -3564,20 +3564,20 @@ tars::Int32  MKWCacheImp::updateZSet(const DCache::UpdateZSetReq &req, tars::Tar
         }
         else
         {
-            TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.getZSet error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " g_HashMap.getZSet error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKWCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -3619,7 +3619,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                 size_t iVkeyLength = cond.value.size();
                 if (int(iVkeyLength) > lenthInDB)
                 {
-                    TLOGERROR("procUpdateUK string uk:" << cond.fieldName << " length:" << iVkeyLength << " lengthLimit:" << lenthInDB << endl);
+                    TLOG_ERROR("procUpdateUK string uk:" << cond.fieldName << " length:" << iVkeyLength << " lengthLimit:" << lenthInDB << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     return ET_PARAM_TOO_LONG;
                 }
@@ -3631,7 +3631,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
     KeyLengthInDB += mk.size();
     if (KeyLengthInDB > _maxKeyLengthInDB)
     {
-        TLOGERROR("MKWCacheImp::update keyLength > " << _maxKeyLengthInDB << endl);
+        TLOG_ERROR("MKWCacheImp::update keyLength > " << _maxKeyLengthInDB << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_PARAM_TOO_LONG;
     }
@@ -3683,12 +3683,12 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                 {
                     if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                     {
-                        TLOGERROR("MKWCacheImp::update g_HashMap.set ver mismatch" << endl);
+                        TLOG_ERROR("MKWCacheImp::update g_HashMap.set ver mismatch" << endl);
                         return ET_DATA_VER_MISMATCH;
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
+                        TLOG_ERROR("MKWCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return ET_SYS_ERR;
                     }
@@ -3731,7 +3731,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::select: async select db, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::select: async select db, mainKey = " << mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(mk, cb);
@@ -3739,7 +3739,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::select: set into cbparam, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::select: set into cbparam, mainKey = " << mk << endl);
                     return 1;
                 }
             }
@@ -3790,12 +3790,12 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                             {
                                 if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                                 {
-                                    TLOGERROR("MKWCacheImp::update g_HashMap.set ver mismatch" << endl);
+                                    TLOG_ERROR("MKWCacheImp::update g_HashMap.set ver mismatch" << endl);
                                     return ET_DATA_VER_MISMATCH;
                                 }
                                 else
                                 {
-                                    TLOGERROR("MKWCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
+                                    TLOG_ERROR("MKWCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
                                     g_app.ppReport(PPReport::SRP_EX, 1);
                                     return ET_SYS_ERR;
                                 }
@@ -3817,7 +3817,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
                 {
                     if (iGetRet != TC_Multi_HashMap_Malloc::RT_NO_DATA)
                     {
-                        TLOGERROR("MKWCacheImp::update: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("MKWCacheImp::update: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -3827,7 +3827,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
     }
     else
     {
-        TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }
@@ -3836,7 +3836,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
     {
         if (vtValueCond.size() != 0)
         {
-            TLOGERROR("MKWCacheImp::update data not exist, need insert but param error" << endl);
+            TLOG_ERROR("MKWCacheImp::update data not exist, need insert but param error" << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -3844,7 +3844,7 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
         int iRetCode;
         if (!checkSetValue(mpValue, mpJValue, iRetCode))
         {
-            TLOGERROR("MKWCacheImp::update data not exist, need insert but param error" << endl);
+            TLOG_ERROR("MKWCacheImp::update data not exist, need insert but param error" << endl);
             return iRetCode;
         }
 
@@ -3866,23 +3866,23 @@ int MKWCacheImp::procUpdateUK(tars::TarsCurrentPtr current, const string &mk, co
         {
             if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
             {
-                TLOGERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set ver mismatch, mk = " << mk << endl);
+                TLOG_ERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set ver mismatch, mk = " << mk << endl);
                 return ET_DATA_VER_MISMATCH;
             }
             else if (iSetRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
             {
-                TLOGERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set no memory, mk = " << mk << endl);
+                TLOG_ERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set no memory, mk = " << mk << endl);
                 return ET_MEM_FULL;
             }
             else
             {
-                TLOGERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set error, ret = " << iSetRet << ", mk = " << mk << endl);
+                TLOG_ERROR("MKWCacheImp::update data not exist, need insert but g_HashMap.set error, ret = " << iSetRet << ", mk = " << mk << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return ET_SYS_ERR;
             }
 
         }
-        TLOGDEBUG("update data not exist, need insert, insert succ, mk = " << mk << endl);
+        TLOG_DEBUG("update data not exist, need insert, insert succ, mk = " << mk << endl);
         ++iUpdateCount;
         if (_recordBinLog)
             WriteBinLog::set(mk, uk, value, expireTimeSecond, dirty, _binlogFile);
@@ -3914,7 +3914,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
                 size_t iVkeyLength = cond.value.size();
                 if (int(iVkeyLength) > lenthInDB)
                 {
-                    TLOGERROR("procUpdateUK string uk:" << cond.fieldName << " length:" << iVkeyLength << " lengthLimit:" << lenthInDB << endl);
+                    TLOG_ERROR("procUpdateUK string uk:" << cond.fieldName << " length:" << iVkeyLength << " lengthLimit:" << lenthInDB << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     return ET_PARAM_TOO_LONG;
                 }
@@ -3926,7 +3926,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
     KeyLengthInDB += mk.size();
     if (KeyLengthInDB > _maxKeyLengthInDB)
     {
-        TLOGERROR("MKWCacheImp::update keyLength > " << _maxKeyLengthInDB << endl);
+        TLOG_ERROR("MKWCacheImp::update keyLength > " << _maxKeyLengthInDB << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_PARAM_TOO_LONG;
     }
@@ -3986,7 +3986,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::select: async select db, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::select: async select db, mainKey = " << mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(mk, cb);
@@ -3994,7 +3994,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::select: set into cbparam, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::select: set into cbparam, mainKey = " << mk << endl);
                     return 1;
                 }
             }
@@ -4029,7 +4029,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
                 {
                     if (iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA)
                     {
-                        TLOGERROR("MKWCacheImp::update: g_HashMap.get(mk, uk, v) error, ret = " << iRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("MKWCacheImp::update: g_HashMap.get(mk, uk, v) error, ret = " << iRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -4039,7 +4039,7 @@ int MKWCacheImp::procUpdateUKAtom(tars::TarsCurrentPtr current, const string &mk
     }
     else
     {
-        TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }
@@ -4101,7 +4101,7 @@ int MKWCacheImp::procUpdateMK(tars::TarsCurrentPtr current, const string &mk, co
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::update: async select db, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::update: async select db, mainKey = " << mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(mk, cb);
@@ -4109,7 +4109,7 @@ int MKWCacheImp::procUpdateMK(tars::TarsCurrentPtr current, const string &mk, co
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::update: set into cbparam, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::update: set into cbparam, mainKey = " << mk << endl);
                     return 1;
                 }
             }
@@ -4143,7 +4143,7 @@ int MKWCacheImp::procUpdateMK(tars::TarsCurrentPtr current, const string &mk, co
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iGetRet << endl);
+                    TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iGetRet << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     return ET_SYS_ERR;
                 }
@@ -4161,7 +4161,7 @@ int MKWCacheImp::procUpdateMK(tars::TarsCurrentPtr current, const string &mk, co
     }
     else
     {
-        TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }
@@ -4223,7 +4223,7 @@ int MKWCacheImp::procUpdateMKAtom(tars::TarsCurrentPtr current, const string &mk
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::update: async select db, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::update: async select db, mainKey = " << mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(mk, cb);
@@ -4231,7 +4231,7 @@ int MKWCacheImp::procUpdateMKAtom(tars::TarsCurrentPtr current, const string &mk
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::update: set into cbparam, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::update: set into cbparam, mainKey = " << mk << endl);
                     return 1;
                 }
             }
@@ -4265,7 +4265,7 @@ int MKWCacheImp::procUpdateMKAtom(tars::TarsCurrentPtr current, const string &mk
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iGetRet << endl);
+                    TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iGetRet << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     return ET_SYS_ERR;
                 }
@@ -4283,7 +4283,7 @@ int MKWCacheImp::procUpdateMKAtom(tars::TarsCurrentPtr current, const string &mk
     }
     else
     {
-        TLOGERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::update g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }
@@ -4326,7 +4326,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
 
                     if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                     {
-                        TLOGERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -4341,7 +4341,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
         break;
         case TC_Multi_HashMap_Malloc::RT_ONLY_KEY:
         {
-            TLOGDEBUG("MKWCacheImp::del g_HashMap.get return RT_ONLY_KEY, mainKey = " << mk << endl);
+            TLOG_DEBUG("MKWCacheImp::del g_HashMap.get return RT_ONLY_KEY, mainKey = " << mk << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
@@ -4365,7 +4365,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
                     current->setResponse(false);
                     if (isCreate)
                     {
-                        TLOGDEBUG("MKWCacheImp::del: async select db, mainKey = " << mk << endl);
+                        TLOG_DEBUG("MKWCacheImp::del: async select db, mainKey = " << mk << endl);
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                         //异步调用DBAccess
                         asyncDbSelect(mk, cb);
@@ -4373,7 +4373,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
                     }
                     else
                     {
-                        TLOGDEBUG("MKWCacheImp::del: set into cbparam, mainKey = " << mk << endl);
+                        TLOG_DEBUG("MKWCacheImp::del: set into cbparam, mainKey = " << mk << endl);
                         return 1;
                     }
                 }
@@ -4398,7 +4398,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
 
                                 if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                                 {
-                                    TLOGERROR("MKWCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
+                                    TLOG_ERROR("MKWCacheImp::del g_HashMap.erase error, ret = " << iDelRet << endl);
                                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                                     return ET_SYS_ERR;
                                 }
@@ -4416,7 +4416,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
                     }
                     else
                     {
-                        TLOGERROR("MKWCacheImp::del: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("MKWCacheImp::del: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -4427,13 +4427,13 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
         break;
         case TC_Multi_HashMap_Malloc::RT_DATA_DEL:
         {
-            TLOGDEBUG("MKWCacheImp::del g_HashMap.get return RT_DATA_DEL, mainKey = " << mk << endl);
+            TLOG_DEBUG("MKWCacheImp::del g_HashMap.get return RT_DATA_DEL, mainKey = " << mk << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
         default:
         {
-            TLOGERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -4450,7 +4450,7 @@ int MKWCacheImp::procDelUK(tars::TarsCurrentPtr current, const string &mk, const
                     && iDelRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY
                     && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
             {
-                TLOGERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << endl);
+                TLOG_ERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 return ET_SYS_ERR;
             }
@@ -4508,7 +4508,7 @@ int MKWCacheImp::procDelUKVer(tars::TarsCurrentPtr current, const string &mk, co
                     if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL) &&
                             (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH))
                     {
-                        TLOGERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         ret = DEL_ERROR;
                         return -1;
@@ -4533,7 +4533,7 @@ int MKWCacheImp::procDelUKVer(tars::TarsCurrentPtr current, const string &mk, co
         break;
         case TC_Multi_HashMap_Malloc::RT_ONLY_KEY:
         {
-            TLOGDEBUG("MKWCacheImp::del g_HashMap.get return RT_ONLY_KEY, mainKey = " << mk << endl);
+            TLOG_DEBUG("MKWCacheImp::del g_HashMap.get return RT_ONLY_KEY, mainKey = " << mk << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
@@ -4548,13 +4548,13 @@ int MKWCacheImp::procDelUKVer(tars::TarsCurrentPtr current, const string &mk, co
         break;
         case TC_Multi_HashMap_Malloc::RT_DATA_DEL:
         {
-            TLOGDEBUG("MKWCacheImp::del g_HashMap.get return RT_DATA_DEL, mainKey = " << mk << endl);
+            TLOG_DEBUG("MKWCacheImp::del g_HashMap.get return RT_DATA_DEL, mainKey = " << mk << endl);
             g_app.gstat()->hit(_hitIndex);
         }
         break;
         default:
         {
-            TLOGERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             ret = DEL_ERROR;
         }
@@ -4572,7 +4572,7 @@ int MKWCacheImp::procDelUKVer(tars::TarsCurrentPtr current, const string &mk, co
                     && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL
                     && iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
             {
-                TLOGERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << endl);
+                TLOG_ERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iDelRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 ret = DEL_ERROR;
                 return ET_SYS_ERR;
@@ -4613,7 +4613,7 @@ int MKWCacheImp::procDelMK(tars::TarsCurrentPtr current, const string &mk, const
                 && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY
                 && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::del g_HashMap.del error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -4667,7 +4667,7 @@ int MKWCacheImp::procDelMK(tars::TarsCurrentPtr current, const string &mk, const
                 current->setResponse(false);
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKWCacheImp::del: async select db, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::del: async select db, mainKey = " << mk << endl);
                     DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                     //异步调用DBAccess
                     asyncDbSelect(mk, cb);
@@ -4675,7 +4675,7 @@ int MKWCacheImp::procDelMK(tars::TarsCurrentPtr current, const string &mk, const
                 }
                 else
                 {
-                    TLOGDEBUG("MKWCacheImp::del: set into cbparam, mainKey = " << mk << endl);
+                    TLOG_DEBUG("MKWCacheImp::del: set into cbparam, mainKey = " << mk << endl);
                     return 1;
                 }
             }
@@ -4700,7 +4700,7 @@ int MKWCacheImp::procDelMK(tars::TarsCurrentPtr current, const string &mk, const
                 }
                 else
                 {
-                    TLOGERROR("MKWCacheImp::del: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
+                    TLOG_ERROR("MKWCacheImp::del: g_HashMap.get(mk, uk, v) error, ret = " << iGetRet << ", mainKey = " << mk << endl);
                     return ET_SYS_ERR;
                 }
             }
@@ -4718,7 +4718,7 @@ int MKWCacheImp::procDelMK(tars::TarsCurrentPtr current, const string &mk, const
     break;
     default:
     {
-        TLOGERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::del g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }
@@ -4743,7 +4743,7 @@ int MKWCacheImp::procDelMKVer(tars::TarsCurrentPtr current, const string &mk, co
                 && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY
                 && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKWCacheImp::procDelMKVer g_HashMap.del error, ret = " << iRet << endl);
+            TLOG_ERROR("MKWCacheImp::procDelMKVer g_HashMap.del error, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -4795,7 +4795,7 @@ int MKWCacheImp::procDelMKVer(tars::TarsCurrentPtr current, const string &mk, co
     break;
     default:
     {
-        TLOGERROR("MKWCacheImp::procDelMKVer g_HashMap.get error, ret = " << iRet << endl);
+        TLOG_ERROR("MKWCacheImp::procDelMKVer g_HashMap.get error, ret = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return ET_SYS_ERR;
     }

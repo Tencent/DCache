@@ -358,6 +358,8 @@ protected:
 
     string formatCacheHead(vector<TC_HashMapMalloc::tagMapHead> &tmpHead);
 
+    void errorAndExit(const string &result);
+
 protected:
     TC_Config _tcConf;
 

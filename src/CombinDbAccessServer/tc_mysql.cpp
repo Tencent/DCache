@@ -98,7 +98,7 @@ void TC_Mysql::connect()
 		}
     }
 
-    TLOGERROR(string("[TC_Mysql::connect] connect succ!")<< " ip:"<<_dbConf._host << " port:"<< _dbConf._port<< endl);
+    TLOG_ERROR(string("[TC_Mysql::connect] connect succ!")<< " ip:"<<_dbConf._host << " port:"<< _dbConf._port<< endl);
     
 	_bConnected = true;
 }
@@ -292,7 +292,7 @@ void TC_Mysql::execute(const string& sSql)
 		int iErrno = mysql_errno(_pstMql);
 		if (iErrno == 2006)
         {
-            TLOGERROR(string("[TC_Mysql::execute] retry connect!") << endl);
+            TLOG_ERROR(string("[TC_Mysql::execute] retry connect!") << endl);
             connect();
             iRet = mysql_real_query(_pstMql, sSql.c_str(), sSql.length());
         }
@@ -306,7 +306,7 @@ void TC_Mysql::execute(const string& sSql)
             {
 				// 发现经常出现 MySQL server has gone away， 超时重试时先重连
 				connect();
-                TLOGERROR(string("[TC_Mysql::execute] ") << string(mysql_error(_pstMql))<< "! retry execute!"<<endl);
+                TLOG_ERROR(string("[TC_Mysql::execute] ") << string(mysql_error(_pstMql))<< "! retry execute!"<<endl);
                 iRet = mysql_real_query(_pstMql, sSql.c_str(), sSql.length());
             }
 		}
@@ -349,7 +349,7 @@ TC_Mysql::MysqlData TC_Mysql::queryRecord(const string& sSql)
 		int iErrno = mysql_errno(_pstMql);
 		if(iErrno == 2006)
         {
-            TLOGERROR(string("[TC_Mysql::queryRecord] retry connect!") << endl);
+            TLOG_ERROR(string("[TC_Mysql::queryRecord] retry connect!") << endl);
             connect();
             iRet = mysql_real_query(_pstMql, sSql.c_str(), sSql.length());
         }
@@ -363,7 +363,7 @@ TC_Mysql::MysqlData TC_Mysql::queryRecord(const string& sSql)
             {
 				// 发现经常出现 MySQL server has gone away， 超时重试时先重连
 				connect();
-                TLOGERROR(string("[TC_Mysql::queryRecord] ") << string(mysql_error(_pstMql))<< "! retry queryRecord!"<<endl);
+                TLOG_ERROR(string("[TC_Mysql::queryRecord] ") << string(mysql_error(_pstMql))<< "! retry queryRecord!"<<endl);
                 iRet = mysql_real_query(_pstMql, sSql.c_str(), sSql.length());
             }
 		}

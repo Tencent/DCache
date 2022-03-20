@@ -30,7 +30,7 @@ PropertyReapThread::~PropertyReapThread()
 
 void PropertyReapThread::terminate()
 {
-    TLOGDEBUG("PropertyReapThread::terminate");
+    TLOG_DEBUG("PropertyReapThread::terminate");
 
     _terminate = true;
 
@@ -43,7 +43,7 @@ void PropertyReapThread::terminate()
 
 void PropertyReapThread::run()
 {
-    TLOGDEBUG("PropertyReapThread::run REAP_INTERVAL:" << REAP_INTERVAL << "|begin ...");
+    TLOG_DEBUG("PropertyReapThread::run REAP_INTERVAL:" << REAP_INTERVAL << "|begin ...");
 
     const string &sClonePath = g_app.getClonePath();
     
@@ -62,7 +62,7 @@ void PropertyReapThread::run()
 
                 if(sFileName.length() != 12 || TC_Common::isdigit(sFileName) == false)
                 {
-                    TLOGERROR("PropertyReapThread::run invalid clone file:" << vCloneFiles[i] << endl);
+                    TLOG_ERROR("PropertyReapThread::run invalid clone file:" << vCloneFiles[i] << endl);
                     continue;
                 }
 
@@ -86,11 +86,11 @@ void PropertyReapThread::run()
         }
         catch (exception &ex)
         {
-            TLOGERROR("PropertyReapThread::run exception:" << ex.what() << endl);
+            TLOG_ERROR("PropertyReapThread::run exception:" << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("PropertyReapThread::run unkown exception" << endl);
+            TLOG_ERROR("PropertyReapThread::run unkown exception" << endl);
         }
 
         TC_ThreadLock::Lock lock(*this);
@@ -100,7 +100,7 @@ void PropertyReapThread::run()
 
 void PropertyReapThread::getPropertyMsg(const string &sCloneFile, PropertyMsg &mPropMsg)
 {
-    TLOGDEBUG("PropertyReapThread::getPropertyMsg sCloneFile:" << sCloneFile << "|begin ..." << endl);
+    TLOG_DEBUG("PropertyReapThread::getPropertyMsg sCloneFile:" << sCloneFile << "|begin ..." << endl);
 
     try
     {
@@ -108,7 +108,7 @@ void PropertyReapThread::getPropertyMsg(const string &sCloneFile, PropertyMsg &m
         size_t iSize = TC_File::getFileSize(sCloneFile);
         tHashMap.initStore(sCloneFile.c_str(), iSize);
         
-        TLOGDEBUG("PropertyReapThread::getPropertyMsg tHashMap:" << tHashMap.desc() << endl);
+        TLOG_DEBUG("PropertyReapThread::getPropertyMsg tHashMap:" << tHashMap.desc() << endl);
         
         size_t iCount = 0;
         
@@ -129,11 +129,11 @@ void PropertyReapThread::getPropertyMsg(const string &sCloneFile, PropertyMsg &m
             ++it;
         }
 
-        TLOGDEBUG("PropertyReapThread::getPropertyMsg get total size:" << iCount << endl);
+        TLOG_DEBUG("PropertyReapThread::getPropertyMsg get total size:" << iCount << endl);
     }
     catch (exception &ex)
     {
-        TLOGERROR("PropertyReapThread::getPropertyMsg exception:" << ex.what() << endl);
+        TLOG_ERROR("PropertyReapThread::getPropertyMsg exception:" << ex.what() << endl);
 
         string sMsg("PropertyReapThread::getPropertyMsg Clone File:");
         sMsg += sCloneFile;

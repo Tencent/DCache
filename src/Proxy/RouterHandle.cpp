@@ -24,7 +24,7 @@ void RouterHandle::init(TC_Config &conf)
 
     if (_routerEndpoints.empty())
     {
-        TLOGERROR("[RouterHandle::init] Endpoint of " << _routeObj << " is 0" << endl);
+        TLOG_ERROR("[RouterHandle::init] Endpoint of " << _routeObj << " is 0" << endl);
         TARS_NOTIFY_WARN(string("[RouterHandle::init] have no useful Endpoint of ") + _routeObj);
         _lastGetEndpointTime = 0;
     }
@@ -38,7 +38,7 @@ void RouterHandle::init(TC_Config &conf)
         _routerPrx = Application::getCommunicator()->stringToProxy<RouterPrx>(_routerProxy);
     }
 
-    TLOGDEBUG("RouterHandle::initialize Succ" << endl);
+    TLOG_DEBUG("RouterHandle::initialize Succ" << endl);
 }
 
 int RouterHandle::getRouterInfo(const string &moduleName, PackTable &packTable, bool needRetry)
@@ -48,7 +48,7 @@ int RouterHandle::getRouterInfo(const string &moduleName, PackTable &packTable, 
         RouterPrx routerPrx;
         if (getRouterPrx(routerPrx) != 0)
         {
-            TLOGERROR("[RouterHandle::getRouterInfo] have no useful end_point for " << _routeObj << endl);
+            TLOG_ERROR("[RouterHandle::getRouterInfo] have no useful end_point for " << _routeObj << endl);
             return -1;
         }
         bool bShouldRetry = false;
@@ -58,7 +58,7 @@ int RouterHandle::getRouterInfo(const string &moduleName, PackTable &packTable, 
 
             if (iRet != ROUTER_SUCC)
             {
-                TLOGERROR("[RouterHandle::getRouterInfo] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " for module: " << moduleName << " failed, ret = " << iRet << endl);
+                TLOG_ERROR("[RouterHandle::getRouterInfo] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " for module: " << moduleName << " failed, ret = " << iRet << endl);
                 if (iRet == ROUTER_SYS_ERR)
                 {
                     bShouldRetry = true;
@@ -71,7 +71,7 @@ int RouterHandle::getRouterInfo(const string &moduleName, PackTable &packTable, 
         }
         catch (const exception &ex)
         {
-            TLOGERROR("[RouterHandle::getRouterInfo] exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::getRouterInfo] exception:" << ex.what() << endl);
             bShouldRetry = true;
         }
 
@@ -110,7 +110,7 @@ int RouterHandle::getRouterVersion(const string &moduleName, int &version, bool 
         RouterPrx routerPrx;
         if (getRouterPrx(routerPrx) != 0)
         {
-            TLOGERROR("[RouterHandle::getRouterVersion] have no useful end_point for " << _routeObj << endl);
+            TLOG_ERROR("[RouterHandle::getRouterVersion] have no useful end_point for " << _routeObj << endl);
             return -1;
         }
         bool bShouldRetry = false;
@@ -120,7 +120,7 @@ int RouterHandle::getRouterVersion(const string &moduleName, int &version, bool 
 
             if (iRet < 0)
             {
-                TLOGERROR("[RouterHandle::getRouterVersion] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " for module: " << moduleName << " failed, ret = " << iRet << endl);
+                TLOG_ERROR("[RouterHandle::getRouterVersion] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " for module: " << moduleName << " failed, ret = " << iRet << endl);
                 if (iRet == ROUTER_SYS_ERR)
                 {
                     bShouldRetry = true;
@@ -134,7 +134,7 @@ int RouterHandle::getRouterVersion(const string &moduleName, int &version, bool 
         }
         catch (const exception &ex)
         {
-            TLOGERROR("[RouterHandle::getRouterVersion] exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::getRouterVersion] exception:" << ex.what() << endl);
             bShouldRetry = true;
         }
 
@@ -172,7 +172,7 @@ int RouterHandle::getRouterVersionBatch(const vector<string> &moduleList, map<st
         RouterPrx routerPrx;
         if (getRouterPrx(routerPrx) != 0)
         {
-            TLOGERROR("[RouterHandle::getRouterVersion] have no useful end_point for " << _routeObj << endl);
+            TLOG_ERROR("[RouterHandle::getRouterVersion] have no useful end_point for " << _routeObj << endl);
             return -1;
         }
         bool bShouldRetry = false;
@@ -182,7 +182,7 @@ int RouterHandle::getRouterVersionBatch(const vector<string> &moduleList, map<st
 
             if (iRet < 0)
             {
-                TLOGERROR("[RouterHandle::getRouterVersionBatch] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " failed, ret = " << iRet << endl);
+                TLOG_ERROR("[RouterHandle::getRouterVersionBatch] from " << _routeObj << "@" << routerPrx->tars_invoke_endpoint().getHost() << " failed, ret = " << iRet << endl);
                 if (iRet == ROUTER_SYS_ERR)
                 {
                     bShouldRetry = true;
@@ -195,7 +195,7 @@ int RouterHandle::getRouterVersionBatch(const vector<string> &moduleList, map<st
         }
         catch (const exception &ex)
         {
-            TLOGERROR("[RouterHandle::getRouterVersion] exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::getRouterVersion] exception:" << ex.what() << endl);
             bShouldRetry = true;
         }
 
@@ -236,7 +236,7 @@ int RouterHandle::reportSwitchGroup(const string &moduleName, const string &grou
         RouterPrx routerPrx;
         if (getRouterPrx(routerPrx) != 0)
         {
-            TLOGERROR("[RouterHandle::reportSwitchGroup] have no useful end_point for " << _routeObj << endl);
+            TLOG_ERROR("[RouterHandle::reportSwitchGroup] have no useful end_point for " << _routeObj << endl);
             return -1;
         }
         bool bShouldRetry = false;
@@ -247,7 +247,7 @@ int RouterHandle::reportSwitchGroup(const string &moduleName, const string &grou
         }
         catch (const exception &ex)
         {
-            TLOGERROR("[RouterHandle::reportSwitchGroup] exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::reportSwitchGroup] exception:" << ex.what() << endl);
             bShouldRetry = true;
         }
 
@@ -272,7 +272,7 @@ int RouterHandle::getModuleList(vector<string> &moduleList)
         RouterPrx routerPrx;
         if (getRouterPrx(routerPrx) != 0)
         {
-            TLOGERROR("[RouterHandle::getModuleList] have no useful end_point for " << _routeObj << endl);
+            TLOG_ERROR("[RouterHandle::getModuleList] have no useful end_point for " << _routeObj << endl);
             return -1;
         }
         bool bShouldRetry = false;
@@ -283,7 +283,7 @@ int RouterHandle::getModuleList(vector<string> &moduleList)
         }
         catch (const exception &ex)
         {
-            TLOGERROR("[RouterHandle::getModuleList] exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::getModuleList] exception:" << ex.what() << endl);
             bShouldRetry = true;
         }
 
@@ -360,7 +360,7 @@ int RouterHandle::updateRouterPrx(RouterPrx &routerPrx)
     _routerProxy = _routeObj + "@tcp -h " + _curEndpoint.getHost() + " -p " + TC_Common::tostr(_curEndpoint.getPort());
     _routerPrx = Application::getCommunicator()->stringToProxy<RouterPrx>(_routerProxy);
 
-    TLOGDEBUG(_curEndpoint.getHost() << ":" << _curEndpoint.getPort() << endl);
+    TLOG_DEBUG(_curEndpoint.getHost() << ":" << _curEndpoint.getPort() << endl);
 
     return 0;
 }

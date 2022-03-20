@@ -120,7 +120,7 @@ int CacheProxyFactory::getWCacheProxy(const string &moduleName,
     if (iRet != RouterTable::RET_SUCC)
     {
         // 如果通过key无法获取CacheServer的节点信息，则返回错误
-        TLOGERROR("CacheProxyFactory::getWCacheProxy can not locate key:" << key << endl);
+        TLOG_ERROR("CacheProxyFactory::getWCacheProxy can not locate key:" << key << endl);
         if (iRet == UnpackTable::RET_GROUP_READONLY)
         {
             return ET_READ_ONLY;
@@ -140,7 +140,7 @@ int CacheProxyFactory::getWCacheProxy(const string &moduleName,
     }
     catch (TarsException &ex)
     {
-        TLOGERROR("CacheProxyFactory::getWCacheProxy " << ex.what() << endl);
+        TLOG_ERROR("CacheProxyFactory::getWCacheProxy " << ex.what() << endl);
 
         return ET_SYS_ERR;
     }
@@ -193,7 +193,7 @@ int CacheProxyFactory::getCacheProxy(const string &moduleName,
     if (iRet != RouterTable::RET_SUCC)
     {
         // 如果通过key无法获取CacheServer的节点信息，则返回错误
-        TLOGERROR("CacheProxyFactory::getCacheProxy can not locate key:" << key << endl);
+        TLOG_ERROR("CacheProxyFactory::getCacheProxy can not locate key:" << key << endl);
 
         return ET_KEY_INVALID;
     }
@@ -207,7 +207,7 @@ int CacheProxyFactory::getCacheProxy(const string &moduleName,
     }
     catch (TarsException &ex)
     {
-        TLOGERROR("CacheProxyFactory::getCacheProxy " << ex.what() << endl);
+        TLOG_ERROR("CacheProxyFactory::getCacheProxy " << ex.what() << endl);
 
         return ET_SYS_ERR;
     }

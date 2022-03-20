@@ -28,7 +28,7 @@ void DoCheckTransThread::init(AdminProxyWrapperPtr adminProxy,
                               const string &reasonStr,
                               std::shared_ptr<DbHandle> dbHandle)
 {
-    TLOGDEBUG(" [DoCheckTransThread::init]"
+    TLOG_DEBUG(" [DoCheckTransThread::init]"
               << " begin " << endl);
 
     try
@@ -44,19 +44,19 @@ void DoCheckTransThread::init(AdminProxyWrapperPtr adminProxy,
     catch (TarsException &e)
     {
         cerr << "Tars exception: " << e.what() << endl;
-        TLOGDEBUG(" [DoCheckTransThread::init]"
+        TLOG_DEBUG(" [DoCheckTransThread::init]"
                   << " end with TarsException " << e.what() << endl);
         exit(-1);
     }
     catch (...)
     {
         cerr << "unkown error" << endl;
-        TLOGDEBUG(" [DoCheckTransThread::init]"
+        TLOG_DEBUG(" [DoCheckTransThread::init]"
                   << " end with unkown error " << endl);
         exit(-1);
     }
 
-    TLOGDEBUG(" [DoCheckTransThread::init]"
+    TLOG_DEBUG(" [DoCheckTransThread::init]"
               << " end " << endl);
 }
 
@@ -141,7 +141,7 @@ int DoCheckTransThread::doCheckTrans(const string &moduleName,
 
                 if (!iret.second)
                 {
-                    TLOGERROR(FILE_FUN << "_isCheckTransDown.insert() fail" << endl);
+                    TLOG_ERROR(FILE_FUN << "_isCheckTransDown.insert() fail" << endl);
                     return -1;
                 }
                 FDLOG("doCheck")
@@ -164,7 +164,7 @@ int DoCheckTransThread::doCheckTrans(const string &moduleName,
             //没入库成功
             if (iRetaddMirgrateInfo != 0)
             {
-                TLOGDEBUG(FILE_FUN << "|_dbHandle->addMirgrateInfo(" << strIp
+                TLOG_DEBUG(FILE_FUN << "|_dbHandle->addMirgrateInfo(" << strIp
                                    << " ) error get ret:" << iRet << endl);
 
                 TC_ThreadLock::Lock lock(lockForInsertCheckTrans);
@@ -190,7 +190,7 @@ int DoCheckTransThread::doCheckTrans(const string &moduleName,
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "[DoCheckTransThread::doCheckTrans] exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "[DoCheckTransThread::doCheckTrans] exception:" << ex.what() << endl);
         return -1;
     }
 
@@ -224,7 +224,7 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
         int iRet = _dbHandle->getAllServerInIp(serverIp, vAllServerInIp);
         if (iRet != 0)
         {
-            TLOGERROR("[DoCheckTransThread::checkMachineDown] getAllServerInIp error get ret:"
+            TLOG_ERROR("[DoCheckTransThread::checkMachineDown] getAllServerInIp error get ret:"
                       << iRet << endl);
             return -1;
         }
@@ -244,13 +244,13 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
                 // Find key word "time out" in resultStr
                 if (find_substr(resultStr, "TimeOut"))
                 {
-                    TLOGERROR("[DoCheckTransThread::checkMachineDown] getserverstate TimeOut! ret:"
+                    TLOG_ERROR("[DoCheckTransThread::checkMachineDown] getserverstate TimeOut! ret:"
                               << Ret << endl);
                     count++;
                 }
                 else
                 {
-                    TLOGERROR("[DoCheckTransThread::checkMachineDown] getserverstate error! ret:"
+                    TLOG_ERROR("[DoCheckTransThread::checkMachineDown] getserverstate error! ret:"
                               << Ret << endl);
                     return -1;
                 }
@@ -258,7 +258,7 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
 
             if (state.settingStateInReg == "active" && state.presentStateInReg == "active")
             {
-                TLOGDEBUG("[DoCheckTransThread::checkMachineDown]in ip:"
+                TLOG_DEBUG("[DoCheckTransThread::checkMachineDown]in ip:"
                           << serverIp << ",server:" << vAllServerInIp[si]
                           << " is active/active. 0 returned.\n");
                 return 0;  // false
@@ -282,13 +282,13 @@ int DoCheckTransThread::checkMachineDown(const string &serverIp)
         }
         if (count > 0)
         {
-            TLOGDEBUG("[DoCheckTransThread::checkMachineDown]ip:" << serverIp << " is down \n");
+            TLOG_DEBUG("[DoCheckTransThread::checkMachineDown]ip:" << serverIp << " is down \n");
             return 1;
         }
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "exception:" << ex.what() << endl);
         return -2;
     }
 
@@ -319,7 +319,7 @@ void SwitchThread::terminate()
     TC_ThreadLock::Lock sync(*this);
     _terminate = true;
     notifyAll();
-    TLOGDEBUG(FILE_FUN << "DoSwitchThread  terminate() succ" << endl);
+    TLOG_DEBUG(FILE_FUN << "DoSwitchThread  terminate() succ" << endl);
 }
 
 void SwitchThread::init(AdminProxyWrapperPtr adminProxy, std::shared_ptr<DbHandle> dbHandle)
@@ -356,7 +356,7 @@ void SwitchThread::init(AdminProxyWrapperPtr adminProxy, std::shared_ptr<DbHandl
         exit(-1);
     }
 
-    TLOGDEBUG("init SwitchThread succ!" << endl);
+    TLOG_DEBUG("init SwitchThread succ!" << endl);
 }
 
 void SwitchThread::run()
@@ -383,7 +383,7 @@ void SwitchThread::run()
 //        {
 //            if (lastType == ROUTER_MASTER)
 //            {
-//                TLOGDEBUG(FILE_FUN << "downgrade from master to slave" << endl);
+//                TLOG_DEBUG(FILE_FUN << "downgrade from master to slave" << endl);
 //                downgrade();
 //            }
 //            lastType = ROUTER_SLAVE;
@@ -398,12 +398,12 @@ void SwitchThread::run()
 //            int rc = reloadRouter();
 //            if (rc != 0)
 //            {
-//                TLOGERROR(FILE_FUN << "SwitchThread::run reloadRouter error:" << rc << endl);
+//                TLOG_ERROR(FILE_FUN << "SwitchThread::run reloadRouter error:" << rc << endl);
 //                TC_ThreadLock::Lock sync(*this);
 //                timedWait(1000);
 //                continue;
 //            }
-//            TLOGDEBUG(FILE_FUN << "reloadRouter succ, server change to master" << endl);
+//            TLOG_DEBUG(FILE_FUN << "reloadRouter succ, server change to master" << endl);
 //            lastType = ROUTER_MASTER;
 //        }
 
@@ -418,7 +418,7 @@ void SwitchThread::run()
 
         g_app.removeFinishedSwitchThreads();
 
-        TLOGDEBUG(FILE_FUN << "before _doCheckTransThreads size:" << _doCheckTransThreads.size()
+        TLOG_DEBUG(FILE_FUN << "before _doCheckTransThreads size:" << _doCheckTransThreads.size()
                            << endl);
         vector<DoCheckTransThreadPtr>::iterator it2 = _doCheckTransThreads.begin();
         while (it2 != _doCheckTransThreads.end())
@@ -430,7 +430,7 @@ void SwitchThread::run()
             else
                 it2++;
         }
-        TLOGDEBUG(FILE_FUN << "after _doCheckTransThreads size:" << _doCheckTransThreads.size()
+        TLOG_DEBUG(FILE_FUN << "after _doCheckTransThreads size:" << _doCheckTransThreads.size()
                            << endl);
     }
 }
@@ -445,13 +445,13 @@ int SwitchThread::reloadRouter()
         if (rc == 0)
         {
             os << "reload router ok!" << endl;
-            TLOGDEBUG(FILE_FUN << "doLoadSwitcInfo() now" << endl);
+            TLOG_DEBUG(FILE_FUN << "doLoadSwitcInfo() now" << endl);
 
             if (g_app.switchingModuleNum() == 0)
             {
                 // TC_ThreadLock::Lock lock1(lockForHeartBeat);
                 _dbHandle->loadSwitchInfo();
-                TLOGDEBUG(FILE_FUN << "doLoadSwitcInfo() end" << endl);
+                TLOG_DEBUG(FILE_FUN << "doLoadSwitcInfo() end" << endl);
             }
             return 0;
         }
@@ -466,7 +466,7 @@ int SwitchThread::reloadRouter()
             TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
         }
 
-        TLOGDEBUG(FILE_FUN << os.str() << endl);
+        TLOG_DEBUG(FILE_FUN << os.str() << endl);
         return rc;
     }
     catch (TarsException &e)
@@ -483,7 +483,7 @@ int SwitchThread::reloadRouter()
     }
 
     TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
-    TLOGDEBUG(FILE_FUN << os.str() << endl);
+    TLOG_DEBUG(FILE_FUN << os.str() << endl);
     return -1;
 }
 
@@ -955,7 +955,7 @@ int SwitchThread::checkServerSettingState(const string &serverName)
 
         if ((activeEndPoint.size() > 0) && (inactiveEndPoint.size() == 0))
         {
-            TLOGERROR("[SwitchThread::checkServerSettingState] server is active! serverName:"
+            TLOG_ERROR("[SwitchThread::checkServerSettingState] server is active! serverName:"
                       << serverName << endl);
             return -1;
         }
@@ -970,7 +970,7 @@ int SwitchThread::checkServerSettingState(const string &serverName)
             int Ret =
                 _adminProxy->getServerState("DCache", serverName.substr(7), sIp, state, resultStr);
 
-            TLOGERROR("[SwitchThread::checkServerSettingState] state.settingStateInReg:"
+            TLOG_ERROR("[SwitchThread::checkServerSettingState] state.settingStateInReg:"
                       << state.settingStateInReg << endl);
 
             if ((Ret == 0) && (state.settingStateInReg == "inactive"))
@@ -984,7 +984,7 @@ int SwitchThread::checkServerSettingState(const string &serverName)
             }
             else if (Ret != 0)
             {  //获取服务状态出错
-                TLOGERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
+                TLOG_ERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
                           << Ret << endl);
                 return -1;
             }
@@ -996,7 +996,7 @@ int SwitchThread::checkServerSettingState(const string &serverName)
         else
         {
             //主控找不到服务的ip信息
-            TLOGERROR(
+            TLOG_ERROR(
                 "[SwitchThread::checkServerSettingState] some thing wrong! activeEndPoint.size():"
                 << activeEndPoint.size() << " inactiveEndPoint.size():" << inactiveEndPoint.size()
                 << " serverName:" << serverName << endl);
@@ -1005,7 +1005,7 @@ int SwitchThread::checkServerSettingState(const string &serverName)
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "[SwitchThread::checkServerSettingState] exception:" << ex.what()
+        TLOG_ERROR(FILE_FUN << "[SwitchThread::checkServerSettingState] exception:" << ex.what()
                            << endl);
         return -1;
     }
@@ -1026,7 +1026,7 @@ int SwitchThread::checkMachineDown(const string &serverName, const string &serve
         int iRet = _dbHandle->getAllServerInIp(serverIp, vAllServerInIp);
         if (iRet != 0)
         {
-            TLOGERROR("[SwitchThread::checkMachineDown] getAllServerInIp error get ret:" << iRet
+            TLOG_ERROR("[SwitchThread::checkMachineDown] getAllServerInIp error get ret:" << iRet
                                                                                          << endl);
             FDLOG("migrate") << "[SwitchThread::checkMachineDown] getAllServerInIp error get ret:"
                              << iRet << endl;
@@ -1049,14 +1049,14 @@ int SwitchThread::checkMachineDown(const string &serverName, const string &serve
                                                 resultStr);  //不用主控调服务状态，直接调用服务
                 if (Ret != 0)
                 {  //获取服务状态出错
-                    TLOGERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
+                    TLOG_ERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
                               << Ret << endl);
                     return -1;
                 }
 
                 if (state.settingStateInReg == "active" && state.presentStateInReg == "active")
                 {
-                    TLOGDEBUG("[SwitchThread::checkMachineDown]in ip:"
+                    TLOG_DEBUG("[SwitchThread::checkMachineDown]in ip:"
                               << serverIp << ",server:" << vAllServerInIp[si]
                               << " is active/active. 0 returned.\n");
                     FDLOG("migrate")
@@ -1071,7 +1071,7 @@ int SwitchThread::checkMachineDown(const string &serverName, const string &serve
             }
             catch (exception &ex)
             {
-                TLOGERROR(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp
+                TLOG_ERROR(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp
                                    << ",server:" << vAllServerInIp[si] << " with exception"
                                    << endl);
                 FDLOG("migrate") << "[SwitchThread::checkMachineDown]ip:" << serverIp
@@ -1081,7 +1081,7 @@ int SwitchThread::checkMachineDown(const string &serverName, const string &serve
         }
         if (count > 0)
         {
-            TLOGDEBUG(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down"
+            TLOG_DEBUG(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down"
                                << endl);
             FDLOG("migrate") << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down \n";
             return 1;
@@ -1089,7 +1089,7 @@ int SwitchThread::checkMachineDown(const string &serverName, const string &serve
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down"
+        TLOG_ERROR(FILE_FUN << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down"
                            << endl);
         FDLOG("migrate") << "[SwitchThread::checkMachineDown]ip:" << serverIp << " is down \n";
         return -2;
@@ -1155,7 +1155,7 @@ int SwitchThread::doCheckTrans(const string &moduleName,
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "[SwitchThread::doCheckTrans] exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "[SwitchThread::doCheckTrans] exception:" << ex.what() << endl);
         FDLOG("migrate") << "[SwitchThread::doCheckTrans] exception:" << ex.what() << endl;
         return -1;
     }
@@ -1182,7 +1182,7 @@ DoSwitchThread::DoSwitchThread(AdminProxyWrapperPtr adminProxy,
 
     if (_locator.find_first_not_of('@') == string::npos)
     {
-        TLOGERROR(FILE_FUN << "[Locator is not valid:" << _locator << "]" << endl);
+        TLOG_ERROR(FILE_FUN << "[Locator is not valid:" << _locator << "]" << endl);
         throw TarsRegistryException("locator is not valid:" + _locator);
     }
 
@@ -1367,7 +1367,7 @@ int DoSwitchThread::slaveReady(const string &moduleName, const string &serverNam
         int iRet = pRouterClientPrx->isReadyForSwitch(moduleName, bReady);
         if (iRet != 0)
         {
-            TLOGERROR(FILE_FUN << "DoSwitchThread::" << __FUNCTION__
+            TLOG_ERROR(FILE_FUN << "DoSwitchThread::" << __FUNCTION__
                                << " invoke error:" << serverName << " ret:" << iRet << endl);
             return -1;
         }
@@ -1375,20 +1375,20 @@ int DoSwitchThread::slaveReady(const string &moduleName, const string &serverNam
     }
     catch (const TarsException &ex)
     {
-        TLOGERROR(FILE_FUN << " exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << " exception:" << ex.what() << endl);
         try
         {
             int iRet = pRouterClientPrx->isReadyForSwitch(moduleName, bReady);
             if (iRet != 0)
             {
-                TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
+                TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
                 return -1;
             }
             return 0;
         }
         catch (const TarsException &ex)
         {
-            TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+            TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
         }
     }
     return -1;
@@ -1548,7 +1548,7 @@ void DoSwitchThread::doSwitchMaterSlave(const SwitchWork &switchWork)
         }
 
         //通知主机降级，不关心是否成功，
-        TLOGDEBUG(FILE_FUN << "notify master downgrade." << endl);
+        TLOG_DEBUG(FILE_FUN << "notify master downgrade." << endl);
         notifyMasterDowngrade(moduleName, masterName);
 
         //等待30s，目的是等待主机降级
@@ -1643,14 +1643,14 @@ int DoSwitchThread::notifyMasterDowngrade(const string &moduleName, const string
     }
     catch (const TarsException &ex)
     {
-        TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
         try
         {
             pRouterClientPrx->async_notifyMasterDowngrade(NULL, moduleName);
         }
         catch (const TarsException &ex)
         {
-            TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+            TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
         }
     }
 
@@ -1667,7 +1667,7 @@ int DoSwitchThread::setRouter4Switch(const string &moduleName,
         _dbHandle->getPackTable4SwitchRW(moduleName, groupName, oldMaster, newMaster, packTable);
     if (iRet != 0)
     {
-        TLOGERROR(FILE_FUN << " getPackTable4SwitchRW error:" << moduleName << " ret:" << iRet
+        TLOG_ERROR(FILE_FUN << " getPackTable4SwitchRW error:" << moduleName << " ret:" << iRet
                            << endl);
         return -1;
     }
@@ -1684,38 +1684,38 @@ int DoSwitchThread::setRouter4Switch(const string &moduleName,
             iRet = pRouterClientPrx->setRouterInfoForSwitch(moduleName, packTable);
             if (iRet != 0)
             {
-                TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
+                TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
                 return -1;
             }
         }
         catch (exception &ex)
         {
-            TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+            TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
             try
             {
                 iRet = pRouterClientPrx->setRouterInfoForSwitch(moduleName, packTable);
                 if (iRet != 0)
                 {
-                    TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet
+                    TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet
                                        << endl);
                     return -1;
                 }
             }
             catch (exception &ex)
             {
-                TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what()
+                TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what()
                                    << endl);
                 return -1;
             }
             catch (...)
             {
-                TLOGERROR(FILE_FUN << " invoke " << serverName << " unknow exception" << endl);
+                TLOG_ERROR(FILE_FUN << " invoke " << serverName << " unknow exception" << endl);
                 return -1;
             }
         }
         catch (...)
         {
-            TLOGDEBUG(FILE_FUN << " invoke " << serverName << " unknow exception" << endl);
+            TLOG_DEBUG(FILE_FUN << " invoke " << serverName << " unknow exception" << endl);
             return -1;
         }
     }
@@ -1732,13 +1732,13 @@ int DoSwitchThread::setRouter4Switch(const string &moduleName,
             iRet = pRouterClientPrx->setRouterInfoForSwitch(moduleName, packTable);
             if (iRet != 0)
             {
-                TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet
+                TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet
                                    << "| doesn't matter." << endl);
             }
         }
         catch (const TarsException &ex)
         {
-            TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what()
+            TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what()
                                << "| doesn't matter." << endl);
         }
         return 0;
@@ -1756,27 +1756,27 @@ int DoSwitchThread::disconFromMaster(const string &moduleName, const string &ser
         int iRet = pRouterClientPrx->disconnectFromMaster(moduleName);
         if (iRet != 0)
         {
-            TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
+            TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
             return -1;
         }
         return 0;
     }
     catch (const TarsException &ex)
     {
-        TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
         try
         {
             int iRet = pRouterClientPrx->disconnectFromMaster(moduleName);
             if (iRet != 0)
             {
-                TLOGERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
+                TLOG_ERROR(FILE_FUN << " invoke error:" << serverName << " ret:" << iRet << endl);
                 return -1;
             }
             return 0;
         }
         catch (const TarsException &ex)
         {
-            TLOGERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
+            TLOG_ERROR(FILE_FUN << " invoke " << serverName << " exception:" << ex.what() << endl);
         }
     }
     return -1;
@@ -1796,7 +1796,7 @@ int DoSwitchThread::checkServerSettingState(const string &serverName)
 
         if ((activeEndPoint.size() > 0) && (inactiveEndPoint.size() == 0))
         {
-            TLOGERROR("[SwitchThread::checkServerSettingState] server is active! serverName:"
+            TLOG_ERROR("[SwitchThread::checkServerSettingState] server is active! serverName:"
                       << serverName << endl);
             return -1;
         }
@@ -1811,7 +1811,7 @@ int DoSwitchThread::checkServerSettingState(const string &serverName)
             int Ret =
                 _adminProxy->getServerState("DCache", serverName.substr(7), sIp, state, resultStr);
 
-            TLOGERROR("[SwitchThread::checkServerSettingState] state.settingStateInReg:"
+            TLOG_ERROR("[SwitchThread::checkServerSettingState] state.settingStateInReg:"
                       << state.settingStateInReg << endl);
 
             if ((Ret == 0) && (state.settingStateInReg == "inactive"))
@@ -1824,7 +1824,7 @@ int DoSwitchThread::checkServerSettingState(const string &serverName)
             }
             else if (Ret != 0 && Ret != 1003)
             {  //获取服务状态出错
-                TLOGERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
+                TLOG_ERROR("[SwitchThread::checkServerSettingState] get server state error! ret:"
                           << Ret << endl);
                 return -1;
             }
@@ -1836,7 +1836,7 @@ int DoSwitchThread::checkServerSettingState(const string &serverName)
         else
         {
             //主控找不到服务的ip信息
-            TLOGERROR(
+            TLOG_ERROR(
                 "[SwitchThread::checkServerSettingState] some thing wrong! activeEndPoint.size():"
                 << activeEndPoint.size() << " inactiveEndPoint.size():" << inactiveEndPoint.size()
                 << " serverName:" << serverName << endl);
@@ -1845,7 +1845,7 @@ int DoSwitchThread::checkServerSettingState(const string &serverName)
     }
     catch (exception &ex)
     {
-        TLOGERROR(FILE_FUN << "[SwitchThread::checkServerSettingState] exception:" << ex.what()
+        TLOG_ERROR(FILE_FUN << "[SwitchThread::checkServerSettingState] exception:" << ex.what()
                            << endl);
         return -1;
     }
@@ -1973,7 +1973,7 @@ void DoSwitchThread::doSwitchOver(const string &moduleName,
                 transferMutextCond.find(moduleName);
             if (_it != transferMutextCond.end())
             {
-                TLOGDEBUG(FILE_FUN
+                TLOG_DEBUG(FILE_FUN
                           << "[DoSwitchThread::doSwitchOver] weakup the waiting transfering thread."
                           << endl);
                 map<string, TransferMutexCondPtr> &_mMutexCond = _it->second;

@@ -32,7 +32,7 @@ ProxyImp::ProxyImp()
 
 void ProxyImp::initialize()
 {
-    TLOGDEBUG("begin to initialize ProxyImp servant ..." << endl);
+    TLOG_DEBUG("begin to initialize ProxyImp servant ..." << endl);
 
     // 载入配置文件
     TC_Config conf;
@@ -76,7 +76,7 @@ int ProxyImp::getKV(const GetKVReq &req, GetKVRsp &rsp, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &key = req.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
 
     if (_printReadLog && _printLogModules.count(req.moduleName))
     {
@@ -85,7 +85,7 @@ int ProxyImp::getKV(const GetKVReq &req, GetKVRsp &rsp, TarsCurrentPtr current)
 
     if (req.keyItem.empty())
     {
-        TLOGERROR("ProxyImp::getKV key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getKV key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -120,7 +120,7 @@ int ProxyImp::getKV(const GetKVReq &req, GetKVRsp &rsp, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("ProxyImp::getKV async call exception:" << ex.what() << "|module:" << req.moduleName << "|key:" << req.keyItem << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getKV async call exception:" << ex.what() << "|module:" << req.moduleName << "|key:" << req.keyItem << "|master:" << current->getIp() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -132,7 +132,7 @@ int ProxyImp::getKVBatch(const GetKVBatchReq &req, GetKVBatchRsp &rsp, TarsCurre
     const vector<string> &keys = req.keys;
     const string &moduleName = req.moduleName;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << keys.size() << " keys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << keys.size() << " keys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -150,7 +150,7 @@ int ProxyImp::getKVBatch(const GetKVBatchReq &req, GetKVBatchRsp &rsp, TarsCurre
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::getKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::getKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -170,7 +170,7 @@ int ProxyImp::getKVBatch(const GetKVBatchReq &req, GetKVBatchRsp &rsp, TarsCurre
         string key = keys[i];
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -203,11 +203,11 @@ int ProxyImp::getKVBatch(const GetKVBatchReq &req, GetKVBatchRsp &rsp, TarsCurre
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMKVBatch] exception:" << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatch] exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getStringBatch] UnkownException" << endl);
+        TLOG_ERROR("[ProxyImp::getStringBatch] UnkownException" << endl);
     }
 
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
@@ -225,7 +225,7 @@ int ProxyImp::checkKey(const CheckKeyReq &req, CheckKeyRsp &rsp, TarsCurrentPtr 
     const string moduleName = req.moduleName;
     const vector<string> &keys = req.keys;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << keys.size() << " keys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << keys.size() << " keys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -242,7 +242,7 @@ int ProxyImp::checkKey(const CheckKeyReq &req, CheckKeyRsp &rsp, TarsCurrentPtr 
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::checkKey] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::checkKey] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -261,7 +261,7 @@ int ProxyImp::checkKey(const CheckKeyReq &req, CheckKeyRsp &rsp, TarsCurrentPtr 
         string key = keys[i];
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getCacheProxy(moduleName, key, objectName, prxCache, idcArea);
@@ -292,11 +292,11 @@ int ProxyImp::checkKey(const CheckKeyReq &req, CheckKeyRsp &rsp, TarsCurrentPtr 
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::checkKey] exception:" << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::checkKey] exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::checkKey] UnkownException" << endl);
+        TLOG_ERROR("[ProxyImp::checkKey] UnkownException" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误）时，提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     CacheBatchCallParam<CheckKeyRsp> *tmpParam = (CacheBatchCallParam<CheckKeyRsp> *)(pParam.get());
@@ -313,7 +313,7 @@ int ProxyImp::insertKV(const SetKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &key = req.data.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (context.count(CONTEXT_CALLER))
@@ -327,7 +327,7 @@ int ProxyImp::insertKV(const SetKVReq &req, TarsCurrentPtr current)
 
     if (key.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -347,7 +347,7 @@ int ProxyImp::insertKV(const SetKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::insertKV] async_insertKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::insertKV] async_insertKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -359,7 +359,7 @@ int ProxyImp::setKV(const SetKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &key = req.data.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -373,7 +373,7 @@ int ProxyImp::setKV(const SetKVReq &req, TarsCurrentPtr current)
 
     if (key.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -393,7 +393,7 @@ int ProxyImp::setKV(const SetKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::setKV] async_setKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::setKV] async_setKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -420,7 +420,7 @@ int ProxyImp::setKVBatch(const SetKVBatchReq &req, SetKVBatchRsp &rsp, TarsCurre
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::setKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::setKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -433,7 +433,7 @@ int ProxyImp::setKVBatch(const SetKVBatchReq &req, SetKVBatchRsp &rsp, TarsCurre
         string key = keyValue[i].keyItem;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxWCache);
@@ -475,11 +475,11 @@ int ProxyImp::setKVBatch(const SetKVBatchReq &req, SetKVBatchRsp &rsp, TarsCurre
         }
         catch (exception &e)
         {
-            TLOGERROR("[ProxyImp::setKVBatchBatch] exception:" << e.what() << endl);
+            TLOG_ERROR("[ProxyImp::setKVBatchBatch] exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::setKVBatchBatch] UnkownException" << endl);
+            TLOG_ERROR("[ProxyImp::setKVBatchBatch] UnkownException" << endl);
         }
 
         SetKVBatchRsp tempRsp;
@@ -504,7 +504,7 @@ int ProxyImp::updateKV(const UpdateKVReq &req, UpdateKVRsp &rsp, TarsCurrentPtr 
     const string &moduleName = req.moduleName;
     const string &key = req.data.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (context.count(CONTEXT_CALLER))
@@ -518,7 +518,7 @@ int ProxyImp::updateKV(const UpdateKVReq &req, UpdateKVRsp &rsp, TarsCurrentPtr 
 
     if (key.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -538,7 +538,7 @@ int ProxyImp::updateKV(const UpdateKVReq &req, UpdateKVRsp &rsp, TarsCurrentPtr 
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::updateStringEx] async_setStringEx exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::updateStringEx] async_setStringEx exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -550,7 +550,7 @@ int ProxyImp::eraseKV(const RemoveKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &key = req.keyInfo.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", version = " << req.keyInfo.version << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", version = " << req.keyInfo.version << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (context.count(CONTEXT_CALLER))
@@ -564,7 +564,7 @@ int ProxyImp::eraseKV(const RemoveKVReq &req, TarsCurrentPtr current)
 
     if (key.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -584,7 +584,7 @@ int ProxyImp::eraseKV(const RemoveKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::eraseString] async_eraseKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::eraseString] async_eraseKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -611,7 +611,7 @@ int ProxyImp::eraseKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, T
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::eraseKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::eraseKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -624,7 +624,7 @@ int ProxyImp::eraseKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, T
         string key = keys[i].keyItem;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxWCache);
@@ -665,11 +665,11 @@ int ProxyImp::eraseKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, T
         }
         catch (exception &e)
         {
-            TLOGERROR("[ProxyImp::eraseKVBatch] exception:" << e.what() << endl);
+            TLOG_ERROR("[ProxyImp::eraseKVBatch] exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::eraseKVBatch] UnkownException" << endl);
+            TLOG_ERROR("[ProxyImp::eraseKVBatch] UnkownException" << endl);
         }
 
         RemoveKVBatchRsp tempRsp;
@@ -693,7 +693,7 @@ int ProxyImp::delKV(const RemoveKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &key = req.keyInfo.keyItem;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", version = " << req.keyInfo.version << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", key = " << key << ", version = " << req.keyInfo.version << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (context.count(CONTEXT_CALLER))
@@ -707,7 +707,7 @@ int ProxyImp::delKV(const RemoveKVReq &req, TarsCurrentPtr current)
 
     if (key.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -727,7 +727,7 @@ int ProxyImp::delKV(const RemoveKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::delString] async_delKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::delString] async_delKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -754,7 +754,7 @@ int ProxyImp::delKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, Tar
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::delKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::delKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -767,7 +767,7 @@ int ProxyImp::delKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, Tar
         string key = keys[i].keyItem;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxWCache);
@@ -803,11 +803,11 @@ int ProxyImp::delKVBatch(const RemoveKVBatchReq &req, RemoveKVBatchRsp &rsp, Tar
         }
         catch (exception &e)
         {
-            TLOGERROR("[ProxyImp::delKVBatch] exception:" << e.what() << endl);
+            TLOG_ERROR("[ProxyImp::delKVBatch] exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::delKVBatch] UnkownException" << endl);
+            TLOG_ERROR("[ProxyImp::delKVBatch] UnkownException" << endl);
         }
 
         RemoveKVBatchRsp tempRsp;
@@ -833,7 +833,7 @@ int ProxyImp::getMKV(const GetMKVReq &req, GetMKVRsp &rsp, TarsCurrentPtr curren
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -847,7 +847,7 @@ int ProxyImp::getMKV(const GetMKVReq &req, GetMKVRsp &rsp, TarsCurrentPtr curren
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getMKV mainKey is empty, module:" << moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getMKV mainKey is empty, module:" << moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -874,7 +874,7 @@ int ProxyImp::getMKV(const GetMKVReq &req, GetMKVRsp &rsp, TarsCurrentPtr curren
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMKV] async_getMKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMKV] async_getMKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -886,7 +886,7 @@ int ProxyImp::getMKVBatch(const MKVBatchReq &req, MKVBatchRsp &rsp, TarsCurrentP
     const string &moduleName = req.moduleName;
     const vector<string> &vtMainKey = req.mainKeys;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtMainKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtMainKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -903,7 +903,7 @@ int ProxyImp::getMKVBatch(const MKVBatchReq &req, MKVBatchRsp &rsp, TarsCurrentP
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::getMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -923,7 +923,7 @@ int ProxyImp::getMKVBatch(const MKVBatchReq &req, MKVBatchRsp &rsp, TarsCurrentP
         string key = vtMainKey[i];
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -957,11 +957,11 @@ int ProxyImp::getMKVBatch(const MKVBatchReq &req, MKVBatchRsp &rsp, TarsCurrentP
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMKVBatch] exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatch] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getMKVBatch] unkown exception" << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatch] unkown exception" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     MKCacheBatchCallParam<MKVBatchRsp> *tmpParam = (MKCacheBatchCallParam<MKVBatchRsp> *)(pParam.get());
@@ -990,7 +990,7 @@ int ProxyImp::getMUKBatch(const MUKBatchReq &req, MUKBatchRsp &rsp, TarsCurrentP
     const string &moduleName = req.moduleName;
     const vector<Record> &vtMUKey = req.primaryKeys;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtMUKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtMUKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1007,7 +1007,7 @@ int ProxyImp::getMUKBatch(const MUKBatchReq &req, MUKBatchRsp &rsp, TarsCurrentP
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::getMUKBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::getMUKBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1028,7 +1028,7 @@ int ProxyImp::getMUKBatch(const MUKBatchReq &req, MUKBatchRsp &rsp, TarsCurrentP
         string key = vtMUKey[i].mainKey;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -1061,11 +1061,11 @@ int ProxyImp::getMUKBatch(const MUKBatchReq &req, MUKBatchRsp &rsp, TarsCurrentP
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMUKBatch] exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMUKBatch] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getMUKBatch] unkown exception" << endl);
+        TLOG_ERROR("[ProxyImp::getMUKBatch] unkown exception" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     MKCacheBatchCallParam<MUKBatchRsp> *tmpParam = (MKCacheBatchCallParam<MUKBatchRsp> *)(pParam.get());
@@ -1082,7 +1082,7 @@ int ProxyImp::getMKVBatchEx(const MKVBatchExReq &req, MKVBatchExRsp &rsp, TarsCu
     const string &moduleName = req.moduleName;
     const vector<MainKeyCondition> &vtKey = req.cond;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtKey.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1099,7 +1099,7 @@ int ProxyImp::getMKVBatchEx(const MKVBatchExReq &req, MKVBatchExRsp &rsp, TarsCu
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::getMKVBatchEx] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatchEx] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1120,7 +1120,7 @@ int ProxyImp::getMKVBatchEx(const MKVBatchExReq &req, MKVBatchExRsp &rsp, TarsCu
         string key = vtKey[i].mainKey;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
 
@@ -1152,11 +1152,11 @@ int ProxyImp::getMKVBatchEx(const MKVBatchExReq &req, MKVBatchExRsp &rsp, TarsCu
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMKVBatchEx] exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatchEx] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getMKVBatchEx] unkown exception" << endl);
+        TLOG_ERROR("[ProxyImp::getMKVBatchEx] unkown exception" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     MKCacheBatchCallParam<MKVBatchExRsp> *tmpParam = (MKCacheBatchCallParam<MKVBatchExRsp> *)(pParam.get());
@@ -1173,7 +1173,7 @@ int ProxyImp::insertMKV(const InsertMKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.data.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1187,7 +1187,7 @@ int ProxyImp::insertMKV(const InsertMKVReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::insertMKV mainKey is empty.|moduleName=" << moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::insertMKV mainKey is empty.|moduleName=" << moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1207,7 +1207,7 @@ int ProxyImp::insertMKV(const InsertMKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::insertMKV] async_insertMKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::insertMKV] async_insertMKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1219,7 +1219,7 @@ int ProxyImp::updateMKVBatch(const UpdateMKVBatchReq &req, MKVBatchWriteRsp &rsp
     const string moduleName = req.moduleName;
     const vector<UpdateKeyValue> &vtReqData = req.data;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1236,7 +1236,7 @@ int ProxyImp::updateMKVBatch(const UpdateMKVBatchReq &req, MKVBatchWriteRsp &rsp
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::updateMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::updateMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1251,13 +1251,13 @@ int ProxyImp::updateMKVBatch(const UpdateMKVBatchReq &req, MKVBatchWriteRsp &rsp
         string key = vtReqData[i].mainKey;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxMKWCache);
         if (ret != ET_SUCC)
         {
-            TLOGERROR("can't locate ServerInfo, invalid key: " << key << endl);
+            TLOG_ERROR("can't locate ServerInfo, invalid key: " << key << endl);
             rsp.rspData[i] = ET_KEY_INVALID;
             continue;
         }
@@ -1294,11 +1294,11 @@ int ProxyImp::updateMKVBatch(const UpdateMKVBatchReq &req, MKVBatchWriteRsp &rsp
         }
         catch (exception &ex)
         {
-            TLOGERROR("[ProxyImp::updateMKVBatch] exception: " << ex.what() << endl);
+            TLOG_ERROR("[ProxyImp::updateMKVBatch] exception: " << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::updateMKVBatch] unkown exception" << endl);
+            TLOG_ERROR("[ProxyImp::updateMKVBatch] unkown exception" << endl);
         }
 
         MKVBatchWriteRsp tempRsp;
@@ -1325,7 +1325,7 @@ int ProxyImp::insertMKVBatch(const InsertMKVBatchReq &req, MKVBatchWriteRsp &rsp
     const string moduleName = req.moduleName;
     const vector<InsertKeyValue> &vtReqData = req.data;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1342,7 +1342,7 @@ int ProxyImp::insertMKVBatch(const InsertMKVBatchReq &req, MKVBatchWriteRsp &rsp
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::insertMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::insertMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1356,13 +1356,13 @@ int ProxyImp::insertMKVBatch(const InsertMKVBatchReq &req, MKVBatchWriteRsp &rsp
         string key = vtReqData[i].mainKey;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxMKWCache);
         if (ret != ET_SUCC)
         {
-            TLOGERROR("can't locate ServerInfo, invalid key: " << key << endl);
+            TLOG_ERROR("can't locate ServerInfo, invalid key: " << key << endl);
             rsp.rspData[i] = ET_KEY_INVALID;
             continue;
         }
@@ -1402,11 +1402,11 @@ int ProxyImp::insertMKVBatch(const InsertMKVBatchReq &req, MKVBatchWriteRsp &rsp
         }
         catch (exception &ex)
         {
-            TLOGERROR("[ProxyImp::insertMKVBatch] exception: " << ex.what() << endl);
+            TLOG_ERROR("[ProxyImp::insertMKVBatch] exception: " << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::insertMKVBatch] unkown exception" << endl);
+            TLOG_ERROR("[ProxyImp::insertMKVBatch] unkown exception" << endl);
         }
 
         MKVBatchWriteRsp tempRsp;
@@ -1433,7 +1433,7 @@ int ProxyImp::updateMKV(const UpdateMKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1447,7 +1447,7 @@ int ProxyImp::updateMKV(const UpdateMKVReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1467,7 +1467,7 @@ int ProxyImp::updateMKV(const UpdateMKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::updateMKV] async_updateMKV exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::updateMKV] async_updateMKV exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1479,7 +1479,7 @@ int ProxyImp::updateMKVAtom(const UpdateMKVAtomReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1493,7 +1493,7 @@ int ProxyImp::updateMKVAtom(const UpdateMKVAtomReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1513,7 +1513,7 @@ int ProxyImp::updateMKVAtom(const UpdateMKVAtomReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::updateMKVAtom] async_updateMKVAtom exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::updateMKVAtom] async_updateMKVAtom exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1525,7 +1525,7 @@ int ProxyImp::eraseMKV(const MainKeyReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1539,7 +1539,7 @@ int ProxyImp::eraseMKV(const MainKeyReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1559,7 +1559,7 @@ int ProxyImp::eraseMKV(const MainKeyReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::erase] async_erase exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::erase] async_erase exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1571,7 +1571,7 @@ int ProxyImp::delMKVBatch(const DelMKVBatchReq &req, MKVBatchWriteRsp &rsp, Tars
     const string moduleName = req.moduleName;
     const vector<DelCondition> &vtReqData = req.data;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", recv " << vtReqData.size() << " mainKeys, from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1588,7 +1588,7 @@ int ProxyImp::delMKVBatch(const DelMKVBatchReq &req, MKVBatchWriteRsp &rsp, Tars
     logBatchCount(moduleName, context[CONTEXT_CALLER], keyCount);
     if (checkKeyCount(keyCount))
     {
-        TLOGERROR("[ProxyImp::delMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
+        TLOG_ERROR("[ProxyImp::delMKVBatch] keyCount for batch  out of limit, moduleName:" << moduleName << " keyCount:" << keyCount << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1602,13 +1602,13 @@ int ProxyImp::delMKVBatch(const DelMKVBatchReq &req, MKVBatchWriteRsp &rsp, Tars
         string key = vtReqData[i].mainKey;
         if (key.empty())
         {
-            TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+            TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
             return ET_INPUT_PARAM_ERROR;
         }
         int ret = _cacheProxyFactory->getWCacheProxy(moduleName, key, objectName, prxMKWCache);
         if (ret != ET_SUCC)
         {
-            TLOGERROR("can't locate ServerInfo, invalid key: " << key << endl);
+            TLOG_ERROR("can't locate ServerInfo, invalid key: " << key << endl);
             rsp.rspData[i] = ET_KEY_INVALID;
             continue;
         }
@@ -1645,11 +1645,11 @@ int ProxyImp::delMKVBatch(const DelMKVBatchReq &req, MKVBatchWriteRsp &rsp, Tars
         }
         catch (exception &e)
         {
-            TLOGERROR("[ProxyImp::delMKVBatch] exception:" << e.what() << endl);
+            TLOG_ERROR("[ProxyImp::delMKVBatch] exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[ProxyImp::delMKVBatch] UnkownException" << endl);
+            TLOG_ERROR("[ProxyImp::delMKVBatch] UnkownException" << endl);
         }
 
         MKVBatchWriteRsp tempRsp;
@@ -1675,7 +1675,7 @@ int ProxyImp::delMKV(const DelMKVReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1689,7 +1689,7 @@ int ProxyImp::delMKV(const DelMKVReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty! moduleName = " << moduleName << ", CALLER = " << current->getContext()[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty! moduleName = " << moduleName << ", CALLER = " << current->getContext()[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1709,7 +1709,7 @@ int ProxyImp::delMKV(const DelMKVReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::delMKV] async_del exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::delMKV] async_del exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1721,7 +1721,7 @@ int ProxyImp::getMainKeyCount(const MainKeyReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", mainKey = " << mainKey << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1735,7 +1735,7 @@ int ProxyImp::getMainKeyCount(const MainKeyReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getMainKeyCount mainKey is empty, module:" << moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getMainKeyCount mainKey is empty, module:" << moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1761,7 +1761,7 @@ int ProxyImp::getMainKeyCount(const MainKeyReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getMainKeyCount] async_getMainKeyCount exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getMainKeyCount] async_getMainKeyCount exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1772,7 +1772,7 @@ int ProxyImp::getAllKeys(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCurre
 {
     const string moduleName = req.moduleName;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", index = " << req.index << ", count = " << req.count << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", index = " << req.index << ", count = " << req.count << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1793,7 +1793,7 @@ int ProxyImp::getAllKeys(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCurre
     RouterTableInfo *pRouterTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
     if (pRouterTableInfo == NULL)
     {
-        TLOGDEBUG("[ProxyImp::getAllKeys] do not support moduleName: " << moduleName << endl);
+        TLOG_DEBUG("[ProxyImp::getAllKeys] do not support moduleName: " << moduleName << endl);
         return ET_MODULE_NAME_INVALID;
     }
     RouterTable &routerTable = pRouterTableInfo->getRouterTable();
@@ -1801,7 +1801,7 @@ int ProxyImp::getAllKeys(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCurre
     vector<ServerInfo> servers;
     if (routerTable.getAllIdcServer(idcArea, servers) < 0)
     {
-        TLOGERROR("[ProxyImp::getAllKeys] get idc server error!" << endl);
+        TLOG_ERROR("[ProxyImp::getAllKeys] get idc server error!" << endl);
         return ET_SYS_ERR;
     }
 
@@ -1821,11 +1821,11 @@ int ProxyImp::getAllKeys(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCurre
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getAllKeys] exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getAllKeys] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getAllKeys] UnkownException" << endl);
+        TLOG_ERROR("[ProxyImp::getAllKeys] UnkownException" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     CacheBatchCallParam<GetAllKeysRsp> *tmpParam = (CacheBatchCallParam<GetAllKeysRsp> *)(pParam.get());
@@ -1841,7 +1841,7 @@ int ProxyImp::getAllMainKey(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCu
 {
     const string &moduleName = req.moduleName;
 
-    TLOGDEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", index = " << req.index << ", count = " << req.count << ", from ip = " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::" << __FUNCTION__ << ", moduleName = " << moduleName << ", index = " << req.index << ", count = " << req.count << ", from ip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1859,7 +1859,7 @@ int ProxyImp::getAllMainKey(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCu
     RouterTableInfo *pRouterTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
     if (pRouterTableInfo == NULL)
     {
-        TLOGDEBUG("[ProxyImp::getMKAllMainKey]do not support moduleName: " << moduleName << endl);
+        TLOG_DEBUG("[ProxyImp::getMKAllMainKey]do not support moduleName: " << moduleName << endl);
         return ET_MODULE_NAME_INVALID;
     }
     RouterTable &routerTable = pRouterTableInfo->getRouterTable();
@@ -1867,7 +1867,7 @@ int ProxyImp::getAllMainKey(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCu
     vector<ServerInfo> servers;
     if (routerTable.getAllIdcServer(idcArea, servers) < 0)
     {
-        TLOGERROR("[ProxyImp::getAllMainKey get idc server error!" << endl);
+        TLOG_ERROR("[ProxyImp::getAllMainKey get idc server error!" << endl);
         return ET_SYS_ERR;
     }
 
@@ -1887,11 +1887,11 @@ int ProxyImp::getAllMainKey(const GetAllKeysReq &req, GetAllKeysRsp &rsp, TarsCu
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getAllMainKey] exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getAllMainKey] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[ProxyImp::getAllMainKey] unkown exception" << endl);
+        TLOG_ERROR("[ProxyImp::getAllMainKey] unkown exception" << endl);
     }
     //当发生未知（不可恢复）异常（系统错误时），提起结束本次调用并返回空数据。（读和写操作对此种错误的响应机制不一样）!!!dengyouwang
     MKCacheBatchCallParam<GetAllKeysRsp> *tmpParam = (MKCacheBatchCallParam<GetAllKeysRsp> *)(pParam.get());
@@ -1907,7 +1907,7 @@ int ProxyImp::getRangeList(const GetRangeListReq &req, BatchEntry &rsp, TarsCurr
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getRangeList: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
+    TLOG_DEBUG("getRangeList: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1921,7 +1921,7 @@ int ProxyImp::getRangeList(const GetRangeListReq &req, BatchEntry &rsp, TarsCurr
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getRangeList key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getRangeList key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1947,7 +1947,7 @@ int ProxyImp::getRangeList(const GetRangeListReq &req, BatchEntry &rsp, TarsCurr
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getRangeList] async_getRangeList exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getRangeList] async_getRangeList exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -1958,7 +1958,7 @@ int ProxyImp::getList(const GetListReq &req, GetListRsp &rsp, TarsCurrentPtr cur
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("getList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -1972,7 +1972,7 @@ int ProxyImp::getList(const GetListReq &req, GetListRsp &rsp, TarsCurrentPtr cur
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getList key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getList key is empty module:" << req.moduleName << "|master:" << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -1998,7 +1998,7 @@ int ProxyImp::getList(const GetListReq &req, GetListRsp &rsp, TarsCurrentPtr cur
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getList] async_getRangeList exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getList] async_getRangeList exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2009,7 +2009,7 @@ int ProxyImp::getSet(const GetSetReq &req, BatchEntry &rsp, TarsCurrentPtr curre
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getSet: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
+    TLOG_DEBUG("getSet: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2023,7 +2023,7 @@ int ProxyImp::getSet(const GetSetReq &req, BatchEntry &rsp, TarsCurrentPtr curre
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getSet key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getSet key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2049,7 +2049,7 @@ int ProxyImp::getSet(const GetSetReq &req, BatchEntry &rsp, TarsCurrentPtr curre
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getSet] async_getSet exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getSet] async_getSet exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2060,7 +2060,7 @@ int ProxyImp::getZSetScore(const GetZsetScoreReq &req, double &score, TarsCurren
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getZSetScore: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
+    TLOG_DEBUG("getZSetScore: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2074,7 +2074,7 @@ int ProxyImp::getZSetScore(const GetZsetScoreReq &req, double &score, TarsCurren
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getZSetScore key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getZSetScore key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2100,7 +2100,7 @@ int ProxyImp::getZSetScore(const GetZsetScoreReq &req, double &score, TarsCurren
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getScoreZSet] async_getZSetScore exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getScoreZSet] async_getZSetScore exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2111,7 +2111,7 @@ int ProxyImp::getZSetPos(const GetZsetPosReq &req, long &pos, TarsCurrentPtr cur
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getZSetPos: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
+    TLOG_DEBUG("getZSetPos: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2125,7 +2125,7 @@ int ProxyImp::getZSetPos(const GetZsetPosReq &req, long &pos, TarsCurrentPtr cur
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getZSetPos key is empty, module = " << req.moduleName << ", | master: = " << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getZSetPos key is empty, module = " << req.moduleName << ", | master: = " << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2151,7 +2151,7 @@ int ProxyImp::getZSetPos(const GetZsetPosReq &req, long &pos, TarsCurrentPtr cur
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getZSetPos] async_getZSetPos exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getZSetPos] async_getZSetPos exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2162,7 +2162,7 @@ int ProxyImp::getZSetByPos(const GetZsetByPosReq &req, BatchEntry &rsp, TarsCurr
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getZSetByPos: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
+    TLOG_DEBUG("getZSetByPos: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip = " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2176,7 +2176,7 @@ int ProxyImp::getZSetByPos(const GetZsetByPosReq &req, BatchEntry &rsp, TarsCurr
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getZSetByPos key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getZSetByPos key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2202,7 +2202,7 @@ int ProxyImp::getZSetByPos(const GetZsetByPosReq &req, BatchEntry &rsp, TarsCurr
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getZSetByPos] async_getZSetByPos exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getZSetByPos] async_getZSetByPos exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2213,7 +2213,7 @@ int ProxyImp::getZSetByScore(const GetZsetByScoreReq &req, BatchEntry &rsp, Tars
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("getZSetByScore: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip =" << current->getIp() << endl);
+    TLOG_DEBUG("getZSetByScore: moduleName = " << moduleName << ", | mainKey = " << mainKey << ", masterip =" << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2227,7 +2227,7 @@ int ProxyImp::getZSetByScore(const GetZsetByScoreReq &req, BatchEntry &rsp, Tars
 
     if (mainKey.empty())
     {
-        TLOGERROR("ProxyImp::getZSetByScore key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
+        TLOG_ERROR("ProxyImp::getZSetByScore key is empty, module = " << moduleName << ", | master: = " << current->getIp() << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2253,7 +2253,7 @@ int ProxyImp::getZSetByScore(const GetZsetByScoreReq &req, BatchEntry &rsp, Tars
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::getZSetByScore] async_getZSetByScore exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::getZSetByScore] async_getZSetByScore exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2265,7 +2265,7 @@ int ProxyImp::pushList(const PushListReq &req, TarsCurrentPtr current)
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
 
-    TLOGDEBUG("ProxyImp::pushList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::pushList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2279,7 +2279,7 @@ int ProxyImp::pushList(const PushListReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2299,7 +2299,7 @@ int ProxyImp::pushList(const PushListReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::pushList] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::pushList] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2310,7 +2310,7 @@ int ProxyImp::popList(const PopListReq &req, PopListRsp &rsp, TarsCurrentPtr cur
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::popList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::popList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2324,7 +2324,7 @@ int ProxyImp::popList(const PopListReq &req, PopListRsp &rsp, TarsCurrentPtr cur
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2344,7 +2344,7 @@ int ProxyImp::popList(const PopListReq &req, PopListRsp &rsp, TarsCurrentPtr cur
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::popList] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::popList] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2355,7 +2355,7 @@ int ProxyImp::replaceList(const ReplaceListReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::replaceList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::replaceList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2369,7 +2369,7 @@ int ProxyImp::replaceList(const ReplaceListReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2389,7 +2389,7 @@ int ProxyImp::replaceList(const ReplaceListReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::replaceList] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::replaceList] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2400,7 +2400,7 @@ int ProxyImp::trimList(const TrimListReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::trimList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::trimList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2414,7 +2414,7 @@ int ProxyImp::trimList(const TrimListReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2434,7 +2434,7 @@ int ProxyImp::trimList(const TrimListReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::trimList] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::trimList] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2445,7 +2445,7 @@ int ProxyImp::remList(const RemListReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::remList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::remList: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2459,7 +2459,7 @@ int ProxyImp::remList(const RemListReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2479,7 +2479,7 @@ int ProxyImp::remList(const RemListReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::remList] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::remList] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2490,7 +2490,7 @@ int ProxyImp::addSet(const AddSetReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.value.mainKey;
-    TLOGDEBUG("ProxyImp::addSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::addSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2504,7 +2504,7 @@ int ProxyImp::addSet(const AddSetReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2524,7 +2524,7 @@ int ProxyImp::addSet(const AddSetReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::addSet] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::addSet] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2548,7 +2548,7 @@ int ProxyImp::delSet(const DelSetReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2568,7 +2568,7 @@ int ProxyImp::delSet(const DelSetReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::addSet] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::addSet] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2579,7 +2579,7 @@ int ProxyImp::addZSet(const AddZSetReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.value.mainKey;
-    TLOGDEBUG("ProxyImp::addZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::addZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2593,7 +2593,7 @@ int ProxyImp::addZSet(const AddZSetReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2613,7 +2613,7 @@ int ProxyImp::addZSet(const AddZSetReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::addZSet] async_update exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::addZSet] async_update exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2624,7 +2624,7 @@ int ProxyImp::incScoreZSet(const IncZSetScoreReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.value.mainKey;
-    TLOGDEBUG("ProxyImp::incScoreZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::incScoreZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2638,7 +2638,7 @@ int ProxyImp::incScoreZSet(const IncZSetScoreReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2658,7 +2658,7 @@ int ProxyImp::incScoreZSet(const IncZSetScoreReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::incScoreZSet] async_incScoreZSet exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::incScoreZSet] async_incScoreZSet exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2669,7 +2669,7 @@ int ProxyImp::delZSet(const DelZSetReq &req, TarsCurrentPtr current)
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::delZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::delZSet: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2682,7 +2682,7 @@ int ProxyImp::delZSet(const DelZSetReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2702,7 +2702,7 @@ int ProxyImp::delZSet(const DelZSetReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::delZSet] async_delZSet exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::delZSet] async_delZSet exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2713,7 +2713,7 @@ int ProxyImp::delZSetByScore(const DelZSetByScoreReq &req, TarsCurrentPtr curren
 {
     const string &moduleName = req.moduleName;
     const string &mainKey = req.mainKey;
-    TLOGDEBUG("ProxyImp::delZSetByScore: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
+    TLOG_DEBUG("ProxyImp::delZSetByScore: " << moduleName << "|" << mainKey << " masterip: " << current->getIp() << endl);
 
     map<string, string> &context = current->getContext();
     if (!context.count(CONTEXT_CALLER))
@@ -2727,7 +2727,7 @@ int ProxyImp::delZSetByScore(const DelZSetByScoreReq &req, TarsCurrentPtr curren
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2747,7 +2747,7 @@ int ProxyImp::delZSetByScore(const DelZSetByScoreReq &req, TarsCurrentPtr curren
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::delZSetByScore] async_delZSetByScore exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::delZSetByScore] async_delZSetByScore exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }
@@ -2772,7 +2772,7 @@ int ProxyImp::updateZSet(const UpdateZSetReq &req, TarsCurrentPtr current)
 
     if (mainKey.empty())
     {
-        TLOGERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
+        TLOG_ERROR("The Key can not be empty.|moduleName=" << moduleName << "|CALLER=" << context[CONTEXT_CALLER] << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -2792,7 +2792,7 @@ int ProxyImp::updateZSet(const UpdateZSetReq &req, TarsCurrentPtr current)
     }
     catch (exception &ex)
     {
-        TLOGERROR("[ProxyImp::updateZSet] async_updateZSet exception: " << ex.what() << endl);
+        TLOG_ERROR("[ProxyImp::updateZSet] async_updateZSet exception: " << ex.what() << endl);
         current->setResponse(true);
         return ET_SYS_ERR;
     }

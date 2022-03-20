@@ -26,7 +26,7 @@ int DumpThread::init(const string &dumpPath, const string &mirrorName, const str
 {
     if (_isStart)
     {
-        TLOGDEBUG("[DumpThread::init] dump thread has started" << endl);
+        TLOG_DEBUG("[DumpThread::init] dump thread has started" << endl);
         return -1;
     }
 
@@ -81,7 +81,7 @@ void DumpThread::doDump()
             {
                 errorOs << "[DumpThread::doDump] create file: " << sFile << " failed, errno = " << errno;
                 errmsg = errorOs.str();
-                TLOGERROR("dump error: " << errmsg << endl);
+                TLOG_ERROR("dump error: " << errmsg << endl);
                 FDLOG(_dumpDayLog) << errmsg << endl;
                 break;
             }
@@ -90,7 +90,7 @@ void DumpThread::doDump()
             {
                 errorOs << "[DumpThread::doDump] dump thread is stoped";
                 errmsg = errorOs.str();
-                TLOGERROR("dump error: " << errmsg << endl);
+                TLOG_ERROR("dump error: " << errmsg << endl);
                 FDLOG(_dumpDayLog) << errmsg << endl;
                 break;
             }
@@ -101,7 +101,7 @@ void DumpThread::doDump()
             // -1 表示 cacheToBinlog在dump时候出现错误
             if (iRet < 0)
             {
-                TLOGERROR("dump error: " << errmsg << endl);
+                TLOG_ERROR("dump error: " << errmsg << endl);
                 FDLOG(_dumpDayLog) << errmsg << endl;
                 break;
             }
@@ -110,7 +110,7 @@ void DumpThread::doDump()
             {
                 errorOs << "[DumpThread::doDump] dump thread is stoped";
                 errmsg = errorOs.str();
-                TLOGERROR("dump error: " << errmsg << endl);
+                TLOG_ERROR("dump error: " << errmsg << endl);
                 FDLOG(_dumpDayLog) << errmsg << endl;
                 break;
             }
@@ -121,7 +121,7 @@ void DumpThread::doDump()
     {
         errorOs << "[DumpThread::doDump] exception: " << ex.what();
         errmsg = errorOs.str();
-        TLOGERROR("dump error: " << errmsg << endl);
+        TLOG_ERROR("dump error: " << errmsg << endl);
         FDLOG(_dumpDayLog) << errmsg << endl;
     }
 
@@ -140,7 +140,7 @@ int DumpThread::cacheToBinlog(const string & dumpPath, const string & mirrorName
     if (!TC_File::makeDirRecursive(dumpPath))
     {
         errmsg = "[DumpThread::cacheToBinlog] cannot create dir: " + dumpPath;
-        TLOGERROR(errmsg << endl);
+        TLOG_ERROR(errmsg << endl);
         FDLOG(_dumpDayLog) << errmsg << endl;
         return -1;
     }
@@ -152,7 +152,7 @@ int DumpThread::cacheToBinlog(const string & dumpPath, const string & mirrorName
     if (!gzf)
     {
         errmsg = "DumpThread::doDump(), open dump filename:" + dumpFileName + " failed";
-        TLOGERROR(errmsg << endl);
+        TLOG_ERROR(errmsg << endl);
         FDLOG(_dumpDayLog) << errmsg << endl;
         return -1;
     }

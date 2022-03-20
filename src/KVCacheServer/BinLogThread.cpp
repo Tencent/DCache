@@ -52,7 +52,7 @@ void BinLogThread::init(const string &sConf)
 
     _binlogQueueSize = TC_Common::strto<unsigned int>(_tcConf.get("/Main/BinLog<BuffSize>", "10"));
 
-    TLOGDEBUG("BinLogThread::init Succ" << endl);
+    TLOG_DEBUG("BinLogThread::init Succ" << endl);
 }
 
 void BinLogThread::reload()
@@ -71,7 +71,7 @@ void BinLogThread::reload()
 
     string sIsGzip = _tcConf.get("/Main/BinLog<IsGzip>", "Y");
     _isGzip = (sIsGzip == "Y" || sIsGzip == "y") ? true : false;
-    TLOGDEBUG("BinLogThread::reload Succ" << endl);
+    TLOG_DEBUG("BinLogThread::reload Succ" << endl);
 }
 
 
@@ -134,11 +134,11 @@ void* BinLogThread::Run(void* arg)
                 if (!bHaveGetSynPoint)
                 {
                     pthis->getSyncPiont(pthis->_isAferSwicth);
-                    TLOGDEBUG("[BinLogThread::Run] afterSwitch:" << pthis->_isAferSwicth << "|getSyncPiont:"
+                    TLOG_DEBUG("[BinLogThread::Run] afterSwitch:" << pthis->_isAferSwicth << "|getSyncPiont:"
                               << pthis->_logFile << "|" << pthis->_seek << endl);
                     if (pthis->_logFile.empty())
                     {
-                        TLOGERROR("[BinLogThread::Run] getSyncPiont failed, file sync_point.data may be destroyed" << endl);
+                        TLOG_ERROR("[BinLogThread::Run] getSyncPiont failed, file sync_point.data may be destroyed" << endl);
                         assert(false);
                     }
                     bHaveGetSynPoint = true;
@@ -148,7 +148,7 @@ void* BinLogThread::Run(void* arg)
                 string sTmpAddr = pthis->getBakSourceAddr();
                 if (sTmpAddr != sAddr)
                 {
-                    TLOGDEBUG("MasterBinLogAddr111 changed from " << sAddr << " to " << sTmpAddr << endl);
+                    TLOG_DEBUG("MasterBinLogAddr111 changed from " << sAddr << " to " << sTmpAddr << endl);
                     //切合后 重新设置同步点
                     if (!firstrGetPoint)
                     {
@@ -170,7 +170,7 @@ void* BinLogThread::Run(void* arg)
 
                         TC_ThreadLock::Lock lock(pthis->_lock);
 
-                        TLOGDEBUG("firstrGetPoint" << endl);
+                        TLOG_DEBUG("firstrGetPoint" << endl);
                         if (!pthis->_isKeySyncMode)
                         {
                             pthis->_logFile = pthis->getServerName() + "_" + pthis->_binLogFile + "_" + pthis->_logFile.substr(pthis->_logFile.size() - 14, 14);
@@ -180,14 +180,14 @@ void* BinLogThread::Run(void* arg)
                             pthis->_logFile = pthis->getServerName() + "_" + pthis->_binLogFile + "key_" + pthis->_logFile.substr(pthis->_logFile.size() - 14, 14);
                         }
                         pthis->_seek = 0;
-                        TLOGDEBUG("last type SLAVE:m_logfile" << pthis->_logFile << endl);
+                        TLOG_DEBUG("last type SLAVE:m_logfile" << pthis->_logFile << endl);
                         pthis->saveSyncPiont(pthis->_logFile, pthis->_seek);
                     }
                     sAddr = sTmpAddr;
                     if (sAddr.length() > 0)
                     {
                         pthis->_binLogPrx = Application::getCommunicator()->stringToProxy<BinLogPrx>(sAddr);
-                        TLOGDEBUG("sAddr" << sAddr << endl);
+                        TLOG_DEBUG("sAddr" << sAddr << endl);
                     }
                 }
             }
@@ -206,12 +206,12 @@ void* BinLogThread::Run(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[BinLogThread::Run] exception: " << ex.what() << endl);
+            TLOG_ERROR("[BinLogThread::Run] exception: " << ex.what() << endl);
             usleep(100000);
         }
         catch (...)
         {
-            TLOGERROR("[BinLogThread::Run] unkown exception" << endl);
+            TLOG_ERROR("[BinLogThread::Run] unkown exception" << endl);
             usleep(100000);
         }
 
@@ -227,7 +227,7 @@ void* BinLogThread::WriteData(void* arg)
 
     BinLogThread* pthis = (BinLogThread*)arg;
 
-    TLOGDEBUG("[BinLogThread::writeData] running!" << endl);
+    TLOG_DEBUG("[BinLogThread::writeData] running!" << endl);
 
     stBinlogDataPtr tmpBinlogData = NULL;
 
@@ -272,7 +272,7 @@ void* BinLogThread::WriteData(void* arg)
                         bool bGzipOk = StringUtil::gzipUncompress(tmpBinlogData->sLogContent.c_str(), tmpBinlogData->sLogContent.length(), sUncompress);
                         if (!bGzipOk)
                         {
-                            TLOGERROR("[BinLogThread::syncCompress] logContent gzip uncompress error" << endl);
+                            TLOG_ERROR("[BinLogThread::syncCompress] logContent gzip uncompress error" << endl);
                             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                             pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                             continue;
@@ -280,7 +280,7 @@ void* BinLogThread::WriteData(void* arg)
 
                         if (!StringUtil::parseString(sUncompress, vLogContent))
                         {
-                            TLOGERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
+                            TLOG_ERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
                             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                             pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                             continue;
@@ -290,7 +290,7 @@ void* BinLogThread::WriteData(void* arg)
                     {
                         if (!StringUtil::parseString(tmpBinlogData->sLogContent, vLogContent))
                         {
-                            TLOGERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
+                            TLOG_ERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
                             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                             pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                             continue;
@@ -301,7 +301,7 @@ void* BinLogThread::WriteData(void* arg)
                 {
                     if (!StringUtil::parseString(tmpBinlogData->sLogContent, vLogContent))
                     {
-                        TLOGERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
+                        TLOG_ERROR("[BinLogThread::syncCompress] logContent string parse error" << endl);
                         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                         pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
                         continue;
@@ -321,13 +321,13 @@ void* BinLogThread::WriteData(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[BinLogThread::writeData] exception: " << ex.what() << endl);
+            TLOG_ERROR("[BinLogThread::writeData] exception: " << ex.what() << endl);
             if (tmpBinlogData)
                 pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
         }
         catch (...)
         {
-            TLOGERROR("[BinLogThread::writeData] unkown exception" << endl);
+            TLOG_ERROR("[BinLogThread::writeData] unkown exception" << endl);
             if (tmpBinlogData)
                 pthis->resetBuff(tmpBinlogData->m_logFile, tmpBinlogData->m_seek);
         }
@@ -345,7 +345,7 @@ int BinLogThread::syncBinLog()
 
         if (_binlogDataQueue.size() >= _binlogQueueSize)
         {
-            TLOGDEBUG("[BinLogThread::syncBinLog] queue is full! queue size():" << _binlogDataQueue.size() << endl);
+            TLOG_DEBUG("[BinLogThread::syncBinLog] queue is full! queue size():" << _binlogDataQueue.size() << endl);
             return 0;
         }
 
@@ -375,7 +375,7 @@ int BinLogThread::syncBinLog()
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[BinLogThread::syncBinLog] getLog exception: " << ex.what() << endl);
+        TLOG_ERROR("[BinLogThread::syncBinLog] getLog exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -384,7 +384,7 @@ int BinLogThread::syncBinLog()
 
     if (tmpBinlogData->iRet != 0)
     {
-        TLOGERROR("[BinLogThread::syncBinLog] getLog error, iRet = " << tmpBinlogData->iRet << endl);
+        TLOG_ERROR("[BinLogThread::syncBinLog] getLog error, iRet = " << tmpBinlogData->iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -415,7 +415,7 @@ int BinLogThread::syncCompress()
 
         if (_binlogDataQueue.size() >= _binlogQueueSize)
         {
-            TLOGDEBUG("[BinLogThread::syncCompress] queue is full!queue size():" << _binlogDataQueue.size() << endl);
+            TLOG_DEBUG("[BinLogThread::syncCompress] queue is full!queue size():" << _binlogDataQueue.size() << endl);
             return 0;
         }
 
@@ -452,7 +452,7 @@ int BinLogThread::syncCompress()
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[BinLogThread::syncCompress] getLogCompress exception: " << ex.what() << endl);
+        TLOG_ERROR("[BinLogThread::syncCompress] getLogCompress exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         if (++iExCount >= 10)
         {
@@ -497,7 +497,7 @@ int BinLogThread::syncCompress()
 
     if (tmpBinlogData->iRet < 0)
     {
-        TLOGERROR("[BinLogThread::syncCompress] getLogCompress error, iRet = " << tmpBinlogData->iRet << endl);
+        TLOG_ERROR("[BinLogThread::syncCompress] getLogCompress error, iRet = " << tmpBinlogData->iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -506,7 +506,7 @@ int BinLogThread::syncCompress()
     //校验返回的binlog同步点格式,目前发现个别因"网络问题"导致的binlog同步点错乱
     if (!checkSyncPoint(tmpBinlogData->curLogfile))
     {
-        TLOGERROR("[BinLogThread::syncCompress] point error" << tmpBinlogData->curLogfile << endl);
+        TLOG_ERROR("[BinLogThread::syncCompress] point error" << tmpBinlogData->curLogfile << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return -1;
     }
@@ -556,7 +556,7 @@ int BinLogThread::syncCompress()
         string tmpMasterServerName = getServerName();
         if (tmpBinlogData->curLogfile.substr(0, tmpMasterServerName.length()) != tmpMasterServerName)
         {
-            TLOGERROR("point error" << tmpBinlogData->curLogfile << " should be " << tmpMasterServerName << endl);
+            TLOG_ERROR("point error" << tmpBinlogData->curLogfile << " should be " << tmpMasterServerName << endl);
         }
 
         {
@@ -598,7 +598,7 @@ void BinLogThread::getSyncPiont(bool aferSwitch)
 
         if (!fin)
         {
-            TLOGERROR("open file: " << sFile << " error" << endl);
+            TLOG_ERROR("open file: " << sFile << " error" << endl);
             _logFile = getServerName() + "_" + _tcConf["/Main/BinLog<LogFile>"];
             _seek = 0;
             return;
@@ -637,7 +637,7 @@ void BinLogThread::getSyncPiont(bool aferSwitch)
         if (fd < 0)
         {
             //要加告警
-            TLOGERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
+            TLOG_ERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return;
         }
@@ -661,7 +661,7 @@ void BinLogThread::saveSyncPiont(const string &logFile, const uint64_t seek)
     int fd = open(sFile.c_str(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (fd < 0)
     {
-        TLOGERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
+        TLOG_ERROR("Save SyncPoint error, open " << sFile << " failed" << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }
@@ -685,7 +685,7 @@ string BinLogThread::getBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[BinLogThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[BinLogThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -703,7 +703,7 @@ string BinLogThread::getServerName()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[BinLogThread::getServerName] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[BinLogThread::getServerName] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -736,7 +736,7 @@ void BinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_sHashMap.set(sKey, sValue, sEncode.GetDirty(), sEncode.GetExpireTime());
                 if (iRet != TC_HashMapMalloc::RT_OK)
                 {
-                    TLOGERROR("[BinLogThread::wirteBinLog] map set error, key = " << sKey << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[BinLogThread::wirteBinLog] map set error, key = " << sKey << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -757,7 +757,7 @@ void BinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_sHashMap.del(sKey);
                 if (iRet != TC_HashMapMalloc::RT_OK && iRet != TC_HashMapMalloc::RT_NO_DATA && iRet != TC_HashMapMalloc::RT_ONLY_KEY)
                 {
-                    TLOGERROR("[BinLogThread::wirteBinLog] map del error,  key = " << sKey << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[BinLogThread::wirteBinLog] map del error,  key = " << sKey << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -774,7 +774,7 @@ void BinLogThread::wirteBinLog(const vector<string>& logContent)
                 iRet = g_sHashMap.eraseByForce(sKey);
                 if (iRet != TC_HashMapMalloc::RT_OK && iRet != TC_HashMapMalloc::RT_NO_DATA && iRet != TC_HashMapMalloc::RT_ONLY_KEY)
                 {
-                    TLOGERROR("[BinLogThread::wirteBinLog] map erase error, key = " << sKey << " iRet = " << iRet << endl);
+                    TLOG_ERROR("[BinLogThread::wirteBinLog] map erase error, key = " << sKey << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
                 else
@@ -785,7 +785,7 @@ void BinLogThread::wirteBinLog(const vector<string>& logContent)
             }
             break;
         default:
-            TLOGERROR("[BinLogThread::wirteBinLog] Binlog format error, opt error" << endl);
+            TLOG_ERROR("[BinLogThread::wirteBinLog] Binlog format error, opt error" << endl);
             break;
         }
         fileStreamStr << logContent[i] << endl;
@@ -844,7 +844,7 @@ bool BinLogThread::checkSyncPoint(const string & strSyncPoint)
 
 void BinLogThread::resetBuff(const string &logFile, const uint64_t seek)
 {
-    TLOGERROR("[BinLogThread::resetBuff] reset" << endl);
+    TLOG_ERROR("[BinLogThread::resetBuff] reset" << endl);
 
     TC_ThreadLock::Lock lock(_lock);
 

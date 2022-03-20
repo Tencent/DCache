@@ -87,7 +87,7 @@ void RouterHandle::init(TC_Config& conf)
 
     _pageSize = TC_Common::strto<unsigned int>(conf["/Main/Router<PageSize>"]);
 
-    TLOGDEBUG("RouterHandle::initialize Succ" << endl);
+    TLOG_DEBUG("RouterHandle::initialize Succ" << endl);
 }
 
 tars::Int32 RouterHandle::initRoute(bool forbidFromFile, bool &syncFromRouterSuccess)
@@ -101,7 +101,7 @@ tars::Int32 RouterHandle::initRoute(bool forbidFromFile, bool &syncFromRouterSuc
 
             if (iRet != ROUTER_SUCC)
             {
-                TLOGERROR("[RouterHandle::initRoute] getRouterInfo from " << _routeObj << " failed, ret=" << iRet << endl);
+                TLOG_ERROR("[RouterHandle::initRoute] getRouterInfo from " << _routeObj << " failed, ret=" << iRet << endl);
             }
             else
             {
@@ -110,7 +110,7 @@ tars::Int32 RouterHandle::initRoute(bool forbidFromFile, bool &syncFromRouterSuc
                 int iRouteRet = g_route_table.init(packTable, sServerName);
                 if (iRouteRet != UnpackTable::RET_SUCC)
                 {
-                    TLOGERROR("[RouterHandle::initRoute] g_route_table.init failed, ret=" << iRouteRet << endl);
+                    TLOG_ERROR("[RouterHandle::initRoute] g_route_table.init failed, ret=" << iRouteRet << endl);
                 }
                 else
                 {
@@ -122,7 +122,7 @@ tars::Int32 RouterHandle::initRoute(bool forbidFromFile, bool &syncFromRouterSuc
         }
         catch (const exception& ex)
         {
-            TLOGERROR("[RouterHandle::initRoute] getRouterInfo from " << _routeObj << " exception:" << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::initRoute] getRouterInfo from " << _routeObj << " exception:" << ex.what() << endl);
         }
 
     }
@@ -136,7 +136,7 @@ tars::Int32 RouterHandle::initRoute(bool forbidFromFile, bool &syncFromRouterSuc
     int iRet = g_route_table.fromFile(_routeFile, sServerName);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[RouterHandle::initRoute] g_route_table.fromFile failed, ret=" << iRet << endl);
+        TLOG_ERROR("[RouterHandle::initRoute] g_route_table.fromFile failed, ret=" << iRet << endl);
         return -1;
     }
 
@@ -151,10 +151,10 @@ void RouterHandle::serviceRestartReport()
         iRet = _routePrx->serviceRestartReport(_moduleName, g_app.gstat()->groupName());
         if (iRet != 0)
         {
-            TLOGERROR("RouterHandle::serviceRestartReport error" << endl);
+            TLOG_ERROR("RouterHandle::serviceRestartReport error" << endl);
         }
 
-        TLOGDEBUG("RouterHandle::serviceRestartReport, moduleName: " << _moduleName << ", groupName: " << g_app.gstat()->groupName() << endl);
+        TLOG_DEBUG("RouterHandle::serviceRestartReport, moduleName: " << _moduleName << ", groupName: " << g_app.gstat()->groupName() << endl);
     }
     catch (const TarsException & ex)
     {
@@ -163,12 +163,12 @@ void RouterHandle::serviceRestartReport()
             iRet = _routePrx->serviceRestartReport(_moduleName, g_app.gstat()->groupName());
             if (iRet != 0)
             {
-                TLOGERROR("RouterHandle::serviceRestartReport error" << endl);
+                TLOG_ERROR("RouterHandle::serviceRestartReport error" << endl);
             }
         }
         catch (const TarsException & ex)
         {
-            TLOGERROR("RouterHandle::serviceRestartReport exception: " << ex.what() << endl);
+            TLOG_ERROR("RouterHandle::serviceRestartReport exception: " << ex.what() << endl);
         }
     }
 }
@@ -194,7 +194,7 @@ void RouterHandle::syncRoute()
             int iRet = _routePrx->getTransRouterInfo(_moduleName, iTransInfoListVer, vTransferingInfoList, packTable);
             if (iRet != 0)
             {
-                TLOGERROR("[RouterClientImp::syncRoute] getTransRouterInfo fail" << endl);
+                TLOG_ERROR("[RouterClientImp::syncRoute] getTransRouterInfo fail" << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return;
             }
@@ -209,7 +209,7 @@ void RouterHandle::syncRoute()
                 iRet = g_route_table.reload(packTable, vTransferingInfoList);
                 if (iRet != UnpackTable::RET_SUCC)
                 {
-                    TLOGERROR("[RouterClientImp::syncRoute] reload route error: " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::syncRoute] reload route error: " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return;
                 }
@@ -225,7 +225,7 @@ void RouterHandle::syncRoute()
 
                 updateCSyncKeyLimit();
 
-                TLOGDEBUG("update route succ" << endl);
+                TLOG_DEBUG("update route succ" << endl);
             }
         }
         else
@@ -248,7 +248,7 @@ void RouterHandle::syncRoute()
                 int iRet = _routePrx->getRouterInfoFromCache(_moduleName, packTable);
                 if (iRet != 0)
                 {
-                    TLOGERROR("[RouterClientImp::syncRoute] getRouterInfo fail" << endl);
+                    TLOG_ERROR("[RouterClientImp::syncRoute] getRouterInfo fail" << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return;
                 }
@@ -261,7 +261,7 @@ void RouterHandle::syncRoute()
                 iRet = g_route_table.reload(packTable);
                 if (iRet != UnpackTable::RET_SUCC)
                 {
-                    TLOGERROR("[RouterClientImp::SyncRoute] reload route error, iRet = " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::SyncRoute] reload route error, iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return;
                 }
@@ -269,13 +269,13 @@ void RouterHandle::syncRoute()
 
                 updateCSyncKeyLimit();
 
-                TLOGDEBUG("update route succ" << endl);
+                TLOG_DEBUG("update route succ" << endl);
             }
         }
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[RouterClientImp::syncRoute] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::syncRoute] exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
     }
 }
@@ -287,13 +287,13 @@ tars::Int32 RouterHandle::setRouterInfo(const string &moduleName, const PackTabl
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不做迁移
-            TLOGERROR("[RouterClientImp::setRouterInfo] is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfo] is not Master" << endl);
             return -1;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("[RouterClientImp::setRouterInfo] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfo] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
             return -1;
         }
 
@@ -302,7 +302,7 @@ tars::Int32 RouterHandle::setRouterInfo(const string &moduleName, const PackTabl
         int iRet = g_route_table.reload(packTable);
         if (iRet != UnpackTable::RET_SUCC)
         {
-            TLOGERROR("[RouterClientImp::setRouterInfo] reload route error, iRet = " << iRet << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfo] reload route error, iRet = " << iRet << endl);
             return -1;
         }
         _transInfoListVer = TRANSFER_CLEAN_VERSION;
@@ -314,17 +314,17 @@ tars::Int32 RouterHandle::setRouterInfo(const string &moduleName, const PackTabl
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfo] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfo] exception: " << ex.what() << endl);
         return -1;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfo] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfo] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfo] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfo] unkown_exception" << endl);
         return -1;
     }
     return 0;
@@ -338,13 +338,13 @@ tars::Int32 RouterHandle::setTransRouterInfo(const std::string& moduleName, tars
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不做迁移
-            TLOGERROR("[RouterClientImp::setTransRouterInfo] is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::setTransRouterInfo] is not Master" << endl);
             return -1;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("[RouterClientImp::setTransRouterInfo] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+            TLOG_ERROR("[RouterClientImp::setTransRouterInfo] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
             return -1;
         }
 
@@ -357,7 +357,7 @@ tars::Int32 RouterHandle::setTransRouterInfo(const std::string& moduleName, tars
         int iRet = g_route_table.reload(packTable, transferingInfoList);
         if (iRet != UnpackTable::RET_SUCC)
         {
-            TLOGERROR("[RouterClientImp::setTransRouterInfo] reload route error, iRet = " << iRet << endl);
+            TLOG_ERROR("[RouterClientImp::setTransRouterInfo] reload route error, iRet = " << iRet << endl);
             return -1;
         }
         _transInfoListVer = transInfoListVer;
@@ -374,17 +374,17 @@ tars::Int32 RouterHandle::setTransRouterInfo(const std::string& moduleName, tars
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[RouterClientImp::setTransRouterInfo] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setTransRouterInfo] exception: " << ex.what() << endl);
         return -1;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::setTransRouterInfo] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setTransRouterInfo] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setTransRouterInfo] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::setTransRouterInfo] unkown_exception" << endl);
         return -1;
     }
     return 0;
@@ -398,13 +398,13 @@ tars::Int32 RouterHandle::fromTransferStart(const std::string& moduleName, tars:
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不做迁移
-            TLOGERROR("[RouterClientImp::fromTransferStart] is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::fromTransferStart] is not Master" << endl);
             return 1;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("[RouterClientImp::fromTransferStart] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+            TLOG_ERROR("[RouterClientImp::fromTransferStart] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
             return 2;
         }
 
@@ -415,7 +415,7 @@ tars::Int32 RouterHandle::fromTransferStart(const std::string& moduleName, tars:
                 int iRet = g_route_table.reload(packTable, transferingInfoList);
                 if (iRet != UnpackTable::RET_SUCC)
                 {
-                    TLOGERROR("[RouterClientImp::fromTransferStart] reload route error, iRet = " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::fromTransferStart] reload route error, iRet = " << iRet << endl);
                     return -1;
                 }
                 _transInfoListVer = transInfoListVer;
@@ -423,13 +423,13 @@ tars::Int32 RouterHandle::fromTransferStart(const std::string& moduleName, tars:
 
                 g_route_table.toFile(_routeFile);
 
-                TLOGDEBUG("RouterClientImp::fromTransferStart route table:" << g_route_table.toString() << endl);
+                TLOG_DEBUG("RouterClientImp::fromTransferStart route table:" << g_route_table.toString() << endl);
 
                 if (g_app.gstat()->serverType() != MASTER)
                 {
                     _transferingInfoList.clear();
                     updateCSyncKeyLimit();
-                    TLOGERROR("[RouterClientImp::fromTransferStart] Server Type error" << endl);
+                    TLOG_ERROR("[RouterClientImp::fromTransferStart] Server Type error" << endl);
                     return 3;
                 }
 
@@ -439,12 +439,12 @@ tars::Int32 RouterHandle::fromTransferStart(const std::string& moduleName, tars:
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::fromTransferStart] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferStart] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::fromTransferStart] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferStart] unkown_exception" << endl);
         return -1;
     }
     return 0;
@@ -455,20 +455,20 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不做迁移
-        TLOGERROR("[RouterClientImp::fromTransferDo] is not Master" << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferDo] is not Master" << endl);
         return 1;
     }
     if (transferingInfo.moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("[RouterClientImp::fromTransferDo] moduleName error, " << _moduleName << " != " << transferingInfo.moduleName << "(config != param)" << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferDo] moduleName error, " << _moduleName << " != " << transferingInfo.moduleName << "(config != param)" << endl);
         return 2;
     }
 
     if (!isInTransferingInfoList(transferingInfo))
     {
         //要执行的迁移已经不在迁移记录列表中
-        TLOGERROR("[RouterClientImp::fromTransferDo] transferingInfo invalid" << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferDo] transferingInfo invalid" << endl);
         return 4;
     }
 
@@ -507,10 +507,10 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
         string sAddr = getTransDest(iPageNo);
         if (sAddr.length() <= 0)
         {
-            TLOGERROR("[RouterClientImp::fromTransferDo] trans dest addr is null" << endl);
+            TLOG_ERROR("[RouterClientImp::fromTransferDo] trans dest addr is null" << endl);
             throw(TarsException("trans dest addr is null"));
         }
-        TLOGDEBUG("RouterClientImp::fromTransferDo trans dest = " << sAddr << endl);
+        TLOG_DEBUG("RouterClientImp::fromTransferDo trans dest = " << sAddr << endl);
         RouterClientPrx pRouterClientPrx = Application::getCommunicator()->stringToProxy<RouterClientPrx>(sAddr);
 
         vector<Data> v;
@@ -540,7 +540,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
                 iRet = g_sHashMap.getHashWithOnlyKey(i, vv, k);
                 if (iRet != TC_HashMapMalloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::fromTransferDo] llhashmap getHash error, iret =  " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::fromTransferDo] llhashmap getHash error, iret =  " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     break;
                 }
@@ -575,7 +575,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
                     }
                     catch (const TarsException & ex)
                     {
-                        TLOGERROR("[RouterClientImp::fromTransferDo] trans exception: " << ex.what() << endl);
+                        TLOG_ERROR("[RouterClientImp::fromTransferDo] trans exception: " << ex.what() << endl);
                         break;
                     }
                 }
@@ -594,7 +594,7 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
                     }
                     catch (const TarsException & ex)
                     {
-                        TLOGERROR("[RouterHandle::fromTransferDo] trans exception: " << ex.what() << endl);
+                        TLOG_ERROR("[RouterHandle::fromTransferDo] trans exception: " << ex.what() << endl);
                         break;
                     }
                 }
@@ -620,11 +620,11 @@ tars::Int32 RouterHandle::fromTransferDo(const TransferInfo& transferingInfo, ta
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::fromTransferDo] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferDo] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::fromTransferDo] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::fromTransferDo] unkown_exception" << endl);
     }
 
     if (param->setEnd())
@@ -642,13 +642,13 @@ tars::Int32 RouterHandle::toTransferStart(const std::string& moduleName, tars::I
         if (g_app.gstat()->serverType() != MASTER)
         {
             //SLAVE状态下不做迁移
-            TLOGERROR("[RouterClientImp::toTransferStart] is not Master" << endl);
+            TLOG_ERROR("[RouterClientImp::toTransferStart] is not Master" << endl);
             return 1;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("[RouterClientImp::toTransferStart] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+            TLOG_ERROR("[RouterClientImp::toTransferStart] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
             return 2;
         }
 
@@ -659,7 +659,7 @@ tars::Int32 RouterHandle::toTransferStart(const std::string& moduleName, tars::I
                 int iRet = g_route_table.reload(packTable, transferingInfoList);
                 if (iRet != UnpackTable::RET_SUCC)
                 {
-                    TLOGERROR("[RouterClientImp::toTransferStart] reload route error, iRet = " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::toTransferStart] reload route error, iRet = " << iRet << endl);
                     return -1;
                 }
                 _transInfoListVer = transInfoListVer;
@@ -671,7 +671,7 @@ tars::Int32 RouterHandle::toTransferStart(const std::string& moduleName, tars::I
                 {
                     _transferingInfoList.clear();
                     updateCSyncKeyLimit();
-                    TLOGERROR("[RouterClientImp::toTransferStart] Server Type error" << endl);
+                    TLOG_ERROR("[RouterClientImp::toTransferStart] Server Type error" << endl);
                     return 3;
                 }
                 updateCSyncKeyLimit();
@@ -698,7 +698,7 @@ tars::Int32 RouterHandle::toTransferStart(const std::string& moduleName, tars::I
 
                 if (iRet != TC_HashMapMalloc::RT_OK)
                 {
-                    TLOGERROR("[RouterClientImp::toTransferStart] llhashmap eraseHashByForce error, iret =  " << iRet << endl);
+                    TLOG_ERROR("[RouterClientImp::toTransferStart] llhashmap eraseHashByForce error, iret =  " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return -1;
                 }
@@ -712,12 +712,12 @@ tars::Int32 RouterHandle::toTransferStart(const std::string& moduleName, tars::I
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::toTransferStart] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::toTransferStart] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::toTransferStart] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::toTransferStart] unkown_exception" << endl);
         return -1;
     }
     return 0;
@@ -730,13 +730,13 @@ tars::Int32 RouterHandle::setRouterInfoForSwicth(const std::string & moduleName,
         if (g_app.gstat()->serverType() == SLAVE && g_app.gstat()->isSlaveCreating() == true)
         {
             //在SLAVE自建的状态下 禁止切换
-            TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] cant swicth" << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] cant swicth" << endl);
             return -1;
         }
         if (moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
             return -1;
         }
 
@@ -744,7 +744,7 @@ tars::Int32 RouterHandle::setRouterInfoForSwicth(const std::string & moduleName,
         int iRet = g_route_table.reload(packTable);
         if (iRet != UnpackTable::RET_SUCC)
         {
-            TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] reload route error, iRet = " << iRet << endl);
+            TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] reload route error, iRet = " << iRet << endl);
             return -1;
         }
         _transInfoListVer = TRANSFER_CLEAN_VERSION;
@@ -768,17 +768,17 @@ tars::Int32 RouterHandle::setRouterInfoForSwicth(const std::string & moduleName,
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] exception: " << ex.what() << endl);
         return -1;
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::setRouterInfoForSwicth] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::setRouterInfoForSwicth] unkown_exception" << endl);
         return -1;
     }
     return 0;
@@ -789,7 +789,7 @@ tars::Int32 RouterHandle::getBinlogdif(tars::Int32 &difBinlogTime)
     {
         if (g_app.gstat()->serverType() == MASTER)
         {
-            TLOGERROR("[RouterClientImp::getBinlogdif] is not Slave" << endl);
+            TLOG_ERROR("[RouterClientImp::getBinlogdif] is not Slave" << endl);
             return 1;
         }
         else
@@ -800,12 +800,12 @@ tars::Int32 RouterHandle::getBinlogdif(tars::Int32 &difBinlogTime)
     }
     catch (const std::exception & ex)
     {
-        TLOGERROR("[RouterClientImp::getBinlogdif] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterClientImp::getBinlogdif] exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("[RouterClientImp::getBinlogdif] unkown_exception" << endl);
+        TLOG_ERROR("[RouterClientImp::getBinlogdif] unkown_exception" << endl);
         return -1;
     }
 }
@@ -819,7 +819,7 @@ void RouterHandle::heartBeat()
     }
     catch (const TarsException & ex)
     {
-        TLOGERROR("[RouterHandle::heartBeat] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::heartBeat] exception: " << ex.what() << endl);
 
         try
         {
@@ -828,7 +828,7 @@ void RouterHandle::heartBeat()
         }
         catch (const TarsException & ex)
         {
-            TLOGERROR("[RouterHandle::heartBeat] exception: " << ex.what() << endl);
+            TLOG_ERROR("[RouterHandle::heartBeat] exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         }
     }
@@ -848,7 +848,7 @@ int RouterHandle::getUpdateServant(const string & mainkey, int index, bool bWrit
             ret = g_route_table.getMaster(mainkey, serverInfo);
             if (ret != 0)
             {
-                TLOGERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
+                TLOG_ERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
                 return ret;
             }
 
@@ -861,7 +861,7 @@ int RouterHandle::getUpdateServant(const string & mainkey, int index, bool bWrit
             ret = g_route_table.getIdcServer(mainkey, idc, false, serverInfo);
             if (ret != 0)
             {
-                TLOGERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
+                TLOG_ERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
                 return ret;
             }
 
@@ -872,11 +872,11 @@ int RouterHandle::getUpdateServant(const string & mainkey, int index, bool bWrit
     }
     catch (const std::exception& ex)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
     }
 
     return -1;
@@ -923,18 +923,18 @@ int RouterHandle::getUpdateServant(const vector<string> &vtMainkey, const vector
         }
         if (ret != 0)
         {
-            TLOGERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
+            TLOG_ERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
         }
 
         return ret;
     }
     catch (const std::exception& ex)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
     }
 
     return -1;
@@ -975,18 +975,18 @@ int RouterHandle::getUpdateServant(const vector<string> &vtMainkey, bool bWrite,
         }
         if (ret != 0)
         {
-            TLOGERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
+            TLOG_ERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
         }
 
         return ret;
     }
     catch (const std::exception& ex)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
     }
 
     return -1;
@@ -1027,18 +1027,18 @@ int RouterHandle::getUpdateServantKey(const vector<string> &vtMainkey, bool bWri
         }
         if (ret != 0)
         {
-            TLOGERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
+            TLOG_ERROR("RouterHandle::getUpdateServant get server error:" << ret << endl);
         }
 
         return ret;
     }
     catch (const std::exception& ex)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
+        TLOG_ERROR("[RouterHandle::getUpdateServant] unkown_exception" << endl);
     }
 
     return -1;
@@ -1056,11 +1056,11 @@ int RouterHandle::updateServant2Str(const RspUpdateServant &updateServant, strin
     }
     catch (const std::exception& ex)
     {
-        TLOGERROR("[RouterHandle::updateServant2Str] exception: " << ex.what() << endl);
+        TLOG_ERROR("[RouterHandle::updateServant2Str] exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[RouterHandle::updateServant2Str] unkown_exception" << endl);
+        TLOG_ERROR("[RouterHandle::updateServant2Str] unkown_exception" << endl);
     }
 
     return -1;
@@ -1081,7 +1081,7 @@ string RouterHandle::getConnectHbAddr()
         int ret = g_route_table.getGroup(serverName, group);
         if (ret != 0)
         {
-            TLOGERROR("RouterHandle::" << __FUNCTION__ << "|getGroup error:" << ret << endl);
+            TLOG_ERROR("RouterHandle::" << __FUNCTION__ << "|getGroup error:" << ret << endl);
             return sRet;
         }
 
@@ -1092,7 +1092,7 @@ string RouterHandle::getConnectHbAddr()
         map<string, ServerInfo>::const_iterator itSelf = pack.serverList.find(serverName);
         if (itMaster == pack.serverList.end() || itSelf == pack.serverList.end())
         {
-            TLOGERROR("RouterHandle::" << __FUNCTION__ << "|find serverInfo error" << endl);
+            TLOG_ERROR("RouterHandle::" << __FUNCTION__ << "|find serverInfo error" << endl);
             return sRet;
         }
 
@@ -1105,7 +1105,7 @@ string RouterHandle::getConnectHbAddr()
     }
     catch (const exception & ex)
     {
-        TLOGERROR("RouterHandle::" << __FUNCTION__ << " exception: " << ex.what() << endl);
+        TLOG_ERROR("RouterHandle::" << __FUNCTION__ << " exception: " << ex.what() << endl);
     }
 
     return sRet;
@@ -1116,7 +1116,7 @@ int RouterHandle::masterDowngrade()
     if (g_app.gstat()->serverType() != MASTER)
     {
         string err("RouterHandle::masterDowngrade, server is not master. error.");
-        TLOGERROR(err << endl);
+        TLOG_ERROR(err << endl);
         FDLOG("switch") << err << endl;
         return -1;
     }
@@ -1165,7 +1165,7 @@ string RouterHandle::getTransDest(int pageNo)
     int iRet = g_route_table.getTrans(pageNo, srcServer, destServer);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[RouterClientImp::getTransDest] getTrans error, iRet = " << iRet << endl);
+        TLOG_ERROR("[RouterClientImp::getTransDest] getTrans error, iRet = " << iRet << endl);
         return "";
     }
     string sTransDest = destServer.RouteClientServant;

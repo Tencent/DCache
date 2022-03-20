@@ -94,7 +94,7 @@ void ReleaseRequestQueueManager::setProgressRecord(int requestId, int percent, R
     map<int, ReleaseProgress>::iterator it = _releaseProgress.find(requestId);
     if (it == _releaseProgress.end())
     {
-        TLOGDEBUG(FUN_LOG << "request id:" << requestId << "no found" << endl);
+        TLOG_DEBUG(FUN_LOG << "request id:" << requestId << "no found" << endl);
         return;
     }
 
@@ -124,7 +124,7 @@ void ReleaseRequestQueueManager::deleteProgressRecord(int requestId)
     map<int, ReleaseProgress>::iterator it = _releaseProgress.find(requestId);
     if (it == _releaseProgress.end())
     {
-        TLOGDEBUG(FUN_LOG << "request id:" << requestId << " has been deleted" << endl);
+        TLOG_DEBUG(FUN_LOG << "request id:" << requestId << " has been deleted" << endl);
         return;
     }
     delete it->second.releaseReq;
@@ -177,11 +177,11 @@ void ReleaseThread::run()
         }
         catch (exception& e)
         {
-            TLOGERROR(FUN_LOG << "catch exception:" << e.what() << endl);
+            TLOG_ERROR(FUN_LOG << "catch exception:" << e.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR(FUN_LOG << "catch unkown exception" << endl);
+            TLOG_ERROR(FUN_LOG << "catch unkown exception" << endl);
         }
     }
 }
@@ -193,7 +193,7 @@ void ReleaseThread::terminate()
 
 void ReleaseThread::doReleaseRequest(ReleaseRequest* request)
 {
-    TLOGDEBUG(FUN_LOG<< "release request id:" << request->requestId << endl);
+    TLOG_DEBUG(FUN_LOG<< "release request id:" << request->requestId << endl);
     string errmsg("");
 
     try
@@ -236,12 +236,12 @@ void ReleaseThread::doReleaseRequest(ReleaseRequest* request)
     catch (exception &ex)
     {
         errmsg = string("release server catch exception:") + ex.what() + "|request id:" + TC_Common::tostr(request->requestId);
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch(...)
     {
         errmsg = string("catch unknown exception|request id:") + TC_Common::tostr(request->requestId);
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     _queueManager->setProgressRecord(request->requestId, 0, RELEASE_FAILED, errmsg);
@@ -251,7 +251,7 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
 {
     string resultStr;
 
-    TLOGDEBUG(FUN_LOG << "release app name:" << serverInfo.appName << "|server name:" << serverInfo.serverName << "|ip: " << serverInfo.nodeName << "|version:" << serverInfo.version << endl);
+    TLOG_DEBUG(FUN_LOG << "release app name:" << serverInfo.appName << "|server name:" << serverInfo.serverName << "|ip: " << serverInfo.nodeName << "|version:" << serverInfo.version << endl);
 
     tars::PatchRequest  req;
     req.appname     = serverInfo.appName;
@@ -266,14 +266,14 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
     req.md5         = serverInfo.md5;
     req.ostype      = serverInfo.ostype;
     //req.filepath    = ""; //可指定带路径的发布包文件名
-    TLOGDEBUG(FUN_LOG << "release server batch patch message: app name:" << req.appname << "|server name:" << req.servername << "|server ip:" << req.nodename << "|group name:" << req.groupname << "|version:" << req.version << "|md5:" << req.md5 << "|ostype:" << req.ostype << endl);
+    TLOG_DEBUG(FUN_LOG << "release server batch patch message: app name:" << req.appname << "|server name:" << req.servername << "|server ip:" << req.nodename << "|group name:" << req.groupname << "|version:" << req.version << "|md5:" << req.md5 << "|ostype:" << req.ostype << endl);
 
     // 批量 patch 服务
     int iRet = _adminproxy->batchPatch(req, resultStr);
     if (iRet != 0)
     {
         errmsg = string("patch server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|errmsg:" + resultStr;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -283,7 +283,7 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
         if (0 != _adminproxy->getPatchPercent(req.appname, req.servername, req.nodename, patchInfo))
         {
             errmsg = string("get patch percent failed|servername:") + req.servername + "|server ip:" + req.nodename + "|patch server result:" + patchInfo.sResult;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -291,25 +291,25 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
 
         if (!patchInfo.bPatching && patchInfo.iPercent == 100)
         {
-            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
+            TLOG_DEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
             break;
         }
         else
         {
-            TLOGDEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
+            TLOG_DEBUG(FUN_LOG << "release progress:" << patchInfo.iPercent << "%" << endl);
         }
 
         sleep(1);
     }
 
-    TLOGDEBUG(FUN_LOG << "patch server successfully" << endl);
+    TLOG_DEBUG(FUN_LOG << "patch server successfully" << endl);
 
     // 启动服务
     iRet = _adminproxy->startServer("DCache", req.servername, req.nodename, resultStr);
     if (iRet != 0)
     {
         errmsg = string("start server failed|servername:") + req.servername + "|server ip:" + req.nodename + "|errmsg:" + resultStr;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -330,7 +330,7 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
             else
             {
                 errmsg = string("adminproxy: server state is unusual|servername:") + req.servername + "|server ip:" + req.nodename + "|cache server may be inactive! getServerState result:" + resultStr;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 // 服务未正常启动，不终止流程，继续发布其他服务
                 break;
             }
@@ -341,7 +341,7 @@ int ReleaseThread::releaseServer(ReleaseInfo &serverInfo, string & errmsg)
         }
     }
 
-    TLOGDEBUG(FUN_LOG << "release server finish, result:" << (iRet == 0 ? "success" : "failed") << "|appname:" << req.appname << "|servername:" << req.servername << "|server ip:" << req.nodename << endl);
+    TLOG_DEBUG(FUN_LOG << "release server finish, result:" << (iRet == 0 ? "success" : "failed") << "|appname:" << req.appname << "|servername:" << req.servername << "|server ip:" << req.nodename << endl);
 
     return 0;
 }

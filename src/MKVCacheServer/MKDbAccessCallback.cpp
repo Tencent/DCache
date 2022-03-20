@@ -199,7 +199,7 @@ MKDbAccessCBParamPtr CBQueue::getCBParamPtr(const string &mainKey, bool &isCreat
         if (tNow - it->second->getCreateTime() > _timeout)
         {
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
-            TLOGERROR("CBQueue::getCBParamPtr: " << mainKey << " timeout, erase it" << endl);
+            TLOG_ERROR("CBQueue::getCBParamPtr: " << mainKey << " timeout, erase it" << endl);
             _callbackParams.erase(mainKey);
             p = new MKDbAccessCBParam(mainKey);
             p->setStatus(MKDbAccessCBParam::INIT);
@@ -228,7 +228,7 @@ void MKDbAccessCallback::callback_select(tars::Int32 ret, const vector<map<std::
     int iRet = addCache(vtData, ret);
     if (iRet != 0)
     {
-        TLOGERROR("[MKDbAccessCallback::callback_select] addCache error, ret = " << iRet << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
+        TLOG_ERROR("[MKDbAccessCallback::callback_select] addCache error, ret = " << iRet << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
     }
     if (ret >= 0)
     {
@@ -243,7 +243,7 @@ void MKDbAccessCallback::callback_select(tars::Int32 ret, const vector<map<std::
     }
     else
     {
-        TLOGERROR("[MKDbAccessCallback::callback_select] error, ret = " << ret << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
+        TLOG_ERROR("[MKDbAccessCallback::callback_select] error, ret = " << ret << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
         procCallBack(MKDbAccessCallback::ERROR);
         g_app.ppReport(PPReport::SRP_DB_ERR, 1);
     }
@@ -255,7 +255,7 @@ void MKDbAccessCallback::callback_select(tars::Int32 ret, const vector<map<std::
 void MKDbAccessCallback::callback_select_exception(tars::Int32 ret)
 {
     TC_LockT<TC_ThreadMutex> lock(_cbParamPtr->getMutex());
-    TLOGERROR("[MKDbAccessCallback::callback_select_exception] ret = " << ret << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
+    TLOG_ERROR("[MKDbAccessCallback::callback_select_exception] ret = " << ret << ", mainKey = " << _cbParamPtr->getMainKey() << endl);
     g_app.ppReport(PPReport::SRP_DB_EX, 1);
     procCallBack(MKDbAccessCallback::ERROR);
     _cbParamPtr->setStatus(MKDbAccessCBParam::FINISH);
@@ -273,7 +273,7 @@ int MKDbAccessCallback::stringOrderData(const vector<map<std::string, std::strin
         map<std::string, std::string>::const_iterator it = vtData[i].find(_orderItem);
         if (it == vtData[i].end())
         {
-            TLOGERROR("[MKDbAccessCallback::stringOrderData] not found item " << _orderItem << endl);
+            TLOG_ERROR("[MKDbAccessCallback::stringOrderData] not found item " << _orderItem << endl);
             return -1;
         }
         result[it->second] = i;
@@ -311,7 +311,7 @@ int MKDbAccessCallback::intOrderData(const vector<map<std::string, std::string> 
         map<std::string, std::string>::const_iterator it = vtData[i].find(_orderItem);
         if (it == vtData[i].end())
         {
-            TLOGERROR("[MKDbAccessCallback::intOrderData] not found item " << _orderItem << endl);
+            TLOG_ERROR("[MKDbAccessCallback::intOrderData] not found item " << _orderItem << endl);
             return -1;
         }
         result[TC_Common::strto<double>(it->second)] = i;
@@ -343,7 +343,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 {
     string mk = _cbParamPtr->getMainKey();
 
-    TLOGDEBUG("async select db, ret:" << ret << " vtData.size() = " << vtData.size() << ", mainKey = " << mk << endl);
+    TLOG_DEBUG("async select db, ret:" << ret << " vtData.size() = " << vtData.size() << ", mainKey = " << mk << endl);
     const FieldConf &fieldConfig = g_app.gstat()->fieldconfig();
     if (ret > 0)
     {
@@ -369,7 +369,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                         }
                         if (g_app.gstat()->isExpireEnabled())
                         {
-                            TLOGDEBUG("ExpireTime:" << ExpireTime << endl);
+                            TLOG_DEBUG("ExpireTime:" << ExpireTime << endl);
                             if (ExpireTime < NowTime && ExpireTime != 0)
                                 continue;
                         }
@@ -391,7 +391,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                     map<string, FieldInfo>::const_iterator it = fieldConfig.mpFieldInfo.find(_orderItem);
                     if (it == fieldConfig.mpFieldInfo.end())
                     {
-                        TLOGERROR("[MKDbAccessCallback::addCache] not found item " << _orderItem << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::addCache] not found item " << _orderItem << endl);
                         return -1;
                     }
                     else
@@ -401,7 +401,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                         {
                             if (intOrderData(vtData, retData) < 0)
                             {
-                                TLOGERROR("[MKDbAccessCallback::addCache] intOrderData ret < 0 " << endl);
+                                TLOG_ERROR("[MKDbAccessCallback::addCache] intOrderData ret < 0 " << endl);
                                 return -1;
                             }
                         }
@@ -409,13 +409,13 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                         {
                             if (stringOrderData(vtData, retData) < 0)
                             {
-                                TLOGERROR("[MKDbAccessCallback::addCache] stringOrderData ret < 0 " << endl);
+                                TLOG_ERROR("[MKDbAccessCallback::addCache] stringOrderData ret < 0 " << endl);
                                 return -1;
                             }
                         }
                         else
                         {
-                            TLOGERROR("[MKDbAccessCallback::addCache] unknow item type " << it->second.type << endl);
+                            TLOG_ERROR("[MKDbAccessCallback::addCache] unknow item type " << it->second.type << endl);
                             return -1;
                         }
                     }
@@ -434,7 +434,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                         if (g_app.gstat()->isExpireEnabled())
                         {
-                            TLOGDEBUG("ExpireTime:" << ExpireTime << endl);
+                            TLOG_DEBUG("ExpireTime:" << ExpireTime << endl);
                             if (ExpireTime < NowTime && ExpireTime != 0)
                                 continue;
                         }
@@ -456,7 +456,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                     {
                         //严重错误
-                        TLOGERROR("[MKDbAccessCallback::addCache] set error, ret = " << iRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::addCache] set error, ret = " << iRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         g_HashMap.erase(mk);
 
@@ -477,7 +477,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                         if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                         {
-                            TLOGERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
+                            TLOG_ERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             return -2;
                         }
@@ -490,7 +490,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                             if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                             {
-                                TLOGERROR("addCache|" << mk << "|saveOnlyKey|failed|" << iRet << endl);
+                                TLOG_ERROR("addCache|" << mk << "|saveOnlyKey|failed|" << iRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 return -3;
                             }
@@ -521,7 +521,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                     if (g_app.gstat()->isExpireEnabled())
                     {
-                        TLOGDEBUG("ExpireTime:" << ExpireTime << endl);
+                        TLOG_DEBUG("ExpireTime:" << ExpireTime << endl);
                         if (ExpireTime < NowTime && ExpireTime != 0)
                             continue;
                     }
@@ -541,7 +541,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                     {
                         //严重错误
-                        TLOGERROR("[MKDbAccessCallback::addCache] addSet error, ret = " << iRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::addCache] addSet error, ret = " << iRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         g_HashMap.erase(mk);
 
@@ -562,7 +562,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                         if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                         {
-                            TLOGERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
+                            TLOG_ERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             return -2;
                         }
@@ -575,7 +575,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                             if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                             {
-                                TLOGERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
+                                TLOG_ERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 return -3;
                             }
@@ -604,7 +604,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                     }
                     if (g_app.gstat()->isExpireEnabled())
                     {
-                        TLOGDEBUG("ExpireTime:" << ExpireTime << endl);
+                        TLOG_DEBUG("ExpireTime:" << ExpireTime << endl);
                         if (ExpireTime < NowTime && ExpireTime != 0)
                             continue;
                     }
@@ -625,7 +625,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                     {
                         //严重错误
-                        TLOGERROR("[MKDbAccessCallback::addCache] addSet error, ret = " << iRet << ", mainKey = " << mk << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::addCache] addSet error, ret = " << iRet << ", mainKey = " << mk << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         g_HashMap.erase(mk);
 
@@ -646,7 +646,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                         if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                         {
-                            TLOGERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
+                            TLOG_ERROR("addCache|" << mk << "|setFullData|failed|" << iRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             return -2;
                         }
@@ -659,7 +659,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                             if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                             {
-                                TLOGERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
+                                TLOG_ERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 return -3;
                             }
@@ -683,7 +683,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
             if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
             {
-                TLOGERROR("addCache|" << mk << "|FullData|failed|" << iRet << endl);
+                TLOG_ERROR("addCache|" << mk << "|FullData|failed|" << iRet << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 return -2;
             }
@@ -701,7 +701,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
+                        TLOG_ERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return -3;
                     }
@@ -716,7 +716,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
+                        TLOG_ERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return -3;
                     }
@@ -731,7 +731,7 @@ int MKDbAccessCallback::addCache(const vector<map<std::string, std::string> >& v
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXIST && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
+                        TLOG_ERROR("addCache|" << mk << "|OnlyKey|failed|" << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         return -3;
                     }
@@ -784,7 +784,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procSelect: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procSelect: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtSelect.size(); ++j)
                     {
                         if (vtSelect[j].bBatch)
@@ -821,7 +821,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                                 int ret = RouterHandle::getInstance()->getUpdateServant(sMainKey, false, context[API_IDC], updateServant);
                                 if (ret != 0)
                                 {
-                                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                                 }
                                 else
                                 {
@@ -847,7 +847,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                     {
                         for (size_t k = 0; k < vtSelect[i].vvUKConds.size(); ++k)
                         {
-                            TLOGDEBUG("async selectbatchex db " << endl);
+                            TLOG_DEBUG("async selectbatchex db " << endl);
                             procSelect(sMainKey, vtSelect[i], vtSelect[i].vvUKConds[k]);
                         }
                     }
@@ -866,7 +866,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                         if (iDataCount > _mkeyMaxSelectCount)
                         {
                             FDLOG("MainKeyDataCount") << "[MKDbAccessCallback::procSelect] mainKey=" << sMainKey << " dataCount=" << iDataCount << endl;
-                            TLOGERROR("MKDbAccessCallback::procSelect: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
+                            TLOG_ERROR("MKDbAccessCallback::procSelect: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             if (vtSelect[i].bBatch)
                             {
@@ -987,7 +987,7 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procSelect g_HashMap.get return " << iRet << ", mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procSelect g_HashMap.get return " << iRet << ", mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         if (vtSelect[i].bBatch)
                         {
@@ -1016,12 +1016,12 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procSelect exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procSelect exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procSelect unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procSelect unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -1090,12 +1090,12 @@ void MKDbAccessCallback::procSelect(const vector<MKDbAccessCBParam::SelectCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procSelect exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procSelect exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procSelect unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procSelect unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -1121,7 +1121,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
         itInfo = fieldConfig.mpFieldInfo.find(vtCondition[j].fieldName);
         if (itInfo == fieldConfig.mpFieldInfo.end())
         {
-            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << " mpFieldInfo find error" << endl);
+            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << " mpFieldInfo find error" << endl);
             return;
         }
         uKeyEncode.write(vtCondition[j].value, itInfo->second.tag, itInfo->second.type);
@@ -1166,7 +1166,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
                 record.mainKey = sMainKey;
                 if (keyValue.value.size() != 1)
                 {
-                    TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " value size error,should be 1 :" << keyValue.value.size() << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " value size error,should be 1 :" << keyValue.value.size() << endl);
                     MUKBatchRsp rsp;
                     MKCache::async_response_getMUKBatch(selectCbParam.current, ET_SYS_ERR, rsp);
                 }
@@ -1251,7 +1251,7 @@ void MKDbAccessCallback::procSelect(const string sMainKey, const  MKDbAccessCBPa
     }
     else
     {
-        TLOGERROR("MKDbAccessCallback::procSelect g_HashMap.get return " << iRet << ", mainKey = " << sMainKey << endl);
+        TLOG_ERROR("MKDbAccessCallback::procSelect g_HashMap.get return " << iRet << ", mainKey = " << sMainKey << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         if (selectCbParam.bBatch)
         {
@@ -1292,7 +1292,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procInsert: " << sMainKey << " forbid insert" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procInsert: " << sMainKey << " forbid insert" << endl);
                     for (size_t j = i; j < vtInsert.size(); ++j)
                     {
                         if (vtInsert[j].bBatch)
@@ -1321,7 +1321,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
 
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procInsert: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procInsert: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtInsert.size(); ++j)
                     {
                         if (vtInsert[j].bBatch)
@@ -1334,7 +1334,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                                 int ret = g_route_table.getMaster(sMainKey, serverInfo);
                                 if (ret != 0)
                                 {
-                                    TLOGERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
+                                    TLOG_ERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
                                 }
                                 else
                                 {
@@ -1367,7 +1367,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                                 int ret = RouterHandle::getInstance()->getUpdateServant(sMainKey, true, "", updateServant);
                                 if (ret != 0)
                                 {
-                                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                                 }
                                 else
                                 {
@@ -1421,7 +1421,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                     }
                     else if (iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXPIRED && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("MKDbAccessCallback::procInsert g_HashMap.get error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procInsert g_HashMap.get error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         if (vtInsert[i].bBatch)
                         {
@@ -1487,7 +1487,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                     }
                     else if (iRet == TC_Multi_HashMap_Malloc::RT_NO_MEMORY)
                     {
-                        TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtInsert[i].logValue << "|" << (int)vtInsert[i].ver << "|" << vtInsert[i].dirty << "|" << vtInsert[i].replace << "|failed|no memory" << endl);
+                        TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtInsert[i].logValue << "|" << (int)vtInsert[i].ver << "|" << vtInsert[i].dirty << "|" << vtInsert[i].replace << "|failed|no memory" << endl);
                         if (vtInsert[i].bBatch)
                         {
                             vtInsert[i].pParam->addFailIndexReason(vtInsert[i].iIndex, ET_MEM_FULL);
@@ -1511,7 +1511,7 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procInsert g_HashMap.set error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procInsert g_HashMap.set error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         if (vtInsert[i].bBatch)
                         {
@@ -1559,12 +1559,12 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procInsert exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procInsert exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procInsert unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procInsert unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -1601,16 +1601,16 @@ void MKDbAccessCallback::procInsert(const vector<MKDbAccessCBParam::InsertCBPara
                         MKWCache::async_response_insertMKV(vtInsert[i].current, iRetCode);
                     }
                 }
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtInsert[i].logValue << "|" << (int)vtInsert[i].ver << "|" << vtInsert[i].dirty << "|" << vtInsert[i].replace << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtInsert[i].logValue << "|" << (int)vtInsert[i].ver << "|" << vtInsert[i].dirty << "|" << vtInsert[i].replace << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procInsert exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procInsert exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procInsert unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procInsert unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -1633,7 +1633,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdate: " << sMainKey << " forbid update" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdate: " << sMainKey << " forbid update" << endl);
                     for (size_t j = i; j < vtUpdate.size(); ++j)
                     {
                         MKWCache::async_response_updateMKV(vtUpdate[j].current, ET_FORBID_OPT);
@@ -1643,7 +1643,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
 
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdate: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdate: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtUpdate.size(); ++j)
                     {
                         map<string, string>& context = vtUpdate[j].current->getContext();
@@ -1656,7 +1656,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                             int ret = RouterHandle::getInstance()->getUpdateServant(sMainKey, true, "", updateServant);
                             if (ret != 0)
                             {
-                                TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                                TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                             }
                             else
                             {
@@ -1682,7 +1682,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         itInfo = fieldConfig.mpFieldInfo.find(vtUpdate[i].vtUKCond[j].fieldName);
                         if (itInfo == fieldConfig.mpFieldInfo.end())
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                             return;
                         }
                         uKeyEncode.write(vtUpdate[i].vtUKCond[j].value, itInfo->second.tag, itInfo->second.type);
@@ -1734,7 +1734,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                                     }
                                     else
                                     {
-                                        TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.set error, ret = " << iSetRet << ",mainKey = " << sMainKey << endl);
+                                        TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.set error, ret = " << iSetRet << ",mainKey = " << sMainKey << endl);
                                         g_app.ppReport(PPReport::SRP_EX, 1);
                                         MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                                         continue;
@@ -1752,7 +1752,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                     }
                     else if (iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                         continue;
@@ -1767,7 +1767,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         {
                             if (vtUpdate[i].vtValueCond.size() != 0)
                             {
-                                TLOGERROR("MKDbAccessCallback::procUpdate data not exist, need insert but cond param error, mainKey = " << sMainKey << endl);
+                                TLOG_ERROR("MKDbAccessCallback::procUpdate data not exist, need insert but cond param error, mainKey = " << sMainKey << endl);
                                 MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_INPUT_PARAM_ERROR);
                                 continue;
                             }
@@ -1776,7 +1776,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                             int iRetCode;
                             if (!checkSetValue(vtUpdate[i].mpValue, mpJValue, iRetCode))
                             {
-                                TLOGERROR("MKDbAccessCallback::procUpdate data not exist, need insert but value param error, mainKey = " << sMainKey << endl);
+                                TLOG_ERROR("MKDbAccessCallback::procUpdate data not exist, need insert but value param error, mainKey = " << sMainKey << endl);
                                 MKWCache::async_response_updateMKV(vtUpdate[i].current, iRetCode);
                                 continue;
                             }
@@ -1789,7 +1789,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                                 itInfo = fieldConfig.mpFieldInfo.find(sValueName);
                                 if (itInfo == fieldConfig.mpFieldInfo.end())
                                 {
-                                    TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                                    TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                                     return;
                                 }
                                 vEncode.write(mpJValue[sValueName].value, itInfo->second.tag, itInfo->second.type);
@@ -1805,19 +1805,19 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                                 if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                                 {
                                     MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_DATA_VER_MISMATCH);
-                                    TLOGERROR("MKDbAccessCallback::procUpdate data not exist, need insert but g_HashMap.set ver mismatch, mainKey = " << sMainKey << endl);
+                                    TLOG_ERROR("MKDbAccessCallback::procUpdate data not exist, need insert but g_HashMap.set ver mismatch, mainKey = " << sMainKey << endl);
                                     continue;
                                 }
                                 else
                                 {
-                                    TLOGERROR("MKDbAccessCallback::procUpdate data not exist, need insert but g_HashMap.set error, ret = " << iSetRet << ", mainKey = " << sMainKey << endl);
+                                    TLOG_ERROR("MKDbAccessCallback::procUpdate data not exist, need insert but g_HashMap.set error, ret = " << iSetRet << ", mainKey = " << sMainKey << endl);
                                     g_app.ppReport(PPReport::SRP_EX, 1);
                                     MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                                     continue;
                                 }
 
                             }
-                            TLOGDEBUG("procUpdate data not exist, need insert, insert succ, mk = " << sMainKey << endl);
+                            TLOG_DEBUG("procUpdate data not exist, need insert, insert succ, mk = " << sMainKey << endl);
                             iUpdateCount = 1;
                             if (_recordBinLog)
                                 WriteBinLog::set(sMainKey, uk, value, vtUpdate[i].expireTime, vtUpdate[i].dirty, _binlogFile);
@@ -1840,7 +1840,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         itInfo = fieldConfig.mpFieldInfo.find(vtUpdate[i].vtUKCond[j].fieldName);
                         if (itInfo == fieldConfig.mpFieldInfo.end())
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                             return;
                         }
                         uKeyEncode.write(vtUpdate[i].vtUKCond[j].value, itInfo->second.tag, itInfo->second.type);
@@ -1878,7 +1878,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         MKWCache::async_response_updateMKVAtom(vtUpdate[i].current, ET_SYS_ERR);
                         continue;
@@ -1893,7 +1893,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         if (iDataCount > _mkeyMaxSelectCount)
                         {
                             FDLOG("MainKeyDataCount") << "[MKDbAccessCallback::procUpdate] mainKey=" << sMainKey << " dataCount=" << iDataCount << endl;
-                            TLOGERROR("MKDbAccessCallback::procUpdate: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
+                            TLOG_ERROR("MKDbAccessCallback::procUpdate: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             MKWCache::async_response_updateMKVAtom(vtUpdate[i].current, ET_SYS_ERR);
                             continue;
@@ -1917,7 +1917,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         int iUpdateRet = updateResultAtom(sMainKey, vtValue, vtUpdate[i].mpValue, vtUpdate[i].vtUKCond, vtUpdate[i].vtValueCond, vtUpdate[i].stLimit, 0, vtUpdate[i].dirty, vtUpdate[i].expireTime, _insertAtHead, _updateInOrder, _binlogFile, _recordBinLog, _recordKeyBinLog, iUpdateCount);
                         if (iUpdateRet != 0)
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|updateResult error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|updateResult error" << endl);
                             MKWCache::async_response_updateMKVAtom(vtUpdate[i].current, ET_SYS_ERR);
                             continue;
                         }
@@ -1929,7 +1929,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         MKWCache::async_response_updateMKVAtom(vtUpdate[i].current, ET_SYS_ERR);
                         continue;
@@ -1944,7 +1944,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         if (iDataCount > _mkeyMaxSelectCount)
                         {
                             FDLOG("MainKeyDataCount") << "[MKDbAccessCallback::procUpdate] mainKey=" << sMainKey << " dataCount=" << iDataCount << endl;
-                            TLOGERROR("MKDbAccessCallback::procUpdate: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
+                            TLOG_ERROR("MKDbAccessCallback::procUpdate: g_HashMap.get(mk, iDataCount) error, mainKey = " << sMainKey << " iDataCount = " << iDataCount << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                             continue;
@@ -1968,7 +1968,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                         int iUpdateRet = updateResult(sMainKey, vtValue, vtUpdate[i].mpValue, vtUpdate[i].vtUKCond, vtUpdate[i].vtValueCond, vtUpdate[i].stLimit, 0, vtUpdate[i].dirty, vtUpdate[i].expireTime, _insertAtHead, _updateInOrder, _binlogFile, _recordBinLog, _recordKeyBinLog, iUpdateCount);
                         if (iUpdateRet != 0)
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|updateResult error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|updateResult error" << endl);
                             MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                             continue;
                         }
@@ -1980,7 +1980,7 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.get error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         MKWCache::async_response_updateMKV(vtUpdate[i].current, ET_SYS_ERR);
                         continue;
@@ -1989,12 +1989,12 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdate exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdate exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdate unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdate unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2015,16 +2015,16 @@ void MKDbAccessCallback::procUpdate(const vector<MKDbAccessCBParam::UpdateCBPara
                 {
                     MKWCache::async_response_updateMKV(vtUpdate[i].current, iRetCode);
                 }
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdate[i].ver << "|" << vtUpdate[i].dirty << "|" << vtUpdate[i].insert << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdate exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdate exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdate unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdate unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2045,7 +2045,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDel: " << sMainKey << " forbid del" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDel: " << sMainKey << " forbid del" << endl);
                     for (size_t j = i; j < vtDel.size(); ++j)
                     {
                         MKWCache::async_response_delMKV(vtDel[j].current, ET_FORBID_OPT);
@@ -2055,7 +2055,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
 
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDel: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDel: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtDel.size(); ++j)
                     {
                         map<string, string>& context = vtDel[j].current->getContext();
@@ -2068,7 +2068,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                             int ret = RouterHandle::getInstance()->getUpdateServant(sMainKey, true, "", updateServant);
                             if (ret != 0)
                             {
-                                TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                                TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                             }
                             else
                             {
@@ -2093,7 +2093,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                         itInfo = fieldConfig.mpFieldInfo.find(vtDel[i].vtUKCond[j].fieldName);
                         if (itInfo == fieldConfig.mpFieldInfo.end())
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                             return;
                         }
                         uKeyEncode.write(vtDel[i].vtUKCond[j].value, itInfo->second.tag, itInfo->second.type);
@@ -2115,7 +2115,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
 
                                 if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL))
                                 {
-                                    TLOGERROR("MKDbAccessCallback::procDel g_HashMap.erase error, ret = " << iDelRet << endl);
+                                    TLOG_ERROR("MKDbAccessCallback::procDel g_HashMap.erase error, ret = " << iDelRet << endl);
                                     g_app.ppReport(PPReport::SRP_EX, 1);
                                     MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                                     continue;
@@ -2136,7 +2136,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procDel g_HashMap.get error, ret = " << iRet << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procDel g_HashMap.get error, ret = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                     }
@@ -2154,7 +2154,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                             int iDelRet = DelResult(sMainKey, vtValue, vtDel[i].vtUKCond, vtDel[i].vtValueCond, vtDel[i].stLimit, _binlogFile, _recordBinLog, _recordKeyBinLog, vtDel[i].current, vtDel[i].pMKDBaccess, true);
                             if (iDelRet != 0)
                             {
-                                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogCond << "|failed|del cache error, ret = " << iDelRet << endl);
+                                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogCond << "|failed|del cache error, ret = " << iDelRet << endl);
                                 MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                                 return;
                             }
@@ -2167,7 +2167,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                         }
                         else
                         {
-                            TLOGERROR("MKDbAccessCallback::procDel g_HashMap.get error, ret = " << iRet << endl);
+                            TLOG_ERROR("MKDbAccessCallback::procDel g_HashMap.get error, ret = " << iRet << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                         }
@@ -2185,7 +2185,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::del: error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
+                            TLOG_ERROR("MKWCacheImp::del: error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                         }
@@ -2210,7 +2210,7 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                         }
                         else
                         {
-                            TLOGERROR("MKWCacheImp::del: error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
+                            TLOG_ERROR("MKWCacheImp::del: error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             MKWCache::async_response_delMKV(vtDel[i].current, ET_SYS_ERR);
                         }
@@ -2226,12 +2226,12 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDel exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDel exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDel unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDel unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2251,16 +2251,16 @@ void MKDbAccessCallback::procDel(const vector<MKDbAccessCBParam::DelCBParam> &vt
                 {
                     MKWCache::async_response_delMKV(vtDel[i].current, iRetCode);
                 }
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogCond << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogCond << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDel exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDel exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDel unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDel unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2280,14 +2280,14 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelForBatch: " << vtDel[i].mk << " forbid del" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelForBatch: " << vtDel[i].mk << " forbid del" << endl);
                     vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
                     continue;
                 }
 
                 if (!g_route_table.isMySelf(vtDel[i].mk))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelForBatch: " << vtDel[i].mk << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelForBatch: " << vtDel[i].mk << " is not in self area" << endl);
                     //API直连模式，返回增量更新路由
                     map<string, string>& context = vtDel[i].pParam->current->getContext();
                     if (VALUE_YES == context[GET_ROUTE])
@@ -2296,7 +2296,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                         int ret = g_route_table.getMaster(vtDel[i].mk, serverInfo);
                         if (ret != 0)
                         {
-                            TLOGERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
+                            TLOG_ERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
                         }
                         else
                         {
@@ -2319,7 +2319,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                         itInfo = fieldConfig.mpFieldInfo.find(vtDel[i].vtUKCond[j].fieldName);
                         if (itInfo == fieldConfig.mpFieldInfo.end())
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                             return;
                         }
                         uKeyEncode.write(vtDel[i].vtUKCond[j].value, itInfo->second.tag, itInfo->second.type);
@@ -2342,7 +2342,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                                 if ((iDelRet != TC_Multi_HashMap_Malloc::RT_OK) && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                                         && (iDelRet != TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH))
                                 {
-                                    TLOGERROR("MKDbAccessCallback::procDelForBatch g_HashMap.erase error, ret = " << iDelRet << endl);
+                                    TLOG_ERROR("MKDbAccessCallback::procDelForBatch g_HashMap.erase error, ret = " << iDelRet << endl);
                                     g_app.ppReport(PPReport::SRP_EX, 1);
                                     vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
                                     continue;
@@ -2380,7 +2380,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procDelForBatch g_HashMap.get error, ret = " << iRet << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procDelForBatch g_HashMap.get error, ret = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
                     }
@@ -2397,7 +2397,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                         int iDelRet = DelResult(vtDel[i].mk, vtValue, vtDel[i].vtUKCond, vtDel[i].vtValueCond, vtDel[i].stLimit, _binlogFile, _recordBinLog, _recordKeyBinLog, vtDel[i].pMKDBaccess, true, ret);
                         if (iDelRet != 0)
                         {
-                            TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << vtDel[i].mk << "|" << sLogCond << "|failed|del cache error, ret = " << iDelRet << endl);
+                            TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << vtDel[i].mk << "|" << sLogCond << "|failed|del cache error, ret = " << iDelRet << endl);
                             vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
                             return;
                         }
@@ -2410,7 +2410,7 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
                     }
                     else
                     {
-                        TLOGERROR("MKDbAccessCallback::procDelForBatch g_HashMap.get error, ret = " << iRet << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procDelForBatch g_HashMap.get error, ret = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
                     }
@@ -2418,13 +2418,13 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelForBatch exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelForBatch exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelForBatch unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelForBatch unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
             }
@@ -2438,17 +2438,17 @@ void MKDbAccessCallback::procDelForBatch(const vector<MKDbAccessCBParam::DelCBPa
             try
             {
                 vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << vtDel[i].mk << "|" << sLogCond << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << vtDel[i].mk << "|" << sLogCond << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelForBatch exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelForBatch exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelForBatch unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelForBatch unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 vtDel[i].pParam->addFailIndexReason(vtDel[i].pParam->mIndex[vtDel[i].mk], DEL_ERROR);
             }
@@ -2468,7 +2468,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateBatch: " << sMainKey << " forbid insert" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateBatch: " << sMainKey << " forbid insert" << endl);
                     for (size_t j = i; j < vtUpdateBatch.size(); ++j)
                     {
                         vtUpdateBatch[j].pParam->addFailIndexReason(vtUpdateBatch[j].iIndex, ET_FORBID_OPT);
@@ -2489,7 +2489,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
 
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateBatch: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateBatch: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtUpdateBatch.size(); ++j)
                     {
                         //API直连模式，返回增量更新路由
@@ -2500,7 +2500,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                             int ret = g_route_table.getMaster(sMainKey, serverInfo);
                             if (ret != 0)
                             {
-                                TLOGERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
+                                TLOG_ERROR(__FUNCTION__ << ":getMaster error:" << ret << endl);
                             }
                             else
                             {
@@ -2558,12 +2558,12 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                     {
                         if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                         {
-                            TLOGERROR("MKCacheImp::update g_HashMap.set ver mismatch" << endl);
+                            TLOG_ERROR("MKCacheImp::update g_HashMap.set ver mismatch" << endl);
                             vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_DATA_VER_MISMATCH);
                         }
                         else
                         {
-                            TLOGERROR("MKCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
+                            TLOG_ERROR("MKCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                             vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
                         }
@@ -2598,7 +2598,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                 }
                 else if (iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_DATA_EXPIRED && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateBatch g_HashMap.get error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateBatch g_HashMap.get error, ret = " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
                     if ((--(vtUpdateBatch[i].pParam->count)) <= 0)
@@ -2625,7 +2625,7 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                             itInfo = fieldConfig.mpFieldInfo.find(sValueName);
                             if (itInfo == fieldConfig.mpFieldInfo.end())
                             {
-                                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                                 return;
                             }
                             vEncode.write(vtUpdateBatch[i].mpInsertValue.find(sValueName)->second.value, itInfo->second.tag, itInfo->second.type);
@@ -2641,12 +2641,12 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                         {
                             if (iSetRet == TC_Multi_HashMap_Malloc::RT_DATA_VER_MISMATCH)
                             {
-                                TLOGERROR("MKCacheImp::update g_HashMap.set ver mismatch" << endl);
+                                TLOG_ERROR("MKCacheImp::update g_HashMap.set ver mismatch" << endl);
                                 vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_DATA_VER_MISMATCH);
                             }
                             else
                             {
-                                TLOGERROR("MKCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
+                                TLOG_ERROR("MKCacheImp::update g_HashMap.set error, ret = " << iSetRet << endl);
                                 g_app.ppReport(PPReport::SRP_EX, 1);
                                 vtUpdateBatch[i].pParam->addFailIndexReason(vtUpdateBatch[i].iIndex, ET_SYS_ERR);
                             }
@@ -2699,12 +2699,12 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateBatch unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateBatch unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2734,16 +2734,16 @@ void MKDbAccessCallback::procUpdateBatch(const vector<MKDbAccessCBParam::UpdateC
                     }
                     MKWCache::async_response_updateMKVBatch(vtUpdateBatch[i].current, ET_PARTIAL_FAIL, vtUpdateBatch[i].pParam->rsp);
                 }
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtUpdateBatch[i].logValue << "|" << (int)vtUpdateBatch[i].ver << "|" << vtUpdateBatch[i].dirty << "|" << vtUpdateBatch[i].insert << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << vtUpdateBatch[i].logValue << "|" << (int)vtUpdateBatch[i].ver << "|" << vtUpdateBatch[i].dirty << "|" << vtUpdateBatch[i].insert << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateBatch unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateBatch unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2761,7 +2761,7 @@ void MKDbAccessCallback::procGetCount(const vector<MKDbAccessCBParam::GetCountCB
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetCount: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetCount: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < m_vtGetCount.size(); ++j)
                     {
                         map<string, string>& context = m_vtGetCount[j].current->getContext();
@@ -2774,7 +2774,7 @@ void MKDbAccessCallback::procGetCount(const vector<MKDbAccessCBParam::GetCountCB
                             int ret = RouterHandle::getInstance()->getUpdateServant(sMainKey, false, context[API_IDC], updateServant);
                             if (ret != 0)
                             {
-                                TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                                TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                             }
                             else
                             {
@@ -2791,12 +2791,12 @@ void MKDbAccessCallback::procGetCount(const vector<MKDbAccessCBParam::GetCountCB
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetCount exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetCount exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetCount unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetCount unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2818,12 +2818,12 @@ void MKDbAccessCallback::procGetCount(const vector<MKDbAccessCBParam::GetCountCB
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetCount exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetCount exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetCount unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetCount unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2841,7 +2841,7 @@ void MKDbAccessCallback::procGetSet(const vector<MKDbAccessCBParam::GetSetCBPara
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procSelect: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procSelect: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtGetSet.size(); ++j)
                     {
                         DCache::BatchEntry rsp;
@@ -2877,7 +2877,7 @@ void MKDbAccessCallback::procGetSet(const vector<MKDbAccessCBParam::GetSetCBPara
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     DCache::BatchEntry rsp;
@@ -2886,12 +2886,12 @@ void MKDbAccessCallback::procGetSet(const vector<MKDbAccessCBParam::GetSetCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2914,12 +2914,12 @@ void MKDbAccessCallback::procGetSet(const vector<MKDbAccessCBParam::GetSetCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2937,7 +2937,7 @@ void MKDbAccessCallback::procDelSet(const vector<MKDbAccessCBParam::DelSetCBPara
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtDelSet.size(); ++j)
                     {
                         MKWCache::async_response_delSet(vtDelSet[j].current, ET_KEY_AREA_ERR);
@@ -2955,7 +2955,7 @@ void MKDbAccessCallback::procDelSet(const vector<MKDbAccessCBParam::DelSetCBPara
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
 
                     MKWCache::async_response_delSet(vtDelSet[i].current, ET_SYS_ERR);
@@ -2968,12 +2968,12 @@ void MKDbAccessCallback::procDelSet(const vector<MKDbAccessCBParam::DelSetCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -2995,12 +2995,12 @@ void MKDbAccessCallback::procDelSet(const vector<MKDbAccessCBParam::DelSetCBPara
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3018,7 +3018,7 @@ void MKDbAccessCallback::procGetScoreZSet(const vector<MKDbAccessCBParam::MKDbAc
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetScoreZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtGetScoreZSet.size(); ++j)
                     {
                         double iScore = 0;
@@ -3047,7 +3047,7 @@ void MKDbAccessCallback::procGetScoreZSet(const vector<MKDbAccessCBParam::MKDbAc
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetScoreZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     double iScore = 0;
@@ -3056,12 +3056,12 @@ void MKDbAccessCallback::procGetScoreZSet(const vector<MKDbAccessCBParam::MKDbAc
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetScoreZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetScoreZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3084,12 +3084,12 @@ void MKDbAccessCallback::procGetScoreZSet(const vector<MKDbAccessCBParam::MKDbAc
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetScoreZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetScoreZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetScoreZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3106,7 +3106,7 @@ void MKDbAccessCallback::procGetRankZSet(const vector<MKDbAccessCBParam::GetRank
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRankZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRankZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtGetRankZSet.size(); ++j)
                     {
                         long iPos = 0;
@@ -3135,7 +3135,7 @@ void MKDbAccessCallback::procGetRankZSet(const vector<MKDbAccessCBParam::GetRank
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRankZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRankZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     long iPos = 0;
@@ -3144,12 +3144,12 @@ void MKDbAccessCallback::procGetRankZSet(const vector<MKDbAccessCBParam::GetRank
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRankZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRankZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRankZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRankZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3172,12 +3172,12 @@ void MKDbAccessCallback::procGetRankZSet(const vector<MKDbAccessCBParam::GetRank
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRankZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRankZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRankZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRankZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3194,7 +3194,7 @@ void MKDbAccessCallback::procGetRangeZSet(const vector<MKDbAccessCBParam::GetRan
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRangeZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtGetRangeZSet.size(); ++j)
                     {
                         DCache::BatchEntry rsp;
@@ -3226,7 +3226,7 @@ void MKDbAccessCallback::procGetRangeZSet(const vector<MKDbAccessCBParam::GetRan
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRangeZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     DCache::BatchEntry rsp;
@@ -3235,12 +3235,12 @@ void MKDbAccessCallback::procGetRangeZSet(const vector<MKDbAccessCBParam::GetRan
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3263,12 +3263,12 @@ void MKDbAccessCallback::procGetRangeZSet(const vector<MKDbAccessCBParam::GetRan
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3286,7 +3286,7 @@ void MKDbAccessCallback::procGetRangeZSetByScore(const vector<MKDbAccessCBParam:
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtGetRangeZSetByScore.size(); ++j)
                     {
                         DCache::BatchEntry rsp;
@@ -3318,7 +3318,7 @@ void MKDbAccessCallback::procGetRangeZSetByScore(const vector<MKDbAccessCBParam:
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     DCache::BatchEntry rsp;
@@ -3327,12 +3327,12 @@ void MKDbAccessCallback::procGetRangeZSetByScore(const vector<MKDbAccessCBParam:
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3355,12 +3355,12 @@ void MKDbAccessCallback::procGetRangeZSetByScore(const vector<MKDbAccessCBParam:
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procGetRangeZSetByScore unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procGetRangeZSetByScore unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3378,7 +3378,7 @@ void MKDbAccessCallback::procDelZSet(const vector<MKDbAccessCBParam::DelZSetCBPa
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtDelZSet.size(); ++j)
                     {
                         MKWCache::async_response_delZSet(vtDelZSet[j].current, ET_KEY_AREA_ERR);
@@ -3396,7 +3396,7 @@ void MKDbAccessCallback::procDelZSet(const vector<MKDbAccessCBParam::DelZSetCBPa
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     MKWCache::async_response_delZSet(vtDelZSet[i].current, ET_SYS_ERR);
@@ -3409,12 +3409,12 @@ void MKDbAccessCallback::procDelZSet(const vector<MKDbAccessCBParam::DelZSetCBPa
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3436,12 +3436,12 @@ void MKDbAccessCallback::procDelZSet(const vector<MKDbAccessCBParam::DelZSetCBPa
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3459,7 +3459,7 @@ void MKDbAccessCallback::procDelRangeZSet(const vector<MKDbAccessCBParam::DelRan
             {
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelRangeZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtDelRangeZSet.size(); ++j)
                     {
                         MKWCache::async_response_delZSetByScore(vtDelRangeZSet[j].current, ET_KEY_AREA_ERR);
@@ -3481,7 +3481,7 @@ void MKDbAccessCallback::procDelRangeZSet(const vector<MKDbAccessCBParam::DelRan
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procDelRangeZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet g_HashMap.getSet return " << iRet << ", mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
 
                     MKWCache::async_response_delZSetByScore(vtDelRangeZSet[i].current, ET_SYS_ERR);
@@ -3494,12 +3494,12 @@ void MKDbAccessCallback::procDelRangeZSet(const vector<MKDbAccessCBParam::DelRan
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelRangeZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3521,12 +3521,12 @@ void MKDbAccessCallback::procDelRangeZSet(const vector<MKDbAccessCBParam::DelRan
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procDelRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procDelRangeZSet unkown exception, mainKey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procDelRangeZSet unkown exception, mainKey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }
@@ -3549,7 +3549,7 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
             {
                 if (g_route_table.isTransfering(sMainKey) && g_route_table.isTransSrc(iPageNo, ServerConfig::ServerName))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateZSet: " << sMainKey << " forbid update" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateZSet: " << sMainKey << " forbid update" << endl);
                     for (size_t j = i; j < vtUpdateZSet.size(); ++j)
                     {
                         MKWCache::async_response_updateZSet(vtUpdateZSet[j].current, ET_FORBID_OPT);
@@ -3559,7 +3559,7 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
 
                 if (!g_route_table.isMySelf(sMainKey))
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateZSet: " << sMainKey << " is not in self area" << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateZSet: " << sMainKey << " is not in self area" << endl);
                     for (size_t j = i; j < vtUpdateZSet.size(); ++j)
                     {
                         MKWCache::async_response_updateZSet(vtUpdateZSet[j].current, ET_KEY_AREA_ERR);
@@ -3575,7 +3575,7 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
                     itInfo = fieldConfig.mpFieldInfo.find(vCond.fieldName);
                     if (itInfo == fieldConfig.mpFieldInfo.end())
                     {
-                        TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
+                        TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|mpFieldInfo find error" << endl);
                         return;
                     }
                     vEncode.write(vCond.value, itInfo->second.tag, itInfo->second.type);
@@ -3595,7 +3595,7 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
                     int iUpdateRet = updateResult(sMainKey, value, vtUpdateZSet[i].mpValue, vData._score, vData._iExpireTime, vtUpdateZSet[i].iExpireTime, vtUpdateZSet[i].iVersion, vtUpdateZSet[i].bDirty, vtUpdateZSet[i].bOnlyScore, _binlogFile, _keyBinlogFile, _recordBinLog, _recordKeyBinLog);
                     if (iUpdateRet != 0)
                     {
-                        TLOGERROR("MKDbAccessCallback::procUpdateZSet g_HashMap.getZSet return " << iRet << ", mainKey = " << sMainKey << endl);
+                        TLOG_ERROR("MKDbAccessCallback::procUpdateZSet g_HashMap.getZSet return " << iRet << ", mainKey = " << sMainKey << endl);
                         MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, ET_SYS_ERR);
                         continue;
                     }
@@ -3604,13 +3604,13 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
                 }
                 else if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY || iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA || iRet == TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdateZSet: " << "async_response_updateZSet " << sMainKey << " iRet = " << iRet << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdateZSet: " << "async_response_updateZSet " << sMainKey << " iRet = " << iRet << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, ET_NO_DATA);
                 }
                 else
                 {
-                    TLOGERROR("MKDbAccessCallback::procUpdate g_HashMap.getZSet error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKDbAccessCallback::procUpdate g_HashMap.getZSet error, ret = " << iRet << ",mainKey = " << sMainKey << endl);
                     g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                     MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, ET_SYS_ERR);
                     continue;
@@ -3618,13 +3618,13 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateZSet exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateZSet exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, ET_SYS_ERR);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateZSet unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateZSet unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, ET_SYS_ERR);
             }
@@ -3646,16 +3646,16 @@ void MKDbAccessCallback::procUpdateZSet(const vector<MKDbAccessCBParam::UpdateZS
                 {
                     MKWCache::async_response_updateZSet(vtUpdateZSet[i].current, iRetCode);
                 }
-                TLOGERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdateZSet[i].iExpireTime << "|" << vtUpdateZSet[i].iVersion << "|" << vtUpdateZSet[i].bDirty << "|failed|async select db error" << endl);
+                TLOG_ERROR("MKDbAccessCallback::" << __FUNCTION__ << "|" << sMainKey << "|" << sLogValue << "|" << sLogCond << "|" << (int)vtUpdateZSet[i].iExpireTime << "|" << vtUpdateZSet[i].iVersion << "|" << vtUpdateZSet[i].bDirty << "|failed|async select db error" << endl);
             }
             catch (const std::exception &ex)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateZSet exception: " << ex.what() << ", mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateZSet exception: " << ex.what() << ", mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             catch (...)
             {
-                TLOGERROR("MKDbAccessCallback::procUpdateZSet unkown exception, mkey = " << sMainKey << endl);
+                TLOG_ERROR("MKDbAccessCallback::procUpdateZSet unkown exception, mkey = " << sMainKey << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
         }

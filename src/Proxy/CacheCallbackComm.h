@@ -241,14 +241,14 @@ class CacheCallbackComm : public ThreadKey
                     {
                         string err = "ERROR: failed to create property[" + name + "]";
                         TARS_NOTIFY_ERROR(err);
-                        TLOGERROR("CacheCallbackComm::reportException, " << err << endl);
+                        TLOG_ERROR("CacheCallbackComm::reportException, " << err << endl);
 
                         return;
                     }
                 }
                 catch (const exception &ex)
                 {
-                    TLOGERROR("CacheCallbackComm::reportException exception:" << ex.what() << endl);
+                    TLOG_ERROR("CacheCallbackComm::reportException exception:" << ex.what() << endl);
 
                     return;
                 }
@@ -326,11 +326,11 @@ class CacheCallbackComm : public ThreadKey
         }
         catch (const exception &ex)
         {
-            TLOGERROR("CacheCallbackComm::doResponse exception:" << ex.what() << endl);
+            TLOG_ERROR("CacheCallbackComm::doResponse exception:" << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("CacheCallbackComm::doResponse catch unkown exception" << endl);
+            TLOG_ERROR("CacheCallbackComm::doResponse catch unkown exception" << endl);
         }
     }
 

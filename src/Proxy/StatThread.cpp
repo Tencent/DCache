@@ -144,18 +144,18 @@ void StatThread::run()
         }
         catch (exception &ex)
         {
-            TLOGERROR("StatThread::run exception:" << ex.what() << endl);
+            TLOG_ERROR("StatThread::run exception:" << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("StatThread::run catch unkown exception" << endl);
+            TLOG_ERROR("StatThread::run catch unkown exception" << endl);
         }
     }
 }
 
 void StatThread::reportStatData()
 {
-    TLOGDEBUG("StatThread::reportStatData begin..." << endl);
+    TLOG_DEBUG("StatThread::reportStatData begin..." << endl);
 
     Lock lock(*this);
 
@@ -177,7 +177,7 @@ void StatThread::reportStatData()
             (*it)->_statMsg.swap(statMsg);
         }
 
-        TLOGDEBUG("StatThread::reportStatData msg size:" << statMsg.size() << endl);
+        TLOG_DEBUG("StatThread::reportStatData msg size:" << statMsg.size() << endl);
 
         _statPrx->async_reportMicMsg(NULL, statMsg, false);
     }

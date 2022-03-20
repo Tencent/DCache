@@ -46,7 +46,7 @@ void TimerThread::init(const string &sConf)
     if (_srp_dirtyCnt == 0 || _srp_hitcount == 0 || _srp_memSize == 0 || _srp_memInUse == 0 || _srp_dirtyRatio == 0 ||
         _srp_chunksOnceEle == 0 || _srp_mkMemInUse == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_maxJmemUsage == 0)
     {
-        TLOGERROR("TimerThread::init createPropertyReport error" << endl);
+        TLOG_ERROR("TimerThread::init createPropertyReport error" << endl);
         assert(false);
     }
 
@@ -57,19 +57,19 @@ void TimerThread::init(const string &sConf)
         osJmemName << "Jmem" << i << "DataUsedRatio";
 
         PropertyReportPtr ptr = Application::getCommunicator()->getStatReport()->createPropertyReport(osJmemName.str(), PropertyReport::avg());
-        TLOGDEBUG("TimerThread::init createPropertyReport for " << osJmemName.str() << " succ." << endl);
+        TLOG_DEBUG("TimerThread::init createPropertyReport for " << osJmemName.str() << " succ." << endl);
         _srp_memInUse_jmem.push_back(ptr);
 
         if (_srp_memInUse_jmem[i] == 0)
         {
-            TLOGERROR("TimerThread::init createPropertyReport for jmem error" << endl);
+            TLOG_ERROR("TimerThread::init createPropertyReport for jmem error" << endl);
             assert(false);
         }
     }
 
     _downgradeTimeout = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DowngradeTimeout>", "30"));
 
-    TLOGDEBUG("TimerThread::init succ" << endl);
+    TLOG_DEBUG("TimerThread::init succ" << endl);
 }
 
 
@@ -80,7 +80,7 @@ void TimerThread::reload()
     _syncRouteInterval = TC_Common::strto<int>(_tcConf["/Main/Router<SyncInterval>"]);
     _downgradeTimeout = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DowngradeTimeout>", "30"));
 
-    TLOGDEBUG("TimerThread::reload succ" << endl);
+    TLOG_DEBUG("TimerThread::reload succ" << endl);
 }
 
 void TimerThread::createThread()
@@ -124,7 +124,7 @@ void* TimerThread::Run(void* arg)
                     ostringstream os;
                     os << "server changed from SLAVE to MASTER when in data creating status";
                     TARS_NOTIFY_ERROR(os.str());
-                    TLOGERROR(os.str() << endl);
+                    TLOG_ERROR(os.str() << endl);
                 }
             }
             else
@@ -294,7 +294,7 @@ void TimerThread::handleConnectHbTimeout()
             }
             catch (const exception & ex)
             {
-                TLOGERROR("TimerThread::" << __FUNCTION__ << " getEndpoint4All exception: " << ex.what() << endl);
+                TLOG_ERROR("TimerThread::" << __FUNCTION__ << " getEndpoint4All exception: " << ex.what() << endl);
             }
         }
 
@@ -315,7 +315,7 @@ void TimerThread::handleConnectHbTimeout()
                 }
                 catch (const exception & ex)
                 {
-                    TLOGERROR("TimerThread::" << __FUNCTION__ << " heartBeatReport exception again: " << ex.what() << endl);
+                    TLOG_ERROR("TimerThread::" << __FUNCTION__ << " heartBeatReport exception again: " << ex.what() << endl);
                 }
             }
 
@@ -331,7 +331,7 @@ void TimerThread::handleConnectHbTimeout()
             ret = RouterHandle::getInstance()->masterDowngrade();
             if (ret != 0)
             {
-                TLOGERROR("TimerThread::handleConnectHbTimeout masterDowngrade error:" << ret << endl);
+                TLOG_ERROR("TimerThread::handleConnectHbTimeout masterDowngrade error:" << ret << endl);
                 assert(false);
             }
 
@@ -340,11 +340,11 @@ void TimerThread::handleConnectHbTimeout()
     }
     catch (exception &ex)
     {
-        TLOGERROR("[TimerThread::handleConnectHbTimeout] exception:" << ex.what() << endl);
+        TLOG_ERROR("[TimerThread::handleConnectHbTimeout] exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[TimerThread::handleConnectHbTimeout] unknown exception." << endl);
+        TLOG_ERROR("[TimerThread::handleConnectHbTimeout] unknown exception." << endl);
     }
 }
 
@@ -362,7 +362,7 @@ void CreateBinlogFileThread::createThread()
 
 void* CreateBinlogFileThread::Run(void* arg)
 {
-    TLOGDEBUG("[CreateBinlogFileThread::Run] start!" << endl);
+    TLOG_DEBUG("[CreateBinlogFileThread::Run] start!" << endl);
 
     pthread_detach(pthread_self());
 
@@ -402,7 +402,7 @@ void* CreateBinlogFileThread::Run(void* arg)
         //时间跳到下一个小时了，就要加锁生成文件
         if (tmpStr != sTimeStr)
         {
-            TLOGDEBUG("[CreateBinlogFileThread::Run] create file!" << endl);
+            TLOG_DEBUG("[CreateBinlogFileThread::Run] create file!" << endl);
             if (bRecordBinLog)
             {
                 normalBinlogPath = path + sBinlogFile + "_" + str + ".log";
@@ -439,7 +439,7 @@ void* DirtyStatisticThread::Run(void* arg)
 {
     pthread_detach(pthread_self());
 
-    TLOGDEBUG("[DirtyStatisticThread::Run] start!" << endl);
+    TLOG_DEBUG("[DirtyStatisticThread::Run] start!" << endl);
 
     TC_Config tcConfig;
     tcConfig.parseFile(ServerConfig::BasePath + "MKCacheServer.conf");
@@ -455,13 +455,13 @@ void* DirtyStatisticThread::Run(void* arg)
         vector<string> vTival = TC_Common::sepstr<string>(vTime[i], "-", false);
         if (vTival.size() != 2)
         {
-            TLOGERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
             assert(false);
         }
         //检查获取的时间是否正确
         if ((vTival[0].size() != 4) || (vTival[1].size() != 4))
         {
-            TLOGERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -469,7 +469,7 @@ void* DirtyStatisticThread::Run(void* arg)
         {
             if ((!isdigit(vTival[0][j])) || (!isdigit(vTival[1][j])))
             {
-                TLOGERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
+                TLOG_ERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
                 assert(false);
             }
         }
@@ -483,7 +483,7 @@ void* DirtyStatisticThread::Run(void* arg)
 
         if (iBlockBeginTime > iBlockEndTime)
         {
-            TLOGERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DirtyStatisticThread::Run] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -492,15 +492,15 @@ void* DirtyStatisticThread::Run(void* arg)
 
         vBlockTime.push_back(make_pair(iBlockBeginTime, iBlockEndTime));
 
-        TLOGDEBUG("[DirtyStatisticThread::Run] " << iBlockBeginTime << " " << iBlockEndTime << endl);
+        TLOG_DEBUG("[DirtyStatisticThread::Run] " << iBlockBeginTime << " " << iBlockEndTime << endl);
     }
 
     //今天凌晨开始的秒数
     time_t tNow = (time(NULL) + 28800) % 86400;
-    TLOGDEBUG("[DirtyStatisticThread::Run] Now:" << time(NULL) << endl);
+    TLOG_DEBUG("[DirtyStatisticThread::Run] Now:" << time(NULL) << endl);
     do
     {
-        TLOGDEBUG("[DirtyStatisticThread::Run] tNow:" << tNow << endl);
+        TLOG_DEBUG("[DirtyStatisticThread::Run] tNow:" << tNow << endl);
 
         //检查屏蔽时间
         if (vBlockTime.size() > 0)
@@ -518,14 +518,14 @@ void* DirtyStatisticThread::Run(void* arg)
 
             if (it == vBlockTime.end())
             {
-                TLOGDEBUG("[DirtyStatisticThread::Run] stop static!" << endl);
+                TLOG_DEBUG("[DirtyStatisticThread::Run] stop static!" << endl);
                 sleep(30);
                 continue;
             }
         }
         else
         {
-            TLOGDEBUG("[DirtyStatisticThread::Run] Not set block time. exit! " << endl);
+            TLOG_DEBUG("[DirtyStatisticThread::Run] Not set block time. exit! " << endl);
             return NULL;
         }
 
@@ -617,7 +617,7 @@ void HeartBeatThread::createThread()
 
 void* HeartBeatThread::Run(void* arg)
 {
-    TLOGDEBUG("[HeartBeatThread::Run] start!" << endl);
+    TLOG_DEBUG("[HeartBeatThread::Run] start!" << endl);
 
     pthread_detach(pthread_self());
 
@@ -633,7 +633,7 @@ void* HeartBeatThread::Run(void* arg)
     if (masterAddr.length() > 0)
     {
         connectPrx = Application::getCommunicator()->stringToProxy<MKControlAckPrx>(masterAddr);
-        TLOGDEBUG("HeartBeatThread::Run, connect hb master obj:" << masterAddr << endl);
+        TLOG_DEBUG("HeartBeatThread::Run, connect hb master obj:" << masterAddr << endl);
     }
 
     while (!pThis->_stop)
@@ -651,7 +651,7 @@ void* HeartBeatThread::Run(void* arg)
                 {
                     connectPrx = Application::getCommunicator()->stringToProxy<MKControlAckPrx>(tmpAddr);
                     masterAddr = tmpAddr;
-                    TLOGDEBUG("HeartBeatThread::Run, connect hb master change to obj:" << masterAddr << endl);
+                    TLOG_DEBUG("HeartBeatThread::Run, connect hb master change to obj:" << masterAddr << endl);
                 }
 
                 if (connectPrx)
@@ -659,7 +659,7 @@ void* HeartBeatThread::Run(void* arg)
             }
             catch (const exception & ex)
             {
-                TLOGERROR("HeartBeatThread::" << __FUNCTION__ << " connect hb exception: " << ex.what() << endl);
+                TLOG_ERROR("HeartBeatThread::" << __FUNCTION__ << " connect hb exception: " << ex.what() << endl);
             }
         }
 

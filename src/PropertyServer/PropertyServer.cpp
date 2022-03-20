@@ -68,19 +68,19 @@ void PropertyServer::initialize()
     }
     catch (exception& ex)
     {
-        TLOGERROR("PropertyServer::initialize catch exception:" << ex.what() << endl);
+        TLOG_ERROR("PropertyServer::initialize catch exception:" << ex.what() << endl);
         exit(0);
     }
     catch (...)
     {
-        TLOGERROR("PropertyServer::initialize unknow exception catched");
+        TLOG_ERROR("PropertyServer::initialize unknow exception catched");
         exit(0);
     }
 }
 
 void PropertyServer::initHashMap()
 {
-    TLOGDEBUG("PropertyServer::initHashMap begin ..." << endl);
+    TLOG_DEBUG("PropertyServer::initHashMap begin ..." << endl);
 
     int iMinBlock = TC_Common::strto<int>(_conf.get("/Main/HashMap<MinBlock>", "100"));
     int iMaxBlock = TC_Common::strto<int>(_conf.get("/Main/HashMap<MaxBlock>", "200"));
@@ -91,14 +91,14 @@ void PropertyServer::initHashMap()
     string sPath  = TC_File::extractFilePath(sFile);
     if (!TC_File::makeDirRecursive(sPath))
     {
-        TLOGERROR("PropertyServer::initHashMap can not create hashmap file path " << sPath << endl);
+        TLOG_ERROR("PropertyServer::initHashMap can not create hashmap file path " << sPath << endl);
         exit(0);
     }
 
     _clonePatch  = ServerConfig::DataPath + "/" + _conf.get("/Main/HashMap<ClonePatch>", "clone");
     if (!TC_File::makeDirRecursive(_clonePatch))
     {
-        TLOGERROR("PropertyServer::initHashMap can not create clone file path " << _clonePatch << endl);
+        TLOG_ERROR("PropertyServer::initHashMap can not create clone file path " << _clonePatch << endl);
         exit(0);
     }
 
@@ -118,7 +118,7 @@ void PropertyServer::initHashMap()
         throw runtime_error(ex.what());
     }
     
-    TLOGDEBUG("PropertyServer::initHashMap succ" << endl);
+    TLOG_DEBUG("PropertyServer::initHashMap succ" << endl);
 }
 
 const string & PropertyServer::getClonePath() const
@@ -155,7 +155,7 @@ void PropertyServer::destroyApp()
         _updateThread = NULL;
     }
 
-    TLOGDEBUG("PropertyServer::destroyApp ok" << endl);
+    TLOG_DEBUG("PropertyServer::destroyApp ok" << endl);
 }
 
 void PropertyServer::getTimeInfo(time_t &tTime, string &sDate, string &sFlag)

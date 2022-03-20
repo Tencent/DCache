@@ -51,7 +51,7 @@ int RouterTableInfo::update()
     }
     else
     {
-        TLOGERROR("in RouterTableInfo::update(), update too frequently!" << endl);
+        TLOG_ERROR("in RouterTableInfo::update(), update too frequently!" << endl);
         return ET_KEY_AREA_ERR;
     }
     return updateRouterTable();
@@ -72,29 +72,29 @@ int RouterTableInfo::initRouterTable()
             {
                 // 加载成功后写到本地文件
                 _routerTable.toFile(_localRouterFile);
-                TLOGDEBUG("load router table for module: " << _moduleName << " from RouterServer succ" << endl);
+                TLOG_DEBUG("load router table for module: " << _moduleName << " from RouterServer succ" << endl);
                 return 0;
             }
             else
             {
-                TLOGERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from RouterServer succ, but initialize failed, ret="
+                TLOG_ERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from RouterServer succ, but initialize failed, ret="
                                                                                               << iRet << "\ntry from local file: " << _localRouterFile << endl);
             }
         }
         else
         {
-            TLOGERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from RouterServer failed \ntry from local file: " << _localRouterFile << endl);
+            TLOG_ERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from RouterServer failed \ntry from local file: " << _localRouterFile << endl);
         }
 
         iRet = _routerTable.fromFile(_localRouterFile, "");
         if (iRet == RouterTable::RET_SUCC)
         {
-            TLOGDEBUG("load router table for module: " << _moduleName << " from local file succ" << endl);
+            TLOG_DEBUG("load router table for module: " << _moduleName << " from local file succ" << endl);
             return 0;
         }
         else
         {
-            TLOGERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from local file: " << _localRouterFile << " failed, ret=" << iRet << endl);
+            TLOG_ERROR("[RouterTableInfo::initRouterTable] load router table for module: " << _moduleName << " from local file: " << _localRouterFile << " failed, ret=" << iRet << endl);
         }
     }
     catch (exception &e)
@@ -107,7 +107,7 @@ int RouterTableInfo::initRouterTable()
     }
 
     TARS_NOTIFY_WARN(strErr);
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     return -1;
 }
 
@@ -118,7 +118,7 @@ int RouterTableInfo::updateRouterTable()
     int iRet = _pRouterHandle->getRouterVersion(_moduleName, remoteRouteTableVersion);
     if (iRet != 0)
     {
-        TLOGERROR("[RouterTableInfo::updateRouterTable] get route version for module: " << _moduleName << " failed" << endl);
+        TLOG_ERROR("[RouterTableInfo::updateRouterTable] get route version for module: " << _moduleName << " failed" << endl);
         return ET_SYS_ERR;
     }
 
@@ -143,7 +143,7 @@ int RouterTableInfo::updateRouterTableByVersion(int iVersion)
             int iRet = _pRouterHandle->getRouterInfo(_moduleName, packTable);
             if (iRet != 0)
             {
-                TLOGERROR("[RouterTableInfo::updateRouterTable] get router info for module: " << _moduleName << " failed" << endl);
+                TLOG_ERROR("[RouterTableInfo::updateRouterTable] get router info for module: " << _moduleName << " failed" << endl);
                 return ET_SYS_ERR;
             }
             else
@@ -151,7 +151,7 @@ int RouterTableInfo::updateRouterTableByVersion(int iVersion)
                 iRet = _routerTable.reload(packTable);
                 if (iRet != 0)
                 {
-                    TLOGERROR("[RouterTableInfo::updateRouterTable] reload router table for module: " << _moduleName << " failed" << endl);
+                    TLOG_ERROR("[RouterTableInfo::updateRouterTable] reload router table for module: " << _moduleName << " failed" << endl);
                     return ET_SYS_ERR;
                 }
                 else
@@ -168,7 +168,7 @@ int RouterTableInfo::updateRouterTableByVersion(int iVersion)
                             if (iRet != 0)
                             {
                                 string errMsg = "proxy RouterHandle::getInstance()->reportSwitchGroup error _moduleName:" + _moduleName + " groupName:" + itr->second.groupName;
-                                TLOGERROR(errMsg << endl);
+                                TLOG_ERROR(errMsg << endl);
                                 TARS_NOTIFY_ERROR(errMsg);
                             }
                         }
@@ -189,7 +189,7 @@ int RouterTableInfo::updateRouterTableByVersion(int iVersion)
     }
 
     TARS_NOTIFY_WARN(strErr);
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     return ET_SYS_ERR;
 }
 
@@ -219,7 +219,7 @@ int RouterTableInfoFactory::init(TC_Config &conf)
     int iRet = _pRouterHandle->getModuleList(vModuleNameListTmp);
     if (iRet != 0)
     {
-        TLOGDEBUG("RouterTableInfoFactory::init RouterHandle::getInstance()->getModuleList error" << endl);
+        TLOG_DEBUG("RouterTableInfoFactory::init RouterHandle::getInstance()->getModuleList error" << endl);
     }
     vector<string>::const_iterator it = vModuleNameListTmp.begin();
     for (; it != vModuleNameListTmp.end(); ++it)
@@ -237,13 +237,13 @@ int RouterTableInfoFactory::init(TC_Config &conf)
         int iRet = pRouterTableInfo->initRouterTable();
         if (iRet != 0)
         {
-            TLOGERROR("[RouterTableInfoFactory::init] init router table for " << *it << " failed" << endl);
+            TLOG_ERROR("[RouterTableInfoFactory::init] init router table for " << *it << " failed" << endl);
             sFailedModuleNameList = sFailedModuleNameList + "|" + *it;
             delete pRouterTableInfo;
         }
         else
         {
-            TLOGDEBUG("[RouterTableInfoFactory::init] init router table for " << *it << " succ" << endl);
+            TLOG_DEBUG("[RouterTableInfoFactory::init] init router table for " << *it << " succ" << endl);
             _routerTableInfo[0][*it] = pRouterTableInfo;
             sSuccModuleNameList = sSuccModuleNameList + *it + ";";
         }
@@ -255,7 +255,7 @@ int RouterTableInfoFactory::init(TC_Config &conf)
 
     if (sSuccModuleNameList.empty())
     {
-        TLOGERROR("[RouterTableInfoFactory::init] no router table can be used" << endl);
+        TLOG_ERROR("[RouterTableInfoFactory::init] no router table can be used" << endl);
         return ET_SYS_ERR;
     }
     if (!sFailedModuleNameList.empty())
@@ -263,13 +263,13 @@ int RouterTableInfoFactory::init(TC_Config &conf)
         TARS_NOTIFY_ERROR("[RouterTableInfoFactory::init] module:" + sFailedModuleNameList + " load router table failed");
     }
     sSuccModuleNameList = TC_Common::trimright(sSuccModuleNameList, ";", false);
-    TLOGDEBUG("init RouterTableInfoFactory succ, this Proxy provide service for: " << sSuccModuleNameList << endl);
+    TLOG_DEBUG("init RouterTableInfoFactory succ, this Proxy provide service for: " << sSuccModuleNameList << endl);
     return ET_SUCC;
 }
 
 string RouterTableInfoFactory::reloadConf(TC_Config &conf)
 {
-    TLOGDEBUG("RouterTableInfoFactory reload config ..." << endl);
+    TLOG_DEBUG("RouterTableInfoFactory reload config ..." << endl);
 
     // 重置路由表更新最大频率
     RouterTableInfo::setMaxUpdateFrequency(TC_Common::strto<int>(conf["/Main<RouterTableMaxUpdateFrequency>"]));
@@ -325,7 +325,7 @@ void RouterTableInfoFactory::synRouterTableInfo()
         int ret = init(conf);
         if (ret)
         {
-            TLOGDEBUG("synRouterTableInfo get router failed, no RouterTable can be used" << endl);
+            TLOG_DEBUG("synRouterTableInfo get router failed, no RouterTable can be used" << endl);
         }
         return;
     }
@@ -342,7 +342,7 @@ void RouterTableInfoFactory::synRouterTableInfo()
     int iRet = _pRouterHandle->getRouterVersionBatch(moduleNameList, mapModuleVersion);
     if (iRet != 0)
     {
-        TLOGERROR("RouterHandle::getInstance()->getRouterVersionBatch error return==" << iRet << endl);
+        TLOG_ERROR("RouterHandle::getInstance()->getRouterVersionBatch error return==" << iRet << endl);
         return;
     }
 
@@ -379,19 +379,19 @@ void RouterTableInfoFactory::synRouterTableInfo()
     string synFailed = TC_Common::tostr(modulesFail2SyncRouterTable);
     if (synSucc.size() > 0)
     {
-        TLOGDEBUG("synchronize succ: " << synSucc << endl);
+        TLOG_DEBUG("synchronize succ: " << synSucc << endl);
     }
     if (synFailed.size() > 0)
     {
-        TLOGDEBUG("synchronize failed: " << synFailed << endl);
+        TLOG_DEBUG("synchronize failed: " << synFailed << endl);
     }
     if (synNeedless.size() > 0)
     {
-        TLOGDEBUG("synchronize needless: " << synNeedless << endl);
+        TLOG_DEBUG("synchronize needless: " << synNeedless << endl);
     }
 
     int64_t endTime = TC_TimeProvider::getInstance()->getNowMs();
-    TLOGDEBUG("RouterTableInfoFactory::synRouterTableInfo timecount：" << endTime - beginTime << endl);
+    TLOG_DEBUG("RouterTableInfoFactory::synRouterTableInfo timecount：" << endTime - beginTime << endl);
 }
 
 
@@ -403,12 +403,12 @@ void RouterTableInfoFactory::checkModuleChange()
     if (ret != 0)
     {
         string errMsg = "[RouterTableInfoFactory::checkModuleChange] RouterHandle::getInstance()->getModuleList error!";
-        TLOGERROR(errMsg << endl);
+        TLOG_ERROR(errMsg << endl);
         TARS_NOTIFY_ERROR(errMsg);
         return;
     }
 
-    TLOGDEBUG("[RouterTableInfoFactory::checkModuleChange], got " << latestModuleList.size() 
+    TLOG_DEBUG("[RouterTableInfoFactory::checkModuleChange], got " << latestModuleList.size() 
                 << " modules from Router, they are: " << TC_Common::tostr(latestModuleList) << endl);
 
     // 判断是否有新增的模块或者下线的模块
@@ -459,12 +459,12 @@ void RouterTableInfoFactory::checkModuleChange()
 
                 if (iRet != 0)
                 {
-                    TLOGERROR("[RouterTableInfoFactory::checkModuleChange] init router table for module(" << *vIt << ") failed" << endl);
+                    TLOG_ERROR("[RouterTableInfoFactory::checkModuleChange] init router table for module(" << *vIt << ") failed" << endl);
                     delete pRouterTableInfo;
                 }
                 else
                 {
-                    TLOGDEBUG("[RouterTableInfoFactory::checkModuleChange] init router table for module( " << *vIt << ") succ" << endl);
+                    TLOG_DEBUG("[RouterTableInfoFactory::checkModuleChange] init router table for module( " << *vIt << ") succ" << endl);
                     _routerTableInfo[iNew][*vIt] = pRouterTableInfo;
                 }
             }

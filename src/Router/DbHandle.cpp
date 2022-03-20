@@ -90,7 +90,7 @@ int DbHandle::reloadRouter()
             {
                 if (vRecords[i].toPageNo != 429496)
                 {
-                    TLOGERROR("[DbHandle::reloadRouter] error! "
+                    TLOG_ERROR("[DbHandle::reloadRouter] error! "
                               << vRecords[i].moduleName << " is not end with 429496!" << endl);
                     return -1;
                 }
@@ -100,7 +100,7 @@ int DbHandle::reloadRouter()
             {
                 if (vRecords[i].fromPageNo != 0)
                 {
-                    TLOGERROR("[DbHandle::reloadRouter] error! "
+                    TLOG_ERROR("[DbHandle::reloadRouter] error! "
                               << vRecords[i].moduleName << " is not start with 0!" << endl);
                     return -1;
                     ;
@@ -112,14 +112,14 @@ int DbHandle::reloadRouter()
             {  //如果不相等，说明是另外一个模块了，检查是否结束了
                 if (vRecords[i - 1].toPageNo != 429496)
                 {
-                    TLOGERROR("[DbHandle::reloadRouter] error! "
+                    TLOG_ERROR("[DbHandle::reloadRouter] error! "
                               << vRecords[i - 1].moduleName << " is not end with 429496!" << endl);
                     return -1;
                 }
 
                 if (vRecords[i].fromPageNo != 0)
                 {
-                    TLOGERROR("[DbHandle::reloadRouter] error! "
+                    TLOG_ERROR("[DbHandle::reloadRouter] error! "
                               << vRecords[i].moduleName << " is not start with 0!" << endl);
                     return -1;
                 }
@@ -129,7 +129,7 @@ int DbHandle::reloadRouter()
 
             if ((vRecords[i - 1].toPageNo + 1) != vRecords[i].fromPageNo)
             {
-                TLOGERROR("[DbHandle::reloadRouter] error! "
+                TLOG_ERROR("[DbHandle::reloadRouter] error! "
                           << vRecords[i].moduleName << " " << vRecords[i - 1].toPageNo
                           << "+1 != " << vRecords[i].fromPageNo << endl);
                 return -1;
@@ -138,7 +138,7 @@ int DbHandle::reloadRouter()
 
         if (g_app.switchingModuleNum() != 0)
         {
-            TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter hasSwitching" << endl);
+            TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter hasSwitching" << endl);
             return 1;
         }
 
@@ -146,7 +146,7 @@ int DbHandle::reloadRouter()
     }
     else
     {
-        TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter hasTransfering" << endl);
+        TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter hasTransfering" << endl);
         iRet = 1;
     }
 
@@ -157,7 +157,7 @@ int DbHandle::reloadRouter(const string &moduleName)
 {
     int iRet;
     TC_ThreadLock::Lock lock(_transLock);
-    TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter moduleName:" << moduleName << endl);
+    TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter moduleName:" << moduleName << endl);
     if (!hasTransfering(moduleName))  //此处判断是应该限制所有模块  ??????
     {
         //检查路由是否完整
@@ -166,14 +166,14 @@ int DbHandle::reloadRouter(const string &moduleName)
         {
             if ((0 == i) && (vRecords[i].fromPageNo != 0))
             {
-                TLOGERROR("[DbHandle::reloadRouter] error! " << vRecords[i].moduleName
+                TLOG_ERROR("[DbHandle::reloadRouter] error! " << vRecords[i].moduleName
                                                              << " is not start with 0!" << endl);
                 return -1;
             }
 
             if (((vRecords.size() - 1) == i) && (vRecords[i].toPageNo != 429496))
             {
-                TLOGERROR("[DbHandle::reloadRouter] error! " << vRecords[i].moduleName
+                TLOG_ERROR("[DbHandle::reloadRouter] error! " << vRecords[i].moduleName
                                                              << " is not end with 429496!" << endl);
                 return -1;
             }
@@ -182,7 +182,7 @@ int DbHandle::reloadRouter(const string &moduleName)
             {
                 if ((vRecords[i - 1].toPageNo + 1) != vRecords[i].fromPageNo)
                 {
-                    TLOGERROR("[DbHandle::reloadRouter] error! "
+                    TLOG_ERROR("[DbHandle::reloadRouter] error! "
                               << vRecords[i].moduleName << " " << vRecords[i - 1].toPageNo
                               << "+1 != " << vRecords[i].fromPageNo << endl);
                     return -1;
@@ -192,17 +192,17 @@ int DbHandle::reloadRouter(const string &moduleName)
 
         if (g_app.switchingModuleNum() != 0)
         {
-            TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter hasSwitching" << endl);
+            TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter hasSwitching" << endl);
             return 1;
         }
 
         iRet = loadRouteToMem(moduleName);
-        TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter moduleName:" << moduleName << " iRet:" << iRet
+        TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter moduleName:" << moduleName << " iRet:" << iRet
                            << endl);
     }
     else
     {
-        TLOGDEBUG(FILE_FUN << "DbHandle::reloadRouter hasTransfering moduleName:" << moduleName
+        TLOG_DEBUG(FILE_FUN << "DbHandle::reloadRouter hasTransfering moduleName:" << moduleName
                            << endl);
         iRet = 1;
     }
@@ -212,7 +212,7 @@ int DbHandle::reloadRouter(const string &moduleName)
 
 void DbHandle::reloadConf(const RouterServerConfig &conf)
 {
-    TLOGDEBUG(FILE_FUN << "DbHandle reload config ..." << endl);
+    TLOG_DEBUG(FILE_FUN << "DbHandle reload config ..." << endl);
     _reloadTime = conf.getDbReloadTime(100000);
 }
 
@@ -229,7 +229,7 @@ int DbHandle::checkRoute()
             {
                 if (vRecords[i].toPageNo != 429496)
                 {
-                    TLOGERROR("[DbHandle::checkRoute] error! "
+                    TLOG_ERROR("[DbHandle::checkRoute] error! "
                               << vRecords[i].moduleName << " is not end with 429496!" << endl);
                     return -1;
                 }
@@ -245,7 +245,7 @@ int DbHandle::checkRoute()
             {  //如果不相等，说明是另外一个模块了，检查是否结束了
                 if (ri.toPageNo != 429496)
                 {
-                    TLOGERROR("[DbHandle::checkRoute] error! "
+                    TLOG_ERROR("[DbHandle::checkRoute] error! "
                               << ri.moduleName << " is not end with 429496!" << endl);
                     return -1;
                 }
@@ -254,7 +254,7 @@ int DbHandle::checkRoute()
 
                 if (ri.fromPageNo != 0)
                 {
-                    TLOGERROR("[DbHandle::checkRoute] error! " << ri.moduleName
+                    TLOG_ERROR("[DbHandle::checkRoute] error! " << ri.moduleName
                                                                << " is not start with 0!" << endl);
                     return -1;
                 }
@@ -265,7 +265,7 @@ int DbHandle::checkRoute()
                 {  //如果接不上，正常是有重复的路由
                     if (ri.groupName != vRecords[i].groupName)
                     {
-                        TLOGERROR("[DbHandle::checkRoute] router error! "
+                        TLOG_ERROR("[DbHandle::checkRoute] router error! "
                                   << vRecords[i].moduleName << " from:" << vRecords[i].fromPageNo
                                   << " topage:" << vRecords[i].toPageNo
                                   << "|ri.groupName:" << ri.groupName
@@ -290,11 +290,11 @@ int DbHandle::checkRoute()
                         if ((vRecords[i].toPageNo > ri.toPageNo) ||
                             (vRecords[i].fromPageNo < ri.fromPageNo))
                         {
-                            TLOGERROR("[DbHandle::checkRoute] router error! "
+                            TLOG_ERROR("[DbHandle::checkRoute] router error! "
                                       << vRecords[i].moduleName
                                       << " from:" << vRecords[i].fromPageNo
                                       << " topage:" << vRecords[i].toPageNo << endl);
-                            TLOGERROR("[DbHandle::checkRoute] router error! "
+                            TLOG_ERROR("[DbHandle::checkRoute] router error! "
                                       << ri.moduleName << " from:" << ri.fromPageNo
                                       << " topage:" << ri.toPageNo << endl);
                             return -1;
@@ -320,7 +320,7 @@ int DbHandle::checkRoute()
                             int affect = _mysql->deleteRecord("t_router_record", sSql);
                             if (affect <= 0)
                             {
-                                TLOGERROR("[DbHandle::checkRoute] delete error! "
+                                TLOG_ERROR("[DbHandle::checkRoute] delete error! "
                                           << deleteRecord[j].moduleName
                                           << " id:" << deleteRecord[j].id << endl);
                                 return -1;
@@ -336,7 +336,7 @@ int DbHandle::checkRoute()
     }
     catch (exception &ex)
     {
-        TLOGERROR("[DbHandle::checkRoute] exception:" << ex.what() << endl);
+        TLOG_ERROR("[DbHandle::checkRoute] exception:" << ex.what() << endl);
         return -1;
     }
 
@@ -392,7 +392,7 @@ int DbHandle::loadRouteToMem()
         int64_t nowus = TC_Common::now2us();
         if (nowus - _lastLoadTime < _reloadTime)
         {
-            TLOGDEBUG(FILE_FUN << __FUNCTION__ << " load frequently, sleep a little: "
+            TLOG_DEBUG(FILE_FUN << __FUNCTION__ << " load frequently, sleep a little: "
                                << _reloadTime - nowus + _lastLoadTime << "us ..." << endl);
             usleep(_reloadTime - nowus + _lastLoadTime);
         }
@@ -438,7 +438,7 @@ int DbHandle::loadRouteToMem(const string &moduleName)
         {
             TC_ThreadLock::Lock lock(_lock);
             (*_mapPackTables).erase(moduleName);
-            TLOGERROR(FILE_FUN << "DbHandle::loadRouteToMem no group find moduleName " << moduleName
+            TLOG_ERROR(FILE_FUN << "DbHandle::loadRouteToMem no group find moduleName " << moduleName
                                << endl);
             return 0;
         }
@@ -583,7 +583,7 @@ vector<GroupInfo> DbHandle::getDBGroupList()
             string errMsg =
                 "reload router find error accessStatus=1 moduleName:" + info.moduleName +
                 " groupName:" + info.groupName;
-            TLOGERROR(FILE_FUN << errMsg << endl);
+            TLOG_ERROR(FILE_FUN << errMsg << endl);
             TARS_NOTIFY_ERROR(errMsg);
         }
         string sSql2 =
@@ -629,7 +629,7 @@ vector<GroupInfo> DbHandle::getDBGroupList(const string &moduleName)
             string errMsg =
                 "reload router find error accessStatus=1 moduleName:" + info.moduleName +
                 " groupName:" + info.groupName;
-            TLOGERROR(FILE_FUN << errMsg << endl);
+            TLOG_ERROR(FILE_FUN << errMsg << endl);
             TARS_NOTIFY_ERROR(errMsg);
         }
         string sSql2 =
@@ -735,7 +735,7 @@ int DbHandle::getIdcMap(map<string, string> &idcMap)
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR("DbHandle::getIdcMap exception: " << ex.what() << endl);
+        TLOG_ERROR("DbHandle::getIdcMap exception: " << ex.what() << endl);
     }
 
     return -1;
@@ -1496,7 +1496,7 @@ int DbHandle::defragDbRecord(const string &sModuleName,
                         //先插入，再删除
                         if (insertRouterRecord(tmp) != 0)
                         {
-                            TLOGERROR("[DbHandle::defragDbRecord] insert record error!" << endl);
+                            TLOG_ERROR("[DbHandle::defragDbRecord] insert record error!" << endl);
                             ;
                             return -1;
                         }
@@ -1856,7 +1856,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
             {
                 if ((_it1->second == 0 && !bCleanSrc) || (_it2->second == 0 && !bCleanDest))
                 {
-                    TLOGERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
+                    TLOG_ERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
                                        << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
@@ -1874,7 +1874,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
                 {
                     _it1->second++;
                     bSrcHasInc = true;
-                    TLOGERROR(FILE_FUN << "return 4 src++ iReturn==1:" << _it1->second << " "
+                    TLOG_ERROR(FILE_FUN << "return 4 src++ iReturn==1:" << _it1->second << " "
                                        << bCleanSrc << " " << _it2->second << " " << bCleanDest
                                        << endl);
                     return 4;
@@ -1882,7 +1882,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
 
                 if (_it2->second == 0 && !bCleanDest)
                 {
-                    TLOGERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
+                    TLOG_ERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
                                        << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
@@ -1897,7 +1897,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
                 {
                     _it1->second++;
                     bSrcHasInc = true;
-                    TLOGERROR(FILE_FUN << "return 4 src++:" << _it1->second << " " << bCleanSrc
+                    TLOG_ERROR(FILE_FUN << "return 4 src++:" << _it1->second << " " << bCleanSrc
                                        << " " << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
@@ -1905,7 +1905,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
                 {
                     _it2->second++;
                     bDestHasInc = true;
-                    TLOGERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
+                    TLOG_ERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
                                        << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
@@ -1921,13 +1921,13 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
                 {
                     _it2->second++;
                     bDestHasInc = true;
-                    TLOGERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
+                    TLOG_ERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
                                        << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
                 if (_it1->second == 0 && !bCleanSrc)
                 {
-                    TLOGERROR(FILE_FUN << "return 4 src++ iReturn==1:" << _it1->second << " "
+                    TLOG_ERROR(FILE_FUN << "return 4 src++ iReturn==1:" << _it1->second << " "
                                        << bCleanSrc << " " << _it2->second << " " << bCleanDest
                                        << endl);
                     return 4;
@@ -1941,7 +1941,7 @@ int DbHandle::updateTransferingRecord(const TransferInfo *const pTransInfoNew,
             {
                 if ((_it1->second == 0 && !bCleanSrc) || (_it2->second == 0 && !bCleanDest))
                 {
-                    TLOGERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
+                    TLOG_ERROR(FILE_FUN << "return 4:" << _it1->second << " " << bCleanSrc << " "
                                        << _it2->second << " " << bCleanDest << endl);
                     return 4;
                 }
@@ -2056,7 +2056,7 @@ int DbHandle::writeDbTransferRecord(TransferInfo &transferInfo)
         }
 
         transferInfo.id = _mysql->lastInsertID();
-        TLOGDEBUG(FILE_FUN << __FUNCTION__ << " _mysql->lastInsertID return: " << transferInfo.id
+        TLOG_DEBUG(FILE_FUN << __FUNCTION__ << " _mysql->lastInsertID return: " << transferInfo.id
                            << endl);
     }
     catch (TC_Mysql_Exception &ex)
@@ -2287,7 +2287,7 @@ int DbHandle::getTransferTask(TransferInfo &transferInfo)
 
             ostringstream os;
             transferInfo.displaySimple(os);
-            TLOGDEBUG(FILE_FUN << __FUNCTION__ << ": " << os.str() << endl);
+            TLOG_DEBUG(FILE_FUN << __FUNCTION__ << ": " << os.str() << endl);
 
             TC_Mysql::RECORD_DATA updateData;
             updateData["state"] = make_pair(TC_Mysql::DB_INT, I2S(TRANSFERING));
@@ -2387,20 +2387,20 @@ int DbHandle::switchMasterAndSlaveInDbAndMem(const string &moduleName,
         packTable.recordList = (*_mapPackTables)[moduleName].recordList;
         // 更新全局路由信息时，仅更新相关切换的组的信息
 
-        TLOGDEBUG(FILE_FUN << "moduleName :" << moduleName << " groupName : " << groupName << endl);
+        TLOG_DEBUG(FILE_FUN << "moduleName :" << moduleName << " groupName : " << groupName << endl);
         map<string, GroupInfo>::iterator groupIt =
             (*_mapPackTables)[moduleName].groupList.find(groupName);
         // 没有找到旧的组名
         if (groupIt == (*_mapPackTables)[moduleName].groupList.end())
         {
-            TLOGERROR(FILE_FUN << "can not find groupName in global packTable,groupName:"
+            TLOG_ERROR(FILE_FUN << "can not find groupName in global packTable,groupName:"
                                << groupName << endl);
             return -1;
         }
         map<string, GroupInfo>::iterator newGroupIt = packTable.groupList.find(groupName);
         if (newGroupIt == packTable.groupList.end())
         {
-            TLOGERROR(FILE_FUN << "can not find groupName in new packTable,groupName:" << groupName
+            TLOG_ERROR(FILE_FUN << "can not find groupName in new packTable,groupName:" << groupName
                                << endl);
             return -1;
         }
@@ -2438,7 +2438,7 @@ int DbHandle::switchMasterAndSlaveInDbAndMem(const string &moduleName,
         }
         if (odlServerInfoIt == odlServerInfoItEnd || odlServerInfoBakIt == odlServerInfoBakItEnd)
         {
-            TLOGERROR(
+            TLOG_ERROR(
                 FILE_FUN << "[swicth_by_group_fail]no masterServer or slaveServer find module: "
                          << moduleName << " group: " << groupName << endl);
             if (_exRep)
@@ -2545,7 +2545,7 @@ int DbHandle::getPackTable4SwitchRW(const string &moduleName,
                              groupName);
             return -1;
         }
-        TLOGDEBUG(FILE_FUN << "curMasterServer" << lastMaster << " "
+        TLOG_DEBUG(FILE_FUN << "curMasterServer" << lastMaster << " "
                            << "curSlaveServer" << lastSlave << endl);
         // it指向组信息 it1指向主机，it2指向要切合的备机 修改路由
         it1->second.ServerStatus = "S";
@@ -2731,7 +2731,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
                 groupName);
             return -1;
         }
-        TLOGDEBUG(FILE_FUN << "curMasterServer" << lastMaster << " "
+        TLOG_DEBUG(FILE_FUN << "curMasterServer" << lastMaster << " "
                            << "curSlaveServer" << lastSlave << endl);
         // it指向组信息 it1指向主机，it2指向要切合的备机 修改路由
         it1->second.ServerStatus = "S";
@@ -3378,12 +3378,12 @@ int DbHandle::insertSwitchInfo(const string &moduleName,
 
         if (affect != 1)
         {
-            TLOGERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+            TLOG_ERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
             return -1;
         }
 
         id = _mysqlDBRelation->lastInsertID();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|lastInsertID:" << id
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|lastInsertID:" << id
                            << "|sql:" << sSql << endl);
         return 0;
     }
@@ -3431,12 +3431,12 @@ int DbHandle::insertSwitchInfo(const string &moduleName,
 
         if (affect != 1)
         {
-            TLOGERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+            TLOG_ERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
             return -1;
         }
 
         long id = _mysqlDBRelation->lastInsertID();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|lastInsertID:" << id
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|lastInsertID:" << id
                            << "|sql:" << sSql << endl);
         return 0;
     }
@@ -3470,7 +3470,7 @@ void DbHandle::updateSwitchInfo(long iID,
 
         _mysqlDBRelation->execute(sSql);
         int affect = _mysqlDBRelation->getAffectedRows();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
         if (affect != 1)
         {
             DAY_ERROR << __FUNCTION__ << " _mysql->updateSwitchInfo return: " << affect << endl;
@@ -3506,7 +3506,7 @@ void DbHandle::updateSwitchMirrorInfo(long iID,
 
         _mysqlDBRelation->execute(sSql);
         int affect = _mysqlDBRelation->getAffectedRows();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
         if (affect != 1)
         {
             DAY_ERROR << __FUNCTION__ << " _mysql->updateSwitchInfo return: " << affect << endl;
@@ -3538,7 +3538,7 @@ void DbHandle::updateSwitchGroupStatus(const string &moduleName,
 
         _mysqlDBRelation->execute(sSql);
         int affect = _mysqlDBRelation->getAffectedRows();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
         if (affect != 1)
         {
             DAY_ERROR << __FUNCTION__ << " _mysql->updateSwitchInfo return: " << affect << endl;
@@ -3564,7 +3564,7 @@ void DbHandle::updateSwitchGroupStatus(long iID, int iGroupStatus)
 
         _mysqlDBRelation->execute(sSql);
         int affect = _mysqlDBRelation->getAffectedRows();
-        TLOGDEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+        TLOG_DEBUG(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
         if (affect != 1)
         {
             DAY_ERROR << __FUNCTION__ << " _mysql->updateSwitchInfo return: " << affect << endl;
@@ -3600,7 +3600,7 @@ int DbHandle::addMirgrateInfo(const string &strIp, const string &strReason)
             if (affect != 1)
             {
                 DAY_ERROR << __FUNCTION__ << " _mysql->insertRecord return: " << affect << endl;
-                TLOGERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
+                TLOG_ERROR(FILE_FUN << "run sql affect:" << affect << "|sql:" << sSql << endl);
                 return -1;
             }
             FDLOG("migrate") << __LINE__ << "|sql:[" << sSql << "]executed.\n";
@@ -3614,7 +3614,7 @@ int DbHandle::addMirgrateInfo(const string &strIp, const string &strReason)
     {
         FDLOG("migrate") << "DbHandle::addMirgrateInfo exception: " << ex.what() << endl;
         TARS_NOTIFY_ERROR(string("DbHandle::addMirgrateInfo|") + ex.what());
-        TLOGERROR(FILE_FUN << "DbHandle::addMirgrateInfo exception: " << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "DbHandle::addMirgrateInfo exception: " << ex.what() << endl);
         return -1;
     }
     return 0;
@@ -3650,7 +3650,7 @@ int DbHandle::getAllServerInIp(const string &strIp, vector<string> &vServerName)
     {
         FDLOG("migrate") << "DbHandle::getAllServerInIp exception: " << ex.what() << endl;
         TARS_NOTIFY_ERROR(string("DbHandle::getAllServerInIp|") + ex.what());
-        TLOGERROR(FILE_FUN << "DbHandle::getAllServerInIp exception: " << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "DbHandle::getAllServerInIp exception: " << ex.what() << endl);
         return -1;
     }
     return 0;
@@ -3934,19 +3934,19 @@ int DbHandle::checkServerOffline(const string &serverName, bool &bOffline)
             bOffline = false;
         }
 
-        TLOGDEBUG(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
+        TLOG_DEBUG(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
                            << "|bOffline: " << bOffline << "|sql:" << sSql << endl);
 
         return 0;
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
+        TLOG_ERROR(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
                            << "|exception: " << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
+        TLOG_ERROR(FILE_FUN << "DbHandle::checkServerOffline serverName:" << serverName
                            << "|unknown exception." << endl);
     }
 

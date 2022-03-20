@@ -75,14 +75,14 @@ void DCacheOptImp::initialize()
 	_tpool.init(2);
 	_tpool.start();
 
-    TLOGDEBUG(FUN_LOG << "initialize succ" << endl);
+    TLOG_DEBUG(FUN_LOG << "initialize succ" << endl);
 }
 
 //////////////////////////////////////////////////////
 void DCacheOptImp::destroy()
 {
     // _mysqlTarsDb.disconnect();
-    // TLOGDEBUG("DCacheOptImp::destroyApp ok" << endl);
+    // TLOG_DEBUG("DCacheOptImp::destroyApp ok" << endl);
 }
 
 /*
@@ -90,7 +90,7 @@ void DCacheOptImp::destroy()
 */
 tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAppRsp & instalRsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("begin installApp and app_name=" << installReq.appName << endl);
+    TLOG_DEBUG("begin installApp and app_name=" << installReq.appName << endl);
 
     try
     {
@@ -109,7 +109,7 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
         if (string::npos == posDot)
         {
             err = "router server name error, eg: DCache.AbcRouterServer";
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -124,7 +124,7 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
         if (string::npos == posDot)
         {
             err = "proxy server name error, eg: DCache.AbcProxyServer";
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -140,7 +140,7 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
         if (insertTarsDb(stProxy, stRouter, installReq.version, true, installReq.replace, err) !=0)
         {
             err = string("failed to insert tars server, errmsg:") + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -156,17 +156,17 @@ tars::Int32 DCacheOptImp::installApp(const InstallAppReq & installReq, InstallAp
         {
             //这里捕捉异常以不影响安装结果
             err = string("insert relation info catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
 
             return 0;
         }
 
-        TLOGDEBUG(FUN_LOG << "install finish" << endl);
+        TLOG_DEBUG(FUN_LOG << "install finish" << endl);
     }
     catch (const std::exception &ex)
     {
         instalRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch execption:") + ex.what();
-        TLOGERROR(FUN_LOG << instalRsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << instalRsp.errMsg << endl);
         return -1;
     }
 
@@ -724,7 +724,7 @@ int DCacheOptImp::getShmKey(size_t &shmKey)
     catch(const std::exception &ex)
     {
         string errmsg = string("getShmKey catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -733,7 +733,7 @@ int DCacheOptImp::getShmKey(size_t &shmKey)
 
 tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCacheReq, InstallKVCacheRsp & kvCacheRsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name: " << kvCacheReq.appName << "|module name: " << kvCacheReq.moduleName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name: " << kvCacheReq.appName << "|module name: " << kvCacheReq.moduleName << endl);
 
     try
     {
@@ -767,7 +767,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         if (vtCacheHost.size() == 0 || vtCacheHost[0].serverName.empty())
         {
             err = "install cache server, but cache server name is empty";
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -783,7 +783,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
             {
                 err = "failed to insert module and cache info to router db";
             }
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -793,7 +793,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         if (!checkRouterLoadModule("DCache", kvCacheReq.moduleName, strRouterName, err))
         {
             err = "router check routing error, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -802,7 +802,7 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         if (iRet != 0)
         {
             err = "failed to insert catch info to tars db, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -825,16 +825,16 @@ tars::Int32 DCacheOptImp::installKVCacheModule(const InstallKVCacheReq & kvCache
         {
             //这里捕捉异常以不影响安装结果
             err = string("option relation db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return 0;
         }
 
-        TLOGDEBUG(FUN_LOG << "finish" << endl);
+        TLOG_DEBUG(FUN_LOG << "finish" << endl);
     }
     catch(const std::exception &ex)
     {
         kvCacheRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << kvCacheRsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << kvCacheRsp.errMsg << endl);
         return -1;
     }
 
@@ -875,14 +875,14 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         if (vtCacheHost.size() == 0 || vtCacheHost[0].serverName.empty())
         {
             err = "cache server is empty";
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
         if (createMKVCacheConf(mkvCacheReq.appName, mkvCacheReq.moduleName, strRouterName, vtCacheHost, stMultiKeyConf, vtRecord, mkvCacheReq.replace, err) != 0)
         {
             err = "failed to create mkvcache server conf";
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -892,7 +892,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
             {
                 err = "failed to insert module and cache info to router db";
             }
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -902,7 +902,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         if (!checkRouterLoadModule("DCache", mkvCacheReq.moduleName, strRouterName, err))
         {
             err = "router check routing error, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -911,7 +911,7 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         if (iRet != 0)
         {
             err = "failed to insert catch info to tars db, errmsg:" + err;
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return -1;
         }
 
@@ -934,16 +934,16 @@ tars::Int32 DCacheOptImp::installMKVCacheModule(const InstallMKVCacheReq & mkvCa
         {
             //这里捕捉异常以不影响安装结果
             err = string("option relation db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << err << endl);
+            TLOG_ERROR(FUN_LOG << err << endl);
             return 0;
         }
 
-        TLOGDEBUG(FUN_LOG << "finish" << endl);
+        TLOG_DEBUG(FUN_LOG << "finish" << endl);
     }
     catch(const std::exception &ex)
     {
         mkvCacheRsp.errMsg = TC_Common::tostr(__FUNCTION__) + string(" catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << mkvCacheRsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << mkvCacheRsp.errMsg << endl);
         return -1;
     }
 
@@ -957,7 +957,7 @@ tars::Int32 DCacheOptImp::releaseServer(const vector<DCache::ReleaseInfo> & rele
         if (releaseInfo.empty())
         {
             releaseRsp.errMsg = "released server info is null, please cheak";
-            TLOGERROR(FUN_LOG << releaseRsp.errMsg << endl);
+            TLOG_ERROR(FUN_LOG << releaseRsp.errMsg << endl);
             return -1;
         }
 
@@ -969,7 +969,7 @@ tars::Int32 DCacheOptImp::releaseServer(const vector<DCache::ReleaseInfo> & rele
 
         releaseRsp.errMsg = "sucess to release server";
 
-        TLOGDEBUG(FUN_LOG << "sucess to release server|server info size:" << releaseInfo.size() << "|release id:" << request->requestId << endl);
+        TLOG_DEBUG(FUN_LOG << "sucess to release server|server info size:" << releaseInfo.size() << "|release id:" << request->requestId << endl);
 
         return 0;
     }
@@ -982,7 +982,7 @@ tars::Int32 DCacheOptImp::releaseServer(const vector<DCache::ReleaseInfo> & rele
         releaseRsp.errMsg = "release dcahce server unkown exception";
     }
 
-    TLOGERROR(FUN_LOG << releaseRsp.errMsg << endl);
+    TLOG_ERROR(FUN_LOG << releaseRsp.errMsg << endl);
 
     return -1;
 }
@@ -994,7 +994,7 @@ tars::Int32 DCacheOptImp::getReleaseProgress(const ReleaseProgressReq & progress
         vector<DCache::ReleaseInfo> &vtReleaseInfo = progressRsp.releaseInfo;
 
         ReleaseStatus releaseStatus = g_app.releaseRequestQueueManager()->getProgressRecord(progressReq.releaseId, vtReleaseInfo);
-        TLOGDEBUG(FUN_LOG << "release id:" << progressReq.releaseId << "|release status:" << releaseStatus.status << "|release percent:" << releaseStatus.percent << "%" << endl);
+        TLOG_DEBUG(FUN_LOG << "release id:" << progressReq.releaseId << "|release status:" << releaseStatus.status << "|release percent:" << releaseStatus.percent << "%" << endl);
 
         if (releaseStatus.status != RELEASE_FAILED)
         {
@@ -1004,7 +1004,7 @@ tars::Int32 DCacheOptImp::getReleaseProgress(const ReleaseProgressReq & progress
             {
                 g_app.releaseRequestQueueManager()->deleteProgressRecord(progressReq.releaseId);
 
-                TLOGDEBUG(FUN_LOG << "release finish|delete release progress record id:" << progressReq.releaseId << endl);
+                TLOG_DEBUG(FUN_LOG << "release finish|delete release progress record id:" << progressReq.releaseId << endl);
             }
 
             return 0;
@@ -1016,7 +1016,7 @@ tars::Int32 DCacheOptImp::getReleaseProgress(const ReleaseProgressReq & progress
 
             g_app.releaseRequestQueueManager()->deleteProgressRecord(progressReq.releaseId);
 
-            TLOGERROR(FUN_LOG << "release failed|errmsg:" << progressRsp.errMsg << "|release id:" << progressReq.releaseId << endl);
+            TLOG_ERROR(FUN_LOG << "release failed|errmsg:" << progressRsp.errMsg << "|release id:" << progressReq.releaseId << endl);
         }
     }
     catch (exception &ex)
@@ -1028,7 +1028,7 @@ tars::Int32 DCacheOptImp::getReleaseProgress(const ReleaseProgressReq & progress
         progressRsp.errMsg = "get the percent of releasing dcache server catch unknown exception";
     }
 
-    TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+    TLOG_ERROR(FUN_LOG << progressRsp.errMsg << endl);
 
     return -1;
 }
@@ -1043,36 +1043,36 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallReq & uninstallInfo, U
         if (DCache::MODULE == uninstallInfo.unType)
         {
             request.requestId =  uninstallInfo.moduleName;
-            TLOGDEBUG(FUN_LOG << "uninstall by module|module name:" << uninstallInfo.moduleName << endl);
+            TLOG_DEBUG(FUN_LOG << "uninstall by module|module name:" << uninstallInfo.moduleName << endl);
         }
         else if (DCache::GROUP ==  uninstallInfo.unType)
         {
             //按组
             request.requestId = uninstallInfo.groupName;
-            TLOGDEBUG(FUN_LOG << "uninstall by group|group name:" << uninstallInfo.groupName << endl);
+            TLOG_DEBUG(FUN_LOG << "uninstall by group|group name:" << uninstallInfo.groupName << endl);
         }
         else if (DCache::SERVER == uninstallInfo.unType)
         {
             //按服务
             request.requestId = uninstallInfo.serverName;
-            TLOGDEBUG(FUN_LOG << "uninstall by cache server|cache server name:" << uninstallInfo.serverName << endl);
+            TLOG_DEBUG(FUN_LOG << "uninstall by cache server|cache server name:" << uninstallInfo.serverName << endl);
         }
         else if (DCache::QUOTA_SERVER == uninstallInfo.unType)
         {
             //按服务
             request.requestId = uninstallInfo.serverName;
-            TLOGDEBUG(FUN_LOG << "uninstall by quota cache server|cache server name:" << uninstallInfo.serverName << endl);
+            TLOG_DEBUG(FUN_LOG << "uninstall by quota cache server|cache server name:" << uninstallInfo.serverName << endl);
         }
         else
         {
             throw DCacheOptException("uninstall type invalid: " + TC_Common::tostr(uninstallInfo.unType) + ", should be 0(server), 1(group), 2(module)");
-            TLOGERROR(FUN_LOG << "uninstall type invalid:" << uninstallInfo.unType << ", should be 0(server), 1(group), 2(module)" << endl);
+            TLOG_ERROR(FUN_LOG << "uninstall type invalid:" << uninstallInfo.unType << ", should be 0(server), 1(group), 2(module)" << endl);
         }
 
         g_app.uninstallRequestQueueManager()->addUninstallRecord(request.requestId);
         g_app.uninstallRequestQueueManager()->push_back(request);
 
-        TLOGDEBUG(FUN_LOG << "sucess to uninstall cache|request id:" << request.requestId << "|uninstall type:" << uninstallInfo.unType << endl);
+        TLOG_DEBUG(FUN_LOG << "sucess to uninstall cache|request id:" << request.requestId << "|uninstall type:" << uninstallInfo.unType << endl);
 
         return 0;
     }
@@ -1085,7 +1085,7 @@ tars::Int32 DCacheOptImp::uninstall4DCache(const UninstallReq & uninstallInfo, U
         uninstallRsp.errMsg = "uninstall dcache server catch unkown exception";
     }
 
-    TLOGERROR(FUN_LOG << uninstallRsp.errMsg << endl);
+    TLOG_ERROR(FUN_LOG << uninstallRsp.errMsg << endl);
 
     return -1;
 }
@@ -1111,7 +1111,7 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const UninstallReq & uninstallInfo
         }
 
         UninstallStatus currentStatus = g_app.uninstallRequestQueueManager()->getUninstallRecord(sRequestId);
-        TLOGDEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent:" << currentStatus.percent << "|request id:" << sRequestId << endl);
+        TLOG_DEBUG(FUN_LOG << "uninstall status:" << currentStatus.status << "|uninstall percent:" << currentStatus.percent << "|request id:" << sRequestId << endl);
 
         if (currentStatus.status != UNINSTALL_FAILED)
         {
@@ -1129,7 +1129,7 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const UninstallReq & uninstallInfo
             progressRsp.errMsg  = currentStatus.errmsg;
             g_app.uninstallRequestQueueManager()->deleteUninstallRecord(sRequestId);
 
-            TLOGDEBUG(FUN_LOG << "uninstall failed|errmsg:" << progressRsp.errMsg << "|request id:" << sRequestId << endl);
+            TLOG_DEBUG(FUN_LOG << "uninstall failed|errmsg:" << progressRsp.errMsg << "|request id:" << sRequestId << endl);
         }
     }
     catch(exception &ex)
@@ -1141,14 +1141,14 @@ tars::Int32 DCacheOptImp::getUninstallPercent(const UninstallReq & uninstallInfo
         progressRsp.errMsg = "get the percent of uninstalling dcache server catch unknown exception";
     }
 
-    TLOGERROR(FUN_LOG << progressRsp.errMsg << endl);
+    TLOG_ERROR(FUN_LOG << progressRsp.errMsg << endl);
 
     return -1;
 }
 
 tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << endl);
 
     string &errmsg = rsp.errMsg;
     try
@@ -1168,7 +1168,7 @@ tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & 
             if (iRet != 0)
             {
                 errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -1186,7 +1186,7 @@ tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & 
 
                 _mysqlRelationDB.updateRecord("t_transfer_status", m_update, condition);
 
-                TLOGDEBUG(FUN_LOG << "configure transfer record succ and expand cache server succ, module name:" << req.moduleName
+                TLOG_DEBUG(FUN_LOG << "configure transfer record succ and expand cache server succ, module name:" << req.moduleName
                                   << "|src group name:" << req.srcGroupName << "|dst group name:" << req.cacheHost[0].groupName << endl);
 
                 return 0;
@@ -1194,19 +1194,19 @@ tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & 
             else
             {
                 errmsg = "reload router conf from DB failed, router server name:" + tmp[1] + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
         }
         else
         {
            errmsg = "configure transfer record failed and transfer cache server failed, module Name:" + req.moduleName + "|src group name:" + req.srcGroupName + "|dst group name:" + req.cacheHost[0].groupName + "|errmsg:" + errmsg;
-           TLOGERROR(FUN_LOG << errmsg << endl);
+           TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         errmsg = string("configure transfer record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -1214,7 +1214,7 @@ tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & 
 
 tars::Int32 DCacheOptImp::transferDCacheGroup(const TransferGroupReq & req, TransferGroupRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << "|dst group name:" << req.dstGroupName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|src group name:" << req.srcGroupName << "|dst group name:" << req.dstGroupName << endl);
 
     string & errmsg = rsp.errMsg;
     try
@@ -1232,7 +1232,7 @@ tars::Int32 DCacheOptImp::transferDCacheGroup(const TransferGroupReq & req, Tran
     catch (exception &ex)
     {
         errmsg = string("transfer to existed gourp catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -1245,7 +1245,7 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "new expand request|appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << etos(expandReq.cacheType) << endl);
+        TLOG_DEBUG(FUN_LOG << "new expand request|appName:" << expandReq.appName << "|moduleName:" << expandReq.moduleName << "|cacheType:" << etos(expandReq.cacheType) << endl);
 
         int iRet = insertExpandReduceStatusRecord(expandReq.appName, expandReq.moduleName, DCache::EXPAND_TYPE, vector<string>(), expandRsp.errMsg);
         if (iRet == 0)
@@ -1259,7 +1259,7 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
                 if (iRet != 0)
                 {
                     expandRsp.errMsg = "get router obj info failed|appName:" + expandReq.appName + "|errmsg:" + expandRsp.errMsg;
-                    TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+                    TLOG_ERROR(FUN_LOG << expandRsp.errMsg << endl);
                     return -1;
                 }
 
@@ -1281,25 +1281,25 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
                 else
                 {
                     expandRsp.errMsg = "reload router conf from DB failed, router server name:" + tmp[1];
-                    TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+                    TLOG_ERROR(FUN_LOG << expandRsp.errMsg << endl);
                 }
             }
             else
             {
                expandRsp.errMsg = "configure expand record failed and expand cache server failed, app name:" + expandReq.appName + "|module name:" + expandReq.moduleName + "|errmsg:" + expandRsp.errMsg;
-               TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+               TLOG_ERROR(FUN_LOG << expandRsp.errMsg << endl);
             }
         }
         else
         {
             expandRsp.errMsg = "insert expand or reduce to db failed|errmsg:" + expandRsp.errMsg;
-            TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+            TLOG_ERROR(FUN_LOG << expandRsp.errMsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         expandRsp.errMsg = string("expand dcache server catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << expandRsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << expandRsp.errMsg << endl);
     }
 
     return -1;
@@ -1312,7 +1312,7 @@ tars::Int32 DCacheOptImp::reduceDCache(const ReduceReq & reduceReq, ReduceRsp & 
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "appName:" << reduceReq.appName << "|moduleName:" << reduceReq.moduleName << endl);
+        TLOG_DEBUG(FUN_LOG << "appName:" << reduceReq.appName << "|moduleName:" << reduceReq.moduleName << endl);
 
         int iRet = insertExpandReduceStatusRecord(reduceReq.appName, reduceReq.moduleName, DCache::REDUCE_TYPE, reduceReq.srcGroupName, reduceRsp.errMsg);
 
@@ -1322,7 +1322,7 @@ tars::Int32 DCacheOptImp::reduceDCache(const ReduceReq & reduceReq, ReduceRsp & 
     catch(const std::exception &ex)
     {
         reduceRsp.errMsg = string("reduce dcache server catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << reduceRsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << reduceRsp.errMsg << endl);
     }
 
     return -1;
@@ -1334,7 +1334,7 @@ tars::Int32 DCacheOptImp::reduceDCache(const ReduceReq & reduceReq, ReduceRsp & 
 */
 tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTransferRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
 
     try
     {
@@ -1347,7 +1347,7 @@ tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTr
             {
                 rsp.errMsg = string("transfer info wrong, src group or dst group is empty|src group size:")
                            + TC_Common::tostr(req.srcGroupName.size()) + "|dst group size:" + TC_Common::tostr(req.dstGroupName.size());
-                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
                 return -1;
             }
 
@@ -1359,7 +1359,7 @@ tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTr
             if (req.dstGroupName.size() < 1)
             {
                 rsp.errMsg = string("expand info wrong, dst group is empty|dst group size:") + TC_Common::tostr(req.dstGroupName.size());
-                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
                 return -1;
             }
 
@@ -1371,7 +1371,7 @@ tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTr
             if (req.srcGroupName.size() < 1)
             {
                 rsp.errMsg = string("reduce info wrong, src group is empty|src group size:") + TC_Common::tostr(req.srcGroupName.size());
-                TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+                TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
                 return -1;
             }
 
@@ -1383,7 +1383,7 @@ tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTr
     catch(const std::exception &ex)
     {
         rsp.errMsg = string("config transfer to router db table t_router_transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
     }
 
     return -1;
@@ -1391,7 +1391,7 @@ tars::Int32 DCacheOptImp::configTransfer(const ConfigTransferReq & req, ConfigTr
 
 tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStructRsp & rsp,tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
     try
     {
         string & errmsg = rsp.errMsg;
@@ -1403,7 +1403,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + req.appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -1418,7 +1418,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         if (groupInfo.size() <= 0)
         {
             errmsg = "can not find module group info|app name:" + req.appName + "|module name:" + req.moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -1429,7 +1429,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         if (groupStruct.size() < 0)
         {
             errmsg = "can not find module struct|appn ame:" + req.appName + "|module name:" + req.moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -1449,7 +1449,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
             if (serverInfoData.size() <= 0)
             {
                 errmsg = "can not find server info|app name:" + req.appName + "|module name:" + req.moduleName + "|server name:" + tmp.serverName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -1473,7 +1473,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         if (masterIdc.size() == 0)
         {
             errmsg = "can not find master idc|app name:" + req.appName + "|module name:" + req.moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -1496,7 +1496,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         if (masterInfo.size() == 0)
         {
             errmsg = "can not find master server info|app name:" + req.appName + "|module name:" + req.moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -1542,7 +1542,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                     else
                     {
                         errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         break;
                     }
 
@@ -1552,7 +1552,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                 if (memSize == 0)
                 {
                     errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     continue;
                 }
             }
@@ -1565,7 +1565,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                 if (reference_idData.size() == 0)
                 {
                     errmsg = "can not find reference_id|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"] + "|sql:" + sQuerySql;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -1600,7 +1600,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                         else
                         {
                             errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName;
-                            TLOGERROR(FUN_LOG << errmsg << endl);
+                            TLOG_ERROR(FUN_LOG << errmsg << endl);
                             break;
                         }
 
@@ -1610,14 +1610,14 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                     if (memSize == 0)
                     {
                         errmsg = "mem size config value wrong|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         continue;
                     }
                 }
                 else
                 {
                     errmsg = "not find shm size config item|app name:" + req.appName + "|module name:" + req.moduleName + "|master server name:" + masterInfo[i]["server_name"];
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     continue;
                 }
             }
@@ -1633,12 +1633,12 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
     catch (exception &ex)
     {
         rsp.errMsg = string("get module struct catch exception:") + ex.what() + "|app name:" + req.appName + "|module name:" + req.moduleName;
-        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
     }
     catch (...)
     {
         rsp.errMsg = string("get module struct catch unknown exception|app name:") + req.appName + "|module name:" + req.moduleName;
-        TLOGERROR(FUN_LOG << rsp.errMsg << endl);
+        TLOG_ERROR(FUN_LOG << rsp.errMsg << endl);
     }
 
 	return 0;
@@ -1657,7 +1657,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
 */
 tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChangeRsp & rsp,tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
+    TLOG_DEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
 
     string &errmsg = rsp.errMsg;
     try
@@ -1734,7 +1734,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     else
                     {
                         errmsg = string("invalid field in select condition|field:") + it->first;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                 }
@@ -1774,7 +1774,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     if (iRet == -1)
                     {
                         errmsg = string("get router db info failed|appName:") + tmpInfo.appName + "|errmsg:" + errmsg;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         // 如果该应用下的所有模块全部下线，这里找不到router信息，则跳过
                         //return -1;
                         continue;
@@ -1815,12 +1815,12 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                             }
                         }
 
-                        TLOGDEBUG(FUN_LOG << "succ num:" << succPageNum << "|totalPageNum:" << totalPageNum << "|moduleName:" << tmpInfo.moduleName << endl);
+                        TLOG_DEBUG(FUN_LOG << "succ num:" << succPageNum << "|totalPageNum:" << totalPageNum << "|moduleName:" << tmpInfo.moduleName << endl);
                         tmpInfo.progress = int(float(succPageNum) / float(totalPageNum) * 100);
                     }
                     else
                     {
-                        TLOGERROR(FUN_LOG << "not find transfer record in t_router_transfer|module mame:" << tmpInfo.moduleName << "|src group name:" << tmpInfo.srcGroupName << "|dst group name:" << tmpInfo.dstGroupName << endl);
+                        TLOG_ERROR(FUN_LOG << "not find transfer record in t_router_transfer|module mame:" << tmpInfo.moduleName << "|src group name:" << tmpInfo.srcGroupName << "|dst group name:" << tmpInfo.dstGroupName << endl);
                     }
                 }
 
@@ -1887,7 +1887,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     else
                     {
                         errmsg = string("invalid field in select condition|field:") + it->first;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                 }
@@ -1926,7 +1926,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
                     {
                        errmsg = string("get router db info failed|appName:") + tmpInfo.appName + "|errmsg:" + errmsg;
-                       TLOGERROR(FUN_LOG << errmsg << endl);
+                       TLOG_ERROR(FUN_LOG << errmsg << endl);
                        continue;
                     }
 
@@ -1937,7 +1937,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                     if (tmp.size() == 0)
                     {
                        errmsg = string("not find transfer record info in t_expand_status table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|type:" + etos(tmpInfo.type);
-                       TLOGERROR(FUN_LOG << errmsg << endl);
+                       TLOG_ERROR(FUN_LOG << errmsg << endl);
                        continue;
                     }
 
@@ -1953,7 +1953,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                         if (transferData.size() == 0)
                         {
                            errmsg = string("not find transfer record in t_router_transfer table|app name:") + tmpInfo.appName + "|module name:" + tmpInfo.moduleName + "|id:" + tmp[j];
-                           TLOGERROR(FUN_LOG << errmsg << endl);
+                           TLOG_ERROR(FUN_LOG << errmsg << endl);
                            continue;
                         }
 
@@ -2062,7 +2062,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
         if ((req.index < 0) || (req.index > rsp.totalNum))
         {
             errmsg = "the index of request is wrong, less than 0 or greater than total number|index:" + TC_Common::tostr(req.index);
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return 0;
         }
 
@@ -2086,12 +2086,12 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
     catch(exception &ex)
     {
         errmsg = string("get router change info catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = string("get router change info catch unkown exception");
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2099,7 +2099,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
 
 tars::Int32 DCacheOptImp::switchServer(const SwitchReq & req, SwitchRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "new switch request|app name:" << req.appName << "|module name:"
+    TLOG_DEBUG(FUN_LOG << "new switch request|app name:" << req.appName << "|module name:"
                       << req.moduleName << "|group name:" << req.groupName << "|force switch:"
                       << req.forceSwitch << "|binlog diff time limit:" << req.diffBinlogTime << endl);
 
@@ -2112,7 +2112,7 @@ tars::Int32 DCacheOptImp::switchServer(const SwitchReq & req, SwitchRsp & rsp, t
         if (iRet != 0)
         {
             errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2127,12 +2127,12 @@ tars::Int32 DCacheOptImp::switchServer(const SwitchReq & req, SwitchRsp & rsp, t
     catch (exception &ex)
     {
         errmsg = string("active-standby switch catch an exception:") + string(ex.what()) + "|module name:" + req.moduleName + "|group name:" + req.groupName;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = string("active-standby switch catch unkown exception") + "|module name:" + req.moduleName + "|group name:" + req.groupName;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2140,7 +2140,7 @@ tars::Int32 DCacheOptImp::switchServer(const SwitchReq & req, SwitchRsp & rsp, t
 
 tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
+    TLOG_DEBUG(FUN_LOG << "select condition:" << TC_Common::tostr(req.cond) <<  "|index:" << req.index << "|number:" << req.number << endl);
 
     string &errmsg = rsp.errMsg;
 
@@ -2149,7 +2149,7 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
         if ((req.index < 0) || (req.number < -1))
         {
             errmsg = "the index or number of request is wrong |index:" + TC_Common::tostr(req.index) + "|number:" + TC_Common::tostr(req.number);
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return 0;
         }
 
@@ -2220,7 +2220,7 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
                 if (vTimes.size() != 2)
                 {
                     errmsg = "switch time condition set wrongly:" + iter->second;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -2229,7 +2229,7 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
             else
             {
                 errmsg = "unknown condition in switch info request:" + iter->first + "|" + iter->second;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
         }
@@ -2280,12 +2280,12 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
     catch(exception &ex)
     {
         errmsg = string("get switch info catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = string("get switch info catch unkown exception");
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2293,7 +2293,7 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
 
 tars::Int32 DCacheOptImp::stopTransfer(const StopTransferReq& req, StopTransferRsp &rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
 
     string & errmsg = rsp.errMsg;
     try
@@ -2325,7 +2325,7 @@ tars::Int32 DCacheOptImp::stopTransfer(const StopTransferReq& req, StopTransferR
     catch (const std::exception &ex)
     {
         errmsg = string("stop transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2333,7 +2333,7 @@ tars::Int32 DCacheOptImp::stopTransfer(const StopTransferReq& req, StopTransferR
 
 tars::Int32 DCacheOptImp::restartTransfer(const RestartTransferReq& req, RestartTransferRsp &rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
 
     string & errmsg = rsp.errMsg;
     try
@@ -2365,7 +2365,7 @@ tars::Int32 DCacheOptImp::restartTransfer(const RestartTransferReq& req, Restart
     catch (const std::exception &ex)
     {
         errmsg = string("restart transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2374,7 +2374,7 @@ tars::Int32 DCacheOptImp::restartTransfer(const RestartTransferReq& req, Restart
 
 tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTransferRsp& rsp,tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|transfer type:" << etos(req.type) << endl);
 
     string & errmsg = rsp.errMsg;
     try
@@ -2393,7 +2393,7 @@ tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTra
         else
         {
             errmsg = "delete transfer record request has unknow type:" + TC_Common::tostr(req.type);
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2402,7 +2402,7 @@ tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTra
     catch(exception &ex)
     {
         errmsg = string("delete transfer record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2410,7 +2410,7 @@ tars::Int32 DCacheOptImp::deleteTransfer(const DeleteTransferReq& req, DeleteTra
 
 tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, RecoverMirrorRsp & rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|group name:" << req.groupName << "|mirror idc:" << req.mirrorIdc << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << "|group name:" << req.groupName << "|mirror idc:" << req.mirrorIdc << endl);
 
     string & errmsg = rsp.errMsg;
     try
@@ -2421,7 +2421,7 @@ tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, Recov
         if (iRet != 0)
         {
             errmsg = "get router obj info failed|appName:" + req.appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2435,12 +2435,12 @@ tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, Recov
     catch (exception &ex)
     {
         errmsg = string("recover mirrot status catch an exception:") + string(ex.what()) + "|module name:" + req.moduleName + "|group name:" + req.groupName + "|mirror idc:" + req.mirrorIdc;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = string("recover mirrot status catch unkown exception") + "|module name:" + req.moduleName + "|group name:" + req.groupName + "|mirror idc:" + req.mirrorIdc;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2451,7 +2451,7 @@ tars::Int32 DCacheOptImp::recoverMirrorStatus(const RecoverMirrorReq& req, Recov
 */
 tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, CacheServerListRsp& rsp, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << req.appName << "|module name:" << req.moduleName << endl);
     std::string &errmsg = rsp.errMsg;
 
     try
@@ -2461,7 +2461,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
         if (iRet == -1)
         {
             errmsg = "get router db info failed, maybe the selected app is not existed|app name:" + req.appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2478,7 +2478,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
         }
         else
         {
-            TLOGDEBUG(FUN_LOG << "the record of the selected module is not existed, app name:" << req.appName << "|module name:" << req.moduleName << endl);
+            TLOG_DEBUG(FUN_LOG << "the record of the selected module is not existed, app name:" << req.appName << "|module name:" << req.moduleName << endl);
             return 0;
         }
 
@@ -2500,7 +2500,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
             if (iRet != 0)
             {
                 errmsg = string("get group router page number failed|errmsg:") + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
         }
 
@@ -2509,7 +2509,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
     catch (const std::exception &ex)
     {
         errmsg = string("get cache server list catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -2528,7 +2528,7 @@ tars::Int32 DCacheOptImp::addCacheConfigItem(const CacheConfigReq & configReq, C
         if (data.size() > 0)
         {
             errmsg = string("the record of t_config_item is already exists, item:") + configReq.item + ", path:" + configReq.path;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2544,7 +2544,7 @@ tars::Int32 DCacheOptImp::addCacheConfigItem(const CacheConfigReq & configReq, C
     catch(const std::exception &ex)
     {
         errmsg = string("add config item to table t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2569,7 +2569,7 @@ tars::Int32 DCacheOptImp::updateCacheConfigItem(const CacheConfigReq & configReq
     catch(const std::exception &ex)
     {
         errmsg = string("update config item on table t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2589,7 +2589,7 @@ tars::Int32 DCacheOptImp::deleteCacheConfigItem(const CacheConfigReq & configReq
     catch(const std::exception &ex)
     {
         errmsg = string("delete config item from table t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2611,7 +2611,7 @@ tars::Int32 DCacheOptImp::getCacheConfigItemList(const CacheConfigReq & configRe
     catch(const std::exception &ex)
     {
         errmsg = string("get config item from table t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2645,7 +2645,7 @@ tars::Int32 DCacheOptImp::addServerConfigItem(const ServerConfigReq & configReq,
             if (0 != getAppModConfigId(configReq.appName, configReq.moduleName, appModConfigId, errmsg))
             {
                 errmsg = string("get app-mod config id failed, errmsg:") + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
             configId = TC_Common::tostr(appModConfigId);
@@ -2670,7 +2670,7 @@ tars::Int32 DCacheOptImp::addServerConfigItem(const ServerConfigReq & configReq,
     catch(const std::exception &ex)
     {
         errmsg = string("add module or server config item to table t_config_table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2694,7 +2694,7 @@ tars::Int32 DCacheOptImp::updateServerConfigItem(const ServerConfigReq& configRe
     catch(const std::exception &ex)
     {
         errmsg = string("update config item on table t_config_table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2718,7 +2718,7 @@ tars::Int32 DCacheOptImp::updateServerConfigItemBatch(const vector<ServerConfigR
     catch(const std::exception &ex)
     {
         errmsg = string("update config item on table t_config_table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2738,7 +2738,7 @@ tars::Int32 DCacheOptImp::deleteServerConfigItem(const ServerConfigReq & configR
     catch(const std::exception &ex)
     {
         errmsg = string("delete config item from table t_config_table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2762,7 +2762,7 @@ tars::Int32 DCacheOptImp::deleteServerConfigItemBatch(const vector<ServerConfigR
     catch(const std::exception &ex)
     {
         errmsg = string("delete config item from table t_config_table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2784,7 +2784,7 @@ tars::Int32 DCacheOptImp::getServerNodeConfigItemList(const ServerConfigReq & co
     catch(const std::exception &ex)
     {
         errmsg = string("get config item from table t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2802,7 +2802,7 @@ tars::Int32 DCacheOptImp::getServerConfigItemList(const ServerConfigReq & config
         if (0 != getAppModConfigId(configReq.appName, configReq.moduleName, appModConfigId, errmsg))
         {
             errmsg = string("get app-mod config id failed, errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -2820,7 +2820,7 @@ tars::Int32 DCacheOptImp::getServerConfigItemList(const ServerConfigReq & config
             if (iRet != 0)
             {
                 errmsg = string("get server config item failed, errmsg:" + serverConfigRsq.errMsg);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -2831,7 +2831,7 @@ tars::Int32 DCacheOptImp::getServerConfigItemList(const ServerConfigReq & config
     catch(const std::exception &ex)
     {
         errmsg = string("get module or server config item list from table t_config_table and t_config_item catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -2843,7 +2843,7 @@ tars::Int32 DCacheOptImp::queryProperptyData(const DCache::QueryPropReq & req,ve
 {
     ostringstream os("");
     req.displaySimple(os);
-    TLOGDEBUG(FUN_LOG << "request content:" << os.str() << endl);
+    TLOG_DEBUG(FUN_LOG << "request content:" << os.str() << endl);
 
     string errmsg("");
     try
@@ -2863,7 +2863,7 @@ tars::Int32 DCacheOptImp::queryProperptyData(const DCache::QueryPropReq & req,ve
     catch (const std::exception &ex)
     {
         errmsg = string("query cache properpty data catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -2877,7 +2877,7 @@ tars::Int32 DCacheOptImp::queryProperptyData(const DCache::QueryPropReq & req,ve
 */
 bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::string & sModuleName, const std::string & sRouterServerName, std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app:" << sApp << "|module name:" << sModuleName << "|router server name:" << sRouterServerName << endl);
+    TLOG_DEBUG(FUN_LOG << "app:" << sApp << "|module name:" << sModuleName << "|router server name:" << sRouterServerName << endl);
 
     try
     {
@@ -2887,7 +2887,7 @@ bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::st
             if (sApp.empty() || sRouterServerName.empty())
             {
                 errmsg = "app name and router server name can not be empty";
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return false;
             }
 
@@ -2911,7 +2911,7 @@ bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::st
 
                 if (info.find("not support") != string::npos)
                 {
-                    TLOGERROR(FUN_LOG << "module is not support, need reload router|router server name:" << sRouterServerName << "|moduleName:" << sModuleName << "|notify server result:" << info << endl);
+                    TLOG_ERROR(FUN_LOG << "module is not support, need reload router|router server name:" << sRouterServerName << "|moduleName:" << sModuleName << "|notify server result:" << info << endl);
                     reloadNodeIP.insert(*pos);
                 }
             }
@@ -2931,7 +2931,7 @@ bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::st
             else
             {
                 errmsg = string("router load module:") + sModuleName + "'s routing failed, please check!";
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return false;
             }
         }
@@ -2939,7 +2939,7 @@ bool DCacheOptImp::checkRouterLoadModule(const std::string & sApp, const std::st
     catch(const TarsException& ex)
     {
         errmsg = string("get server endpoint catch exception|server name:") + sRouterServerName + "|exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return false;
     }
 
@@ -2954,7 +2954,7 @@ bool DCacheOptImp::reloadRouterByModule(const std::string & sApp, const std::str
         if (sApp.empty() || sRouterServerName.empty())
         {
             errmsg = "app name and router server name can not be empty";
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return false;
         }
 
@@ -2968,7 +2968,7 @@ bool DCacheOptImp::reloadRouterByModule(const std::string & sApp, const std::str
     catch(const TarsException& ex)
     {
         errmsg = string("reload router by module name catch TarsException:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return false;
     }
 
@@ -2983,7 +2983,7 @@ tars::Bool DCacheOptImp::reloadRouterConfByModuleFromDB(const std::string & sApp
         if (sApp.empty() || sRouterServerName.empty())
         {
             errmsg = "app name and router server name can not be empty";
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return false;
         }
 
@@ -3008,7 +3008,7 @@ tars::Bool DCacheOptImp::reloadRouterConfByModuleFromDB(const std::string & sApp
     catch(const TarsException& ex)
     {
         errmsg = string("reload router by module name catch TarsException:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return false;
     }
 
@@ -3018,14 +3018,14 @@ tars::Bool DCacheOptImp::reloadRouterConfByModuleFromDB(const std::string & sApp
 
 int DCacheOptImp::reloadRouterByModule(const std::string & app, const std::string & moduleName, const std::string & routerName, std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app:" << app << "|module name:" << moduleName << "|router server name:" << routerName << endl);
+    TLOG_DEBUG(FUN_LOG << "app:" << app << "|module name:" << moduleName << "|router server name:" << routerName << endl);
 
     try
     {
         if (app.empty() || routerName.empty())
         {
             errmsg = "app and router server name can not be empty|app:" + app + "|router name:" + routerName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -3052,7 +3052,7 @@ int DCacheOptImp::reloadRouterByModule(const std::string & app, const std::strin
     catch (const TarsException& ex)
     {
         errmsg = string("reload router by module name catch TarsException:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -3060,181 +3060,21 @@ int DCacheOptImp::reloadRouterByModule(const std::string & app, const std::strin
 
 int DCacheOptImp::createRouterDBConf(const RouterParam &param, string &errmsg)
 {
-    //string t_sOperation = "replace";
-
     try
     {
-        /*string t_sdbConnectFlag = param.dbIp + string("_") + param.dbName; //"ip_数据库名"
-        string t_sPostTime = TC_Common::now2str("%Y-%m-%d %H:%M:%S");
-
-        map<string, pair<TC_Mysql::FT, string> > m;
-        TC_Mysql::MysqlData t_tcConnData = _mysqlRouterConfDb.queryRecord(string("select * from t_config_dbconnects where name='") + t_sdbConnectFlag + string("'"));
-        if (t_tcConnData.size() == 0)
-        {
-            m["NAME"]       = make_pair(TC_Mysql::DB_STR, t_sdbConnectFlag);
-            m["HOST"]       = make_pair(TC_Mysql::DB_STR, param.dbIp);
-            m["PORT"]       = make_pair(TC_Mysql::DB_STR, param.dbPort);
-            m["USER"]       = make_pair(TC_Mysql::DB_STR, param.dbUser);
-            m["PASSWORD"]   = make_pair(TC_Mysql::DB_STR, param.dbPwd);
-            m["CHARSET"]    = make_pair(TC_Mysql::DB_STR, "utf8");
-            m["DBNAME"]     = make_pair(TC_Mysql::DB_STR, param.dbName);
-            m["ABOUT"]      = make_pair(TC_Mysql::DB_STR, param.remark);
-            m["POSTTIME"]   = make_pair(TC_Mysql::DB_STR, t_sPostTime);
-            m["LASTUSER"]   = make_pair(TC_Mysql::DB_STR, "system");
-
-            _mysqlRouterConfDb.insertRecord("t_config_dbconnects", m);
-        }
-        else
-        {
-            m["NAME"]       = make_pair(TC_Mysql::DB_STR, t_sdbConnectFlag);
-            m["HOST"]       = make_pair(TC_Mysql::DB_STR, param.dbIp);
-            m["PORT"]       = make_pair(TC_Mysql::DB_STR, param.dbPort);
-            m["USER"]       = make_pair(TC_Mysql::DB_STR, param.dbUser);
-            m["PASSWORD"]   = make_pair(TC_Mysql::DB_STR, param.dbPwd);
-            m["CHARSET"]    = make_pair(TC_Mysql::DB_STR, "utf8");
-            m["DBNAME"]     = make_pair(TC_Mysql::DB_STR, param.dbName );
-            m["ABOUT"]      = make_pair(TC_Mysql::DB_STR, param.remark);
-            m["POSTTIME"]   = make_pair(TC_Mysql::DB_STR, t_sPostTime);
-            m["LASTUSER"]   = make_pair(TC_Mysql::DB_STR, "system");
-
-            _mysqlRouterConfDb.replaceRecord("t_config_dbconnects", m);
-        }*/
-
         //创建路由数据库
         createRouterDB(param, errmsg);
-
-        /*string sql = string("select ID from t_config_dbconnects where name='") + t_sdbConnectFlag + "' limit 1 ";
-        TC_Mysql::MysqlData data = _mysqlRouterConfDb.queryRecord(sql);
-
-        if (data.size() == 0)
-        {
-            errmsg = string("select ID from t_config_dbconnects size=0 [t_sdbConnectFlag=") + t_sdbConnectFlag + string("]");
-            TLOGERROR(errmsg << endl);
-            return -1;
-        }
-        else
-        {
-            string ID = data[0]["ID"];
-            string t_sqlContent("select * from t_router_group order by id asc ");
-            string columns(" OPNAME,QUERYKEY, QUERYPOSTTIME,QUERYLASTUSER,SERVERNAME, DBCONNECTID,PAGESIZE,`EXECUTESQL`,ORDERSQL,TABLENAME,OTHERCALL,POSTTIME,LASTUSER ");
-            string t_sLastUser = "system";
-            sql = t_sOperation + string(" into t_config_querys (")      + columns + string(")")
-                + string(" values('DCache.RouterServer.RouterModule.")  + param.appName + string("','id','POSTTIME','LASTUSER','',") + ID + string(",20,'select * from  t_router_module order by id asc ','','t_router_module','','") + t_sPostTime + string("','") + t_sLastUser + string("'),")
-                + string(" ('DCache.RouterServer.RouterTransfer.")      + param.appName + string("','id','POSTTIME','LASTUSER','',") + ID + string(",20,'select * from t_router_transfer order by id asc ','','t_router_transfer','','") + t_sPostTime + string("','") + t_sLastUser + string("'),")
-                + string(" ('DCache.RouterServer.RouterRecord.")        + param.appName + string("','id','POSTTIME','LASTUSER','',") + ID + string(",20,'select * from t_router_record order by id asc ','','t_router_record','','") + t_sPostTime + string("','") + t_sLastUser + string("'),")
-                + string(" ('DCache.RouterServer.RouterGroup.")         + param.appName + string("','id','POSTTIME','LASTUSER','',") + ID + string(",20,'") + t_sqlContent + string("','','t_router_group','','") +t_sPostTime + string("','") + t_sLastUser + string("'),")
-                + string(" ('DCache.RouterServer.RouterServer.")        + param.appName + string("','id','POSTTIME','LASTUSER','',") + ID + string(",20,'select * from t_router_server order by id asc ','','t_router_server','','") + t_sPostTime + string("','") + t_sLastUser + string("') ");
-
-            string sql4Module("select * from t_config_querys where opname in ('DCache.GetModulesNew')");
-            if (_mysqlRouterConfDb.queryRecord(sql4Module).size() == 0) //数据库中没有，插入
-            {
-                sql += string(" ,('DCache.GetModulesNew','id','POSTTIME','LASTUSER','',0,100,'select concat(\\'DCache.\\',module_name) module_name,server_name from t_router_group ','','t_router_group','','") + t_sPostTime + string("','system')")   ;
-            }
-
-            _mysqlRouterConfDb.execute(sql);
-            MYSQL *pMysql = _mysqlRouterConfDb.getMysql();
-            MYSQL_RES *result = mysql_store_result(pMysql);
-            mysql_free_result(result);
-
-            string t_sOpNames = string("'DCache.RouterServer.RouterModule.")  + param.appName+ string("', ")
-                              + string("'DCache.RouterServer.RouterTransfer.")+ param.appName + string("', ")
-                              + string("'DCache.RouterServer.RouterRecord.")  + param.appName + string("', ")
-                              + string("'DCache.RouterServer.RouterGroup.")   + param.appName + string("', ")
-                              + string("'DCache.RouterServer.RouterServer.")  + param.appName + string("' ");
-            sql = string(" select id, opname from t_config_querys where opname in (") + t_sOpNames+ string(") ") ;
-
-            TC_Mysql::MysqlData data5 = _mysqlRouterConfDb.queryRecord(sql);
-            if (5 == data5.size())
-            {
-                string t_sFields = "QUERYID,NAME,SEARCHNAME,ABOUT,ISMODIFY,ISSEARCH,ISVISIBLE,ISEQUAL,ISNULL,ORDERBY,EDITWIDTH,EDITHEIGHT,SEARCHSIZE,DATATYPE,RAWVALUE,OPTIONS,POSTTIME,LASTUSER";
-                for (size_t i=0; i<data5.size(); i++)
-                {
-                    string t_ID =  data5[i]["id"];
-                    string t_OPNAME = data5[i]["opname"];
-
-                    if (string::npos !=  t_OPNAME.find("DCache.RouterServer.RouterModule"))
-                    {
-                        sql = t_sOperation + string("  into t_config_fields (") + t_sFields + string(") ")
-                            + string(" values (") + t_ID + string(",'module_name','module_name','业务模块名','1','1','1','0','0',1,400,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'version','version','版本号','1','1','1','0','0',2,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'switch_status','status','模块状态','1','1','1','0','0',2,100,0,10,4,'','0|读写自动切换;1|只读自动切换;2|不支持自动切换;3|无效模块','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'remark','remark','备注','1','1','1','0','1',3,400,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','1','0','0','1',4,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh')");
-                    }
-
-                    if (string::npos !=  t_OPNAME.find("DCache.RouterServer.RouterTransfer"))
-                    {
-                        sql = t_sOperation + string("  into t_config_fields (") + t_sFields + string(") ")
-                            + string(" values (") + t_ID +string(",'from_page_no','from_page_no','迁移开始页','1','1','1','0','0',2,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'group_name','group_name','迁移原服务器组名','1','1','1','0','0',4,400,60,10,4,'','select group_name as S1, group_name as S2 from t_router_group','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','1','0','0','1',9,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'startTime','startTime','开始时间','1','1','1','0','1',9,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'endTime','endTime','结束时间','1','1','1','0','1',9,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'module_name','module_name','业务模块名','1','1','1','0','0',1,400,0,10,4,'','select module_name as S1, module_name as S2 from t_router_module','")  + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'remark','remark','迁移结果描述','1','1','1','0','1',7,400,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'state','state','迁移状态','1','1','1','0','0',8,100,0,10,4,'','0|未迁移;1|正在迁移;2|迁移结束;4|停止迁移','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'to_page_no','to_page_no','迁移结束页','1','1','1','0','0',3,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'transfered_page_no','transfered_page_no','已迁移成功页','1','1','1','0','1',6,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'trans_group_name','trans_group_name','迁移目的服务器组名','1','1','1','0','0',5,400,60,10,4,'','select group_name as S1, group_name as S2 from t_router_group','") + t_sPostTime + string("','dcache_init_fields.sh')");
-                    }
-
-                    if (string::npos !=  t_OPNAME.find("DCache.RouterServer.RouterRecord"))
-                    {
-                        sql = t_sOperation + string(" into t_config_fields (") + t_sFields + string(") ")
-                            + string(" values (") + t_ID + string(",'from_page_no','from_page_no','开始页','1','1','1','0','0',2,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'group_name','group_name','路由目的服务器组名','1','1','1','0','0',4,400,60,10,4,'','select group_name as S1, group_name as S2 from t_router_group','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'module_name','module_name','业务模块名','1','1','1','0','0',1,400,0,10,4,'','select module_name as S1, module_name as S2 from t_router_module','")  + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','1','0','0','1',5,100,0,10,9,'','','" ) + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'to_page_no','to_page_no','结束页','1','1','1','0','0',3,100,0,10,1,'','','")  + t_sPostTime + string("','dcache_init_fields.sh')");
-                    }
-
-                    if (string::npos !=  t_OPNAME.find("DCache.RouterServer.RouterGroup"))
-                    {
-                        sql = t_sOperation + string("  into t_config_fields (") + t_sFields + string(") ")
-                            + string(" values(") + t_ID + string(",'group_name','group_name','服务器组名','1','1','1','0','0',2,400,0,10,1,'','','")  + t_sPostTime + string("','dcache_init_fields.sh') ,")
-                            + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','0','0','0','0',5,100,0,10,9,'','','")  + t_sPostTime +string( "','dcache_init_fields.sh') ,")
-                            + string(" (") + t_ID + string(",'module_name','module_name','业务模块名','1','1','1','0','0',1,400,60,10,4,'','select module_name as S1, module_name as S2 from t_router_module','")  + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'pri','pri','优先级','1','1','1','0','1',5,150,0,15,1,'','','")  + t_sPostTime + string("','dcache_init_fields.sh' ),")
-                            + string(" (") + t_ID + string(",'server_name','server_name','服务器名','1','1','1','0','0',3,400,60,10,4,'','select server_name as S1, server_name as S2 from t_router_server union all select \\'NULL\\' as S1, \\'NULL\\' as S2 from t_router_server','")  + t_sPostTime + string("','dcache_init_fields.sh' ),")
-                            + string(" (") + t_ID + string(",'server_status','server_status','服务类型','1','1','1','0','0',4,400,60,10,4,'','M|主机;S|备机;I|镜像主机;B|镜像备机','")  + t_sPostTime + string("','dcache_init_fields.sh' ),")
-                            + string(" (") + t_ID + string(",'access_status','access_status','访问状态','1','1','1','0','0',2,100,0,10,4,'','0|正常状态;1|只读状态;2|镜像切换状态','")  + t_sPostTime + string("','dcache_init_fields.sh' ),")
-                            + string(" (") + t_ID + string(",'source_server_name','source_server_name','备份源Server','1','1','1','0','1',6,150,0,15,1,'','','")  + t_sPostTime + string("','dcache_init_fields.sh')");
-                    }
-
-                    if (string::npos !=  t_OPNAME.find("DCache.RouterServer.RouterServer"))
-                    {
-                        sql = t_sOperation + string(" into t_config_fields (") + t_sFields + string(") ")
-                            + string(" values(") + t_ID + string(",'binlog_port','binlog_port','BinLogObj服务端口','1','1','1','0','0',3,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'cache_port','cache_port','cache_port服务端口','1','1','1','0','0',4,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'wcache_port','cache_port','wcache_port服务端口','1','1','1','0','0',4,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'backup_port','backup_port','backup_port服务端口','1','1','1','0','0',4,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'ip','ip','服务器IP','1','1','1','0','0',2,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'modify_time','modify_time','最后修改时间','0','1','0','0','1',7,100,0,10,9,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'remark','remark','备注','1','1','1','0','1',6,400,0,10,1,'','','" )+ t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'routeclient_port','routeclient_port','RouterClientObj服务端口','1','1','1','0','0',5,100,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'server_name','server_name','服务器名','1','1','1','0','0',1,400,0,10,1,'','','") + t_sPostTime + string("','dcache_init_fields.sh'),")
-                            + string(" (") + t_ID + string(",'idc_area','idc_area','IDC地区','1','1','1','0','0',0,150,0,15,4,'','sz|深圳;bj|北京;sh|上海;nj|南京;hk|香港;cd|成都','") + t_sPostTime + string("','dcache_init_fields.sh')");
-                    }
-
-                    _mysqlRouterConfDb.execute(sql);
-
-                    pMysql = _mysqlRouterConfDb.getMysql();
-                    result = mysql_store_result(pMysql);
-                    mysql_free_result(result);
-                }
-            }
-        }*/
     }
     catch(const std::exception &ex)
     {
         errmsg = string("create router DB conf catch expcetion:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
     catch (...)
     {
         errmsg = "create router DB conf catch unknown expcetion";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -3263,7 +3103,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create database:") + param.dbName + "@" + param.dbIp + " error:" + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3291,7 +3131,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create table:") + param.dbName + ".t_router_module error:" + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3323,7 +3163,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create table: ") + param.dbName + ".t_router_server error: " + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3350,7 +3190,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create table: ") + param.dbName + ".t_router_group error: " + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3373,7 +3213,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create table: ") + param.dbName + ".t_router_record error: " + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3402,7 +3242,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             if (iRet != 0)
             {
                 errmsg = string("create table: ") + param.dbName + ".t_router_transfer error: " + mysql_error(pMysql);
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
         }
@@ -3411,7 +3251,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
     {
         tcMysql.disconnect();
         errmsg = string("create router db and table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -3588,7 +3428,7 @@ int DCacheOptImp::matchItemId(const string &item, const string &path, string &it
     if (data.size() != 1)
     {
         string sErr = string("select from table t_config_item result error, the sql is:") + sql;
-        TLOGDEBUG(FUN_LOG << sErr << endl);
+        TLOG_DEBUG(FUN_LOG << sErr << endl);
         throw DCacheOptException(sErr);
     }
     item_id = data[0]["id"];
@@ -3600,7 +3440,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+        TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
         map<string, pair<TC_Mysql::FT, string> > m;
 
         m["appName"]    = make_pair(TC_Mysql::DB_STR, appName);
@@ -3616,7 +3456,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
         if (data.size() != 1)
         {
             errmsg = string("select id from t_config_appMod result count not equal to 1, app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
         }
 
@@ -3625,7 +3465,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
     catch(const std::exception &ex)
     {
         errmsg = string("operate t_config_appMod error, app name:") + appName + "|module name:" + moduleName + "|catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -3636,7 +3476,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|cache type:" << etos(eCacheType) << endl);
+        TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|cache type:" << etos(eCacheType) << endl);
         map<string, pair<TC_Mysql::FT, string> > m;
 
         m["appName"]    = make_pair(TC_Mysql::DB_STR, appName);
@@ -3653,7 +3493,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
         if (data.size() != 1)
         {
             errmsg = string("select id from t_config_appMod result count not equal to 1, app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
         }
 
@@ -3662,7 +3502,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
     catch(const std::exception &ex)
     {
         errmsg = string("operate t_config_appMod error, app name:") + appName + "|module name:" + moduleName + "|catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -3673,7 +3513,7 @@ int DCacheOptImp::insertConfigFilesTable(const string &sFullServerName, const st
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "server name:" << sFullServerName << "|host:" << sHost << endl);
+        TLOG_DEBUG(FUN_LOG << "server name:" << sFullServerName << "|host:" << sHost << endl);
 
         map<string, pair<TC_Mysql::FT, string> > m;
         for (size_t i = 0; i < myVec.size(); i++)
@@ -3697,7 +3537,7 @@ int DCacheOptImp::insertConfigFilesTable(const string &sFullServerName, const st
     catch (const std::exception &ex)
     {
         errmsg = string("config table t_config_table servevr name:") + sFullServerName + "|catch exception:" + ex.what();
-        TLOGDEBUG(FUN_LOG << errmsg << endl);
+        TLOG_DEBUG(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -3722,7 +3562,7 @@ int DCacheOptImp::insertReferenceTable(const int appConfigID, const string& serv
     catch(const std::exception &ex)
     {
         errmsg = string("operate table t_config_reference catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -3860,7 +3700,7 @@ int DCacheOptImp::createKVCacheConf(const string &appName, const string &moduleN
 
 int DCacheOptImp::createMKVCacheConf(const string &appName, const string &moduleName, const string &routerName,const vector<DCache::CacheHostParam> & vtCacheHost,const DCache::MultiKeyConfParam & mkvConf, const vector<RecordParam> &vtRecordParam, bool bReplace, string & errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "router name:" << routerName  << "|cache type:" << mkvConf.cacheType << endl);
+    TLOG_DEBUG(FUN_LOG << "router name:" << routerName  << "|cache type:" << mkvConf.cacheType << endl);
 
     vector< map<string, string> > vtConfig;
 
@@ -3958,7 +3798,7 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
             if (iMKeyNum > 1)
             {
                 errmsg = string("cache config format error, mkey number:") + TC_Common::tostr(iMKeyNum) + "no equal to 1|module name:" + moduleName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 throw DCacheOptException(errmsg);
             }
             sRecords += "\t\t\t" + vtRecordParam[i].fieldName + " = " + TC_Common::tostr(iTag) + "|" + vtRecordParam[i].dataType + "|" + vtRecordParam[i].property + "|" + vtRecordParam[i].defaultValue + "|" + TC_Common::tostr(vtRecordParam[i].maxLen) + "\n";
@@ -3984,7 +3824,7 @@ int DCacheOptImp::createMKVCacheConf(const string &appName, const string &module
     if ((mkvConf.cacheType == "hash") && (sUKey.length() <= 0))
     {
         errmsg = string("module:") + moduleName + "'s cache config format error, not exist ukey";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4074,7 +3914,7 @@ void DCacheOptImp::insertConfigItem2Vector(const string& sItem, const string &sP
 
 int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &sRemark, const TC_DBConf &routerDbInfo, const vector<DCache::CacheHostParam> & vtCacheHost, bool bReplace, string& errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "insert module name and cache server info to router db table|module name:" << sModuleName << endl);
+    TLOG_DEBUG(FUN_LOG << "insert module name and cache server info to router db table|module name:" << sModuleName << endl);
 
     TC_Mysql tcMysql;
     try
@@ -4099,7 +3939,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         {
             // 已经存在，则更新版本号
             string updateVersion = string("update t_router_module set version = version+1 where module_name='") + sModuleName + "';";
-            TLOGDEBUG(FUN_LOG << "module name:" << sModuleName << " already exist, update router version, do SQL:" << updateVersion << endl);
+            TLOG_DEBUG(FUN_LOG << "module name:" << sModuleName << " already exist, update router version, do SQL:" << updateVersion << endl);
             tcMysql.execute(updateVersion);
         }
 
@@ -4107,7 +3947,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         if (0 == iPort)
         {
             errmsg = "failed to get port for cache server ip:" + vtCacheHost[0].serverIp;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -4138,7 +3978,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iBinLogPort == 0)
                     {
                         errmsg = "failed to get port for binlog obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iBinLogPort)) != setAddr.end())
@@ -4158,7 +3998,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iCachePort == 0)
                     {
                         errmsg = "failed to get port for cache obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iCachePort)) != setAddr.end())
@@ -4178,7 +4018,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iRouterPort == 0)
                     {
                         errmsg = "failed to get port for router client obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iRouterPort)) != setAddr.end())
@@ -4198,7 +4038,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iBackUpPort == 0)
                     {
                         errmsg = "failed to get port for backup obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iBackUpPort)) != setAddr.end())
@@ -4218,7 +4058,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iWCachePort == 0)
                     {
                         errmsg = "failed to get port for wcache obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iWCachePort)) != setAddr.end())
@@ -4238,7 +4078,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                     if (iControlAckPort == 0)
                     {
                         errmsg = "failed to get port for control ack obj|server ip:" + vtCacheHost[i].serverIp;
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                     if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iControlAckPort)) != setAddr.end())
@@ -4264,7 +4104,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
             if (!bReplace && (vtCacheHost[i].type == "M") && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "'") > 0)
             {
                 errmsg = string("module_name:") + sModuleName + ", group_name:" + vtCacheHost[i].groupName + " has master cache server|server name:" + vtCacheHost[i].serverName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 continue;
             }
 
@@ -4275,7 +4115,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
                 if (existRouterGroup[0]["source_server_name"] != vtCacheHost[i].bakSrcServerName)
                 {
                     errmsg = string("existed record's source_server_name incosistent with param:") + vtCacheHost[i].bakSrcServerName + "|existed record in database is :" + existRouterGroup[0]["source_server_name"];
-                    TLOGERROR(FUN_LOG << errmsg<< endl);
+                    TLOG_ERROR(FUN_LOG << errmsg<< endl);
                     return -1;
                 }
                 else
@@ -4308,7 +4148,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         if (data.size() <= 0)
         {
             errmsg = string("select group_name from t_router_group error|module_name:") + sModuleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
         }
 
@@ -4347,7 +4187,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
     catch(const std::exception &ex)
     {
         errmsg = string("insert module name:") + sModuleName + " to router db's table catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         tcMysql.disconnect();
         throw DCacheOptException(errmsg);
     }
@@ -4366,7 +4206,7 @@ int DCacheOptImp::insertTarsDb(const ProxyParam &stProxyParam, const RouterParam
             if (0 == iProxyObjPort || 0 == iRouterClientObjPort)
             {
                 //获取PORT失败
-                TLOGERROR(FUN_LOG << "failed to get port for " << stProxyParam.serverName << "_" << stProxyParam.serverIp[i].ip << "|" << iProxyObjPort << "|" << iRouterClientObjPort << endl);
+                TLOG_ERROR(FUN_LOG << "failed to get port for " << stProxyParam.serverName << "_" << stProxyParam.serverIp[i].ip << "|" << iProxyObjPort << "|" << iRouterClientObjPort << endl);
             }
 
             if (insertTarsServerTableWithIdcGroup("DCache", stProxyParam.serverName, stProxyParam.serverIp[i], stProxyParam.serverIp[i].ip, stProxyParam.templateFile, "", sTarsVersion, enableGroup, bReplace, errmsg) != 0)
@@ -4395,7 +4235,7 @@ int DCacheOptImp::insertTarsDb(const ProxyParam &stProxyParam, const RouterParam
             uint16_t iRouterObjPort = getPort(stRouterParam.serverIp[i]);
             if (0 == iRouterObjPort)
             {
-                TLOGERROR(FUN_LOG << "failed to get port for " << stRouterParam.serverName << "_" << stRouterParam.serverIp[i]<< "|" << iRouterObjPort << endl);
+                TLOG_ERROR(FUN_LOG << "failed to get port for " << stRouterParam.serverName << "_" << stRouterParam.serverIp[i]<< "|" << iRouterObjPort << endl);
             }
 
             string sRouterEndpoint = "tcp -h " + stRouterParam.serverIp[i] + " -t 60000 -p " + TC_Common::tostr(iRouterObjPort);
@@ -4425,7 +4265,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertTarsServerTable("DCache", vtCacheHost[i].serverName, vtCacheHost[i].serverIp, vtCacheHost[i].templateFile, sExePath, sTarsVersion, false, bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache info to tars server conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4434,7 +4274,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (selectPort(tcMysql, vtCacheHost[i].serverName, vtCacheHost[i].serverIp, sBinLogPort, sCachePort, sRouterPort, sBackUpPort, sWCachePort, sControlAckPort, errmsg) != 0)
             {
                 errmsg = string("select cache servant info from releation cache router table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4443,7 +4283,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sBinLogServant, sBinLogEndpoint, "3", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache binlog servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4452,7 +4292,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sCacheServant, sCacheEndpoint, "8", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache cache servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4461,7 +4301,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sRouterServant, sRouterEndpoint, "5", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache router client servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4470,7 +4310,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sBackUpServant, sBackupEndpoint, "1", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache backup servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4479,7 +4319,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sWCacheServant, sWCacheEndpoint, "8", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache wcache servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -4488,7 +4328,7 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
             if (insertServantTable("DCache", vtCacheHost[i].serverName.substr(7), vtCacheHost[i].serverIp, sControlAckServant, sControlAckEndpoint, "1", bReplace, errmsg) != 0)
             {
                 errmsg = string("insert cache control ack servant info to tars adapter conf table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
         }
@@ -4499,14 +4339,14 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
     {
         tcMysql.disconnect();
         errmsg = string("insert cache info to tars db catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
     catch (...)
     {
         tcMysql.disconnect();
         errmsg = string("insert cache info to tars db catch unknown exception");
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4539,7 +4379,7 @@ int DCacheOptImp::insertTarsConfigFilesTable(const string &sFullServerName, cons
         if (data.size() != 1)
         {
             errmsg = string("get id from t_config_files error, serverName = ") + sFullServerName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
         }
 
@@ -4548,7 +4388,7 @@ int DCacheOptImp::insertTarsConfigFilesTable(const string &sFullServerName, cons
     catch(const std::exception &ex)
     {
         errmsg = string("insert server name:") + sFullServerName + " catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4575,7 +4415,7 @@ int DCacheOptImp::insertTarsHistoryConfigFilesTable(const int iConfigId, const s
     catch (const std::exception &ex)
     {
         errmsg = string("insert server:") + TC_Common::tostr(iConfigId) + " history config error, catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4630,7 +4470,7 @@ int DCacheOptImp::insertTarsServerTableWithIdcGroup(const string &sApp, const st
     catch(const std::exception &ex)
     {
         errmsg = string("insert appName:") + sApp + ", serverName:" + sServerName + "@" + sIp +"'s tars server config error, " + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4663,7 +4503,7 @@ int DCacheOptImp::insertTarsServerTable(const string &sApp, const string &sServe
     catch (const std::exception &ex)
     {
         errmsg = string("insert") + sApp + "."+ sServerName + "@" + sIp + "'s tars server config error, catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4699,7 +4539,7 @@ int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerNa
     catch(const std::exception &ex)
     {
         errmsg = string("insert ") + sApp + "." + sServerName + "@" + sIp + ":" + sServantName + " config catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4721,7 +4561,7 @@ int DCacheOptImp::selectPort(TC_Mysql &tcMysql, const string &sServerName, const
         if (data.size() != 1)
         {
             errmsg = string("get port from t_router_server error|server name:") + sServerName + "|ip:" + sIp;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
         }
 
@@ -4735,7 +4575,7 @@ int DCacheOptImp::selectPort(TC_Mysql &tcMysql, const string &sServerName, const
     catch(const std::exception &ex)
     {
         errmsg = string("get port from t_router_server catch exception|server name:") + sServerName + "|ip:" + sIp + "|exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -4760,7 +4600,7 @@ int DCacheOptImp::checkDb(TC_Mysql &tcMysql, const string &sDbName)
     catch(const std::exception &ex)
     {
         string sErr = string("check db: ") + sDbName + " error, catch exception: " + ex.what();
-        TLOGERROR(sErr << endl);
+        TLOG_ERROR(sErr << endl);
         throw DCacheOptException(sErr);
     }
 
@@ -4786,7 +4626,7 @@ int DCacheOptImp::checkTable(TC_Mysql &tcMysql, const string &sDbName, const str
     catch(const std::exception &ex)
     {
         string sErr = string("check table: ") + sTableName + " from db:" + sDbName + " error, exception: " + ex.what();
-        TLOGERROR(FUN_LOG << sErr << endl);
+        TLOG_ERROR(FUN_LOG << sErr << endl);
         throw DCacheOptException(sErr);
     }
 
@@ -4806,7 +4646,7 @@ bool DCacheOptImp::checkIP(const string &sIp)
             && TC_Common::isdigit(vDigit[2])
             && TC_Common::isdigit(vDigit[3])))
         {
-            TLOGERROR(FUN_LOG << "ip format error in GetPort(),some nondigit exists|" <<sIp << endl);
+            TLOG_ERROR(FUN_LOG << "ip format error in GetPort(),some nondigit exists|" <<sIp << endl);
             return false;
         }
 
@@ -4820,13 +4660,13 @@ bool DCacheOptImp::checkIP(const string &sIp)
             && (iThree <= 255 && iThree >=0)
             && (iFour <= 255 && iFour >=0)))
         {
-            TLOGERROR(FUN_LOG << "ip format error in GetPort(), digit scope error" << endl);
+            TLOG_ERROR(FUN_LOG << "ip format error in GetPort(), digit scope error" << endl);
             return false;
         }
     }
     else
     {
-        TLOGERROR(FUN_LOG << "ip format error in GetPort(), the size of splited ip is  " << vDigit.size() << endl);
+        TLOG_ERROR(FUN_LOG << "ip format error in GetPort(), the size of splited ip is  " << vDigit.size() << endl);
         return false;
     }
 
@@ -4971,20 +4811,20 @@ void DCacheOptImp::insertProxyRouter(const string &sProxyName, const string &sRo
     catch (exception &ex)
     {
         errmsg = string("insert proxy-router info catch exception:") + string(ex.what());
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 }
 
 int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCacheIp, int memSize, const string &sRouterName, const TC_DBConf &routerDbInfo, const string& sModuleName, bool bReplace, string & errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "cache server name:" << sCacheName << "|router server name:" << sRouterName << endl);
+    TLOG_DEBUG(FUN_LOG << "cache server name:" << sCacheName << "|router server name:" << sRouterName << endl);
 
     vector<string> vRouterName = TC_Common::sepstr<string>(sRouterName, ".");
     if (vRouterName.size() != 3)
     {
         errmsg = "router server name is invalid, router name:" + sRouterName;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -4993,7 +4833,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
     if (appNameData.size() != 1)
     {
         errmsg = string("select from t_router_app result data size:") + TC_Common::tostr(appNameData.size()) + "no equal to 1.|router name:" + vRouterName[0] + "." + vRouterName[1];
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         return -1;
     }
 
@@ -5006,7 +4846,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         if (groupInfo.size() != 1)
         {
             errmsg = string("select from t_router_group result data size:") + TC_Common::tostr(groupInfo.size()) + " no equal to 1.|cache server name:" + "DCache." + sCacheName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5016,7 +4856,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         if (serverInfo.size() != 1)
         {
             errmsg = string("select from t_router_server result data size:") + TC_Common::tostr(serverInfo.size()) + " no equal to 1.|cache server name:" + "DCache." + sCacheName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5044,7 +4884,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
     catch (exception &ex)
     {
         errmsg = string("query router db catch exception|db name:") + routerDbInfo._database + "|db host:" + routerDbInfo._host + "|port:" + TC_Common::tostr(routerDbInfo._port) + "|exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -5098,24 +4938,24 @@ int DCacheOptImp::getRouterDBFromAppTable(const string &appName, TC_DBConf &rout
             else
             {
                 errmsg = string("select from table t_router_app no find app name:") + appName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
         }
         else
         {
             errmsg = string("select from table t_proxy_app no find app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("select from relation db catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "select from relation db catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5151,7 +4991,7 @@ int DCacheOptImp::insertRelationAppTable(const string &appName, const string &pr
     catch (const std::exception &ex)
     {
         errmsg = string("insert relation info catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
     }
 
@@ -5192,14 +5032,14 @@ int DCacheOptImp::expandCacheConf(const string &appName, const string &moduleNam
         if (insertConfigFilesTable(vtCacheHost[i].serverName, vtCacheHost[i].serverIp, 0, level3Vec, 2, bReplace, errmsg) != 0)
         {
             errmsg = string("insert config file table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         if (insertReferenceTable(iAppConfigId, vtCacheHost[i].serverName, vtCacheHost[i].serverIp, bReplace, errmsg) != 0)
         {
             errmsg = string("insert reference table failed|server name:") + vtCacheHost[i].serverName + "|server ip:" + vtCacheHost[i].serverIp + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
     }
@@ -5216,7 +5056,7 @@ int DCacheOptImp::getAppModConfigId(const string &appName, const string &moduleN
         if (data.size() != 1)
         {
             errmsg = string("get id from t_config_appMod error, appName:") + appName + ", moduleName:" + moduleName + ", size:" + TC_Common::tostr<int>(data.size()) + " not equal to 1.";
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
             return -1;
         }
@@ -5226,7 +5066,7 @@ int DCacheOptImp::getAppModConfigId(const string &appName, const string &moduleN
     catch(const std::exception &ex)
     {
         errmsg = string("get id from t_config_appMod appName:") + appName + ", moduleName:" + moduleName + ", catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         throw DCacheOptException(errmsg);
         return -1;
     }
@@ -5239,7 +5079,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
     TC_Mysql tcMysql;
     try
     {
-        TLOGDEBUG(FUN_LOG << "router db name:" << routerDbInfo._database << "|host:" << routerDbInfo._host << "|port:" << routerDbInfo._port << endl);
+        TLOG_DEBUG(FUN_LOG << "router db name:" << routerDbInfo._database << "|host:" << routerDbInfo._host << "|port:" << routerDbInfo._port << endl);
 
         tcMysql.init(routerDbInfo);
 
@@ -5248,7 +5088,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
         {
             //获取PORT失败
             errmsg = "failed to get port for cache server ip:" + vtCacheHost[0].serverIp;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5267,7 +5107,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iBinLogPort == 0)
                 {
                     errmsg = "failed to get port for binlog obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iBinLogPort)) != setAddr.end())
@@ -5288,7 +5128,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iCachePort == 0)
                 {
                     errmsg = "failed to get port for cache obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iCachePort)) != setAddr.end())
@@ -5308,7 +5148,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iRouterPort == 0)
                 {
                     errmsg = "failed to get port for router client obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iRouterPort)) != setAddr.end())
@@ -5328,7 +5168,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iBackUpPort == 0)
                 {
                     errmsg = "failed to get port for backup obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iBackUpPort)) != setAddr.end())
@@ -5348,7 +5188,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iWCachePort == 0)
                 {
                     errmsg = "failed to get port for wcache obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iWCachePort)) != setAddr.end())
@@ -5368,7 +5208,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (iControlAckPort == 0)
                 {
                     errmsg = "failed to get port for control ack obj|server ip:" + vtCacheHost[i].serverIp;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 if (setAddr.find(vtCacheHost[i].serverIp + ":" +TC_Common::tostr(iControlAckPort)) != setAddr.end())
@@ -5398,7 +5238,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
             if (!bReplace && vtCacheHost[i].type == "M" && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "' AND server_status='M'") > 0)
             {
                 errmsg = string("module_name:") + sModuleName + ", group_name:" + vtCacheHost[i].groupName + " has master cache server|server name:" + vtCacheHost[i].serverName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -5409,7 +5249,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
                 if (existRouterGroup[0]["source_server_name"] != vtCacheHost[i].bakSrcServerName)
                 {
                     errmsg = string("source_server_name incosistent-param:") + vtCacheHost[i].bakSrcServerName + "|database:" + existRouterGroup[0]["source_server_name"];
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 else
@@ -5439,7 +5279,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
     catch (const std::exception &ex)
     {
         errmsg = string("expand module name:") + sModuleName + " to router db's table catch exception:" + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
         tcMysql.disconnect();
         throw DCacheOptException(errmsg);
     }
@@ -5472,18 +5312,18 @@ int DCacheOptImp::getRouterObj(const string & sWhereName, string & routerObj, st
         else
         {
             errmsg = "not find router info in t_cache_router";
-            TLOGERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("get router obj from relation db t_cache_router table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get router obj from relation db t_cache_router table catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5511,18 +5351,18 @@ int DCacheOptImp::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo
         else
         {
             errmsg = string("not find router db config in relation db table t_cache_router|app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("get router db info from relation db t_cache_router table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get router db info from relation db t_cache_router table catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5532,12 +5372,12 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "appName:" << appName << "|moduleName:" << moduleName << "|cacheType:" << etos(cacheType) << "|replace:" << bReplace << endl);
+        TLOG_DEBUG(FUN_LOG << "appName:" << appName << "|moduleName:" << moduleName << "|cacheType:" << etos(cacheType) << "|replace:" << bReplace << endl);
 
         if (cacheType != DCache::KVCACHE && cacheType != DCache::MKVCACHE)
         {
             errmsg = "expand type error: KVCACHE-1 or MKVCACHE-2";
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5547,7 +5387,7 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
         if (vtCacheHost.size() == 0)
         {
             errmsg = "no cache server specified, please make sure params is right";
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5558,28 +5398,28 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
         if (0 != getRouterDBFromAppTable(appName, routerDbInfo, vtProxyName, routerServerName, errmsg))
         {
             errmsg = string("get router db and router server name failed|errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         if (expandCacheConf(appName, moduleName, vtCacheHost, bReplace, errmsg) != 0)
         {
             errmsg = string("failed to expand cache server conf|errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         if (expandCache2RouterDb(moduleName, routerDbInfo, vtCacheHost, bReplace, errmsg) != 0)
         {
             errmsg = string("failed to insert cache server info to router db table|errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
         if (insertCache2TarsDb(routerDbInfo, vtCacheHost, cacheType, sTarsVersion, bReplace, errmsg) != 0)
         {
             errmsg = string("failed to insert cache server info to tars db table|errmsg:") + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5601,7 +5441,7 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
         {
             //这里捕捉异常以不影响安装结果
             errmsg = string("option relation db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
 
         return 0;
@@ -5609,7 +5449,7 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
     catch (const std::exception &ex)
     {
         errmsg = string("expand cache server catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5617,7 +5457,7 @@ int DCacheOptImp::expandDCacheServer(const std::string & appName,const std::stri
 
 int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferExisted,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+    TLOG_DEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
     try
     {
         //往已存在服务迁移
@@ -5658,7 +5498,7 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
             }
 
             //改为往数据库中插入相关信息
-            TLOGDEBUG(FUN_LOG << "insert transfer record succ for exist dst group|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+            TLOG_DEBUG(FUN_LOG << "insert transfer record succ for exist dst group|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
 
             return 0;
         }
@@ -5676,7 +5516,7 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
                 //此阶段的配置已成功
                 if (data[0]["status"] != TC_Common::tostr(NEW_TASK))
                 {
-                    TLOGDEBUG(FUN_LOG << "configure transfer succ, app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+                    TLOG_DEBUG(FUN_LOG << "configure transfer succ, app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
                     return 0;
                 }
                 else if (data[0]["status"] == TC_Common::tostr(NEW_TASK))
@@ -5684,7 +5524,7 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
                     // 0: 新建任务，如果配置阶段失败，则状态一直是0
                     //上次在此阶段失败，需要清除下，再发起迁移
                     errmsg = "configure transfer failed need clean, app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "|dst group name:" + dstGroupName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                 }
             }
             else
@@ -5724,7 +5564,7 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
     catch (const std::exception &ex)
     {
         errmsg = string("insert transfer status record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5732,7 +5572,7 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
 
 int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, const std::string& moduleName, TransferType type, const vector<string> & groupName, std::string& errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
+    TLOG_DEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
         string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
@@ -5772,7 +5612,7 @@ int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, con
     catch (const std::exception &ex)
     {
         errmsg = string("insert expand or reduce status record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5783,7 +5623,7 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
 {
     try
     {
-        TLOGDEBUG(FUN_LOG << "|dstGroup:" << destGroup << "|srcGroup:" << srcGroup << "|fromPage:" << fromPage << "|toPage:" << toPage << endl);
+        TLOG_DEBUG(FUN_LOG << "|dstGroup:" << destGroup << "|srcGroup:" << srcGroup << "|fromPage:" << fromPage << "|toPage:" << toPage << endl);
         if ((toPage - fromPage) > 10000)
         {
             for (unsigned int begin = fromPage; begin <= toPage; begin += 10000)
@@ -5851,7 +5691,7 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
     catch (const std::exception &ex)
     {
         errmsg = string("insert transfer record to router db table t_router_transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5859,7 +5699,7 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
 
 int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,bool transferData,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName<< "|srcGroup:" << srcGroupName << "|dstGroupName:" << dstGroupName << "|transferData:" << transferData << endl);
+    TLOG_DEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName<< "|srcGroup:" << srcGroupName << "|dstGroupName:" << dstGroupName << "|transferData:" << transferData << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -5868,7 +5708,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -5890,7 +5730,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
             if (recordData.size() == 0)
             {
                 errmsg = "transfer page not find in router record table|moduleName:" + moduleName + "|srcGroupName:" + srcGroupName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
@@ -5939,7 +5779,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 if (moduleData.size() == 0)
                 {
                     errmsg = "router module info not find in router module table|module name:" + moduleName + "|src group name:" + srcGroupName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 map<string, pair<TC_Mysql::FT, string> > m;
@@ -5953,7 +5793,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 if (iRet != 0)
                 {
                     errmsg = "get router obj info failed|appName:" + appName + "|errmsg:" + errmsg;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -5962,7 +5802,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 if (iRet != 0)
                 {
                     errmsg = "reload router by module failed, router server name:" + tmp[1] + "|module name:" + moduleName + "|errmsg:" + errmsg;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -5978,13 +5818,13 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
         else
         {
             errmsg = "no record in transgfer status table|moduleName:" + moduleName + "|srcGroupName:" + srcGroupName + "|dstGroupName:" + dstGroupName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         errmsg = string("insert tarnsfer record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -5992,7 +5832,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
 
 int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,const std::string & moduleName,const vector<std::string> & dstGroupNames,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|dstGroupNames:" << TC_Common::tostr(dstGroupNames) << endl);
+    TLOG_DEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|dstGroupNames:" << TC_Common::tostr(dstGroupNames) << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -6001,7 +5841,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -6020,7 +5860,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                 if (recordData.size() == 0)
                 {
                     errmsg = string("transfer page not find in router record table|appName:") + appName + "|moduleName:" + moduleName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -6060,12 +5900,12 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                 if (pageCount != TOTAL_ROUTER_PAGE_NUM)
                 {
                     errmsg = string("router page is not complete|appName:") + appName + "|moduleName:" + moduleName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 else
                 {
-                    TLOGDEBUG(FUN_LOG << "router record group size:" << groupRouter.size() << endl);
+                    TLOG_DEBUG(FUN_LOG << "router record group size:" << groupRouter.size() << endl);
                 }
 
                 unsigned int totalGroupSize = srcGroupPages.size() + dstGroupNames.size();//扩容后总的服务组数
@@ -6141,7 +5981,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                         //这个目的组完成了
                         dstGroupPages.erase(destIt);
 
-                        TLOGDEBUG(FUN_LOG << "dst group:" << destIt->first << " done! " << destIt->second << " left dst group size:" << dstGroupPages.size() << endl);
+                        TLOG_DEBUG(FUN_LOG << "dst group:" << destIt->first << " done! " << destIt->second << " left dst group size:" << dstGroupPages.size() << endl);
                         continue;
                     }
 
@@ -6238,7 +6078,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                         {
                             if (routerPtr->fromPage != (cEndPage + 1))
                             {
-                                TLOGERROR(FUN_LOG << "router page is discontinuous, next begin page:" << routerPtr->fromPage << " is not equal to last end page increase one:" << (cEndPage + 1) << endl);
+                                TLOG_ERROR(FUN_LOG << "router page is discontinuous, next begin page:" << routerPtr->fromPage << " is not equal to last end page increase one:" << (cEndPage + 1) << endl);
                                 break;//接不上，直接退出
                             }
 
@@ -6268,7 +6108,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                         {
                             if (routerPtr->toPage != (cBeginPage - 1))
                             {
-                                TLOGERROR(FUN_LOG << "router page is discontinuous, last end page:" << routerPtr->toPage << " is not equal to next begin page decrease one:" << (cBeginPage - 1) << endl);
+                                TLOG_ERROR(FUN_LOG << "router page is discontinuous, last end page:" << routerPtr->toPage << " is not equal to next begin page decrease one:" << (cBeginPage - 1) << endl);
                                 break;//接不上，直接退出
                             }
 
@@ -6336,13 +6176,13 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
         else
         {
             errmsg = string("no record in transgfer db expand status table|appName:") + appName + "|moduleName:" + moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         errmsg = string("insert expand transfer record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -6350,7 +6190,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
 
 int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, const std::string& moduleName, const std::vector<std::string> &srcGroupNames, std::string& errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|srcGroupNames:" << TC_Common::tostr(srcGroupNames) << endl);
+    TLOG_DEBUG(FUN_LOG << "app:" << appName << "|module:" << moduleName << "|srcGroupNames:" << TC_Common::tostr(srcGroupNames) << endl);
 
     std::vector<std::string> vtSrcGroupNames = srcGroupNames;
     size_t oldSize = vtSrcGroupNames.size();
@@ -6362,7 +6202,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
     if (vtSrcGroupNames.size() != oldSize)
     {
         errmsg = string("src group name is not unique|app:") + appName + "|module:" + moduleName;
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     try
@@ -6373,7 +6213,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -6393,7 +6233,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 if (recordData.size() == 0)
                 {
                     errmsg = string("transfer page not find in router record table|appName:") + appName + "|moduleName:" + moduleName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -6433,12 +6273,12 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 if (pageCount != TOTAL_ROUTER_PAGE_NUM)
                 {
                     errmsg = string("router page is not complete|appName:") + appName + "|moduleName:" + moduleName;
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
                 else
                 {
-                    TLOGDEBUG(FUN_LOG << "router record size:" << groupRouter.size() << endl);
+                    TLOG_DEBUG(FUN_LOG << "router record size:" << groupRouter.size() << endl);
                 }
 
                 //把路由页数为0的去掉
@@ -6461,7 +6301,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                     if (dstGroupPages.find(vtSrcGroupNames[i]) == dstGroupPages.end())
                     {
                         errmsg = "src group name not existed:" + vtSrcGroupNames[i];
-                        TLOGERROR(FUN_LOG << errmsg << endl);
+                        TLOG_ERROR(FUN_LOG << errmsg << endl);
                         return -1;
                     }
                 }
@@ -6469,7 +6309,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 if (dstGroupPages.size() <= vtSrcGroupNames.size())
                 {
                     errmsg = "src group num exceed the total group count";
-                    TLOGERROR(FUN_LOG << errmsg << endl);
+                    TLOG_ERROR(FUN_LOG << errmsg << endl);
                     return -1;
                 }
 
@@ -6667,7 +6507,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 string condition = "where id=" + data[0]["id"];
 
                 _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
-                TLOGDEBUG("upadte t_expand_status sql:" << _mysqlRelationDB.getLastSQL() << endl);
+                TLOG_DEBUG("upadte t_expand_status sql:" << _mysqlRelationDB.getLastSQL() << endl);
 
                 vector<string> tmp = TC_Common::sepstr<string>(ids, "|");
                 for (size_t j = 0; j < tmp.size(); j++)
@@ -6685,13 +6525,13 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
         else
         {
             errmsg = string("no record in transgfer db expand status|appName:") + appName + "|moduleName:" + moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         errmsg = string("insert reduce transfer record catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -6772,12 +6612,12 @@ int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &a
     catch (exception &ex)
     {
         errmsg = string("get cache server config from relation db catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get cache server config from relation db catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -6785,7 +6625,7 @@ int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &a
 
 int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
 
     try
     {
@@ -6795,7 +6635,7 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -6807,7 +6647,7 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
             if (status != TRANSFERRING)
             {
                 errmsg = "transfer status is not transferring, can not stop transfer|app name:" + appName + "|module name:" + moduleName + "|srcGroupName:" + srcGroupName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
             else
             {
@@ -6838,13 +6678,13 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
         else
         {
             errmsg = "there is no transfer record for app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "|dst group name:" + dstGroupName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch (const std::exception &ex)
     {
         errmsg = string("stop transfer for transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -6852,7 +6692,7 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
 
 int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -6861,7 +6701,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -6873,7 +6713,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
             if (status != TRANSFERRING)
             {
                 errmsg = "expand status is not transferring, can not stop transfer|app name:" + appName + "|module name:" + moduleName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
             else
             {
@@ -6955,13 +6795,13 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
         else
         {
             errmsg = "there is no expand record for app name:" + appName + "|module name:" + moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(const std::exception &ex)
     {
         errmsg = string("stop transfer for expand catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -6969,7 +6809,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
 
 int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
         //根据appName查询路由数据库信息
@@ -6978,7 +6818,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
         if (iRet == -1)
         {
             errmsg = "get router db info failed|app name:" + appName + "|errmsg:" + errmsg;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -6990,7 +6830,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
             if (status != TRANSFER_STOP)
             {
                 errmsg = "expand status is not stop, can not restart transfer|app name:" + appName + "|module name:" + moduleName;
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
             }
             else
             {
@@ -7026,7 +6866,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
                         else
                         {
                             errmsg = "transfer record or expand not existed, transfer id:" + transferId[j];
-                            TLOGERROR(FUN_LOG << errmsg << endl);
+                            TLOG_ERROR(FUN_LOG << errmsg << endl);
                         }
                     }
 
@@ -7042,13 +6882,13 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
         else
         {
             errmsg = "there is no expand record for app name:" + appName + "|module name:" + moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(const std::exception &ex)
     {
         errmsg = string("restart transfer for expand or reduce catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -7056,7 +6896,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
 
 int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const std::string & moduleName,const std::string & srcGroupName,const std::string & dstGroupName,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << "|src group name:" << srcGroupName << "|dst group name:" << dstGroupName << endl);
 
     try
     {
@@ -7066,7 +6906,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
         if (data.size() == 0)
         {
             errmsg = "not find transfer record|app name:" + appName + "|module name:" + moduleName + "|src group name:" + srcGroupName + "dst group nane:" + dstGroupName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -7079,7 +6919,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
                        + "|module name:" + data[i]["module_name"]
                        + "|src group name:" + data[i]["src_group"]
                        + "|dst group name:" + data[i]["dst_group"];
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
 
                 return -1;
             }
@@ -7099,7 +6939,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
     catch (const std::exception &ex)
     {
         errmsg = string("stop transfer record for transfer catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -7107,7 +6947,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
 
 int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,const std::string & moduleName,TransferType type,std::string &errmsg)
 {
-    TLOGDEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
+    TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
     try
     {
         string sql = "select * from t_expand_status where app_name='" + appName + "' and module_name='" + moduleName + "' and type=" + TC_Common::tostr(type);
@@ -7116,7 +6956,7 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
         if (data.size() == 0)
         {
             errmsg = "not find expand or reduce transfer record|app name:" + appName + "|module name:" + moduleName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -7127,7 +6967,7 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
             {
                 errmsg = "current expand or reduce transfer record is transfering, can not delete|app name:" + data[i]["app_name"]
                        + "|module name:" + data[i]["module_name"];
-                TLOGERROR(FUN_LOG << errmsg << endl);
+                TLOG_ERROR(FUN_LOG << errmsg << endl);
 
                 return -1;
             }
@@ -7143,7 +6983,7 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
     catch(const std::exception &ex)
     {
         errmsg = string("delete transfer record for expand or reduce catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -7163,7 +7003,7 @@ int DCacheOptImp::getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& gro
         if (groupPageInfo.size() <= 0)
         {
             errmsg = "can not find group router page info|group name:" + groupName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -7182,7 +7022,7 @@ int DCacheOptImp::getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& gro
     catch (const std::exception &ex)
     {
         errmsg = string("get cache group router page number catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -7261,7 +7101,7 @@ int DCacheOptImp::loadCacheApp(vector<CacheApp> &cacheApp, tars::CurrentPtr curr
     catch (const std::exception &ex)
     {
         string errmsg = string("get cache app catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;

@@ -47,13 +47,13 @@ void TimerThread::init(const string &sConf)
     if (_srp_dirtyCnt == 0 || _srp_hitcount == 0 || _srp_memSize == 0 || _srp_memInUse == 0 || _srp_dirtyRatio == 0 ||
         _srp_chunksOnceEle == 0 || _srp_elementCount == 0 || _srp_onlykeyCount == 0 || _srp_maxJmemUsage == 0)
     {
-        TLOGERROR("TimerThread::init createPropertyReport error" << endl);
+        TLOG_ERROR("TimerThread::init createPropertyReport error" << endl);
         assert(false);
     }
 
     _downgradeTimeout = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DowngradeTimeout>", "30"));
 
-    TLOGDEBUG("TimerThread::init succ" << endl);
+    TLOG_DEBUG("TimerThread::init succ" << endl);
 }
 
 void TimerThread::reload()
@@ -62,7 +62,7 @@ void TimerThread::reload()
 
     _syncRouteInterval = TC_Common::strto<int>(_tcConf["/Main/Router<SyncInterval>"]);
     _downgradeTimeout = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DowngradeTimeout>", "30"));
-    TLOGDEBUG("TimerThread::reload succ" << endl);
+    TLOG_DEBUG("TimerThread::reload succ" << endl);
 }
 
 void TimerThread::createThread()
@@ -105,7 +105,7 @@ void* TimerThread::Run(void* arg)
                     ostringstream os;
                     os << "server changed from SLAVE to MASTER when in data creating status";
                     TARS_NOTIFY_ERROR(os.str());
-                    TLOGERROR(os.str() << endl);
+                    TLOG_ERROR(os.str() << endl);
                 }
             }
             else
@@ -247,7 +247,7 @@ void TimerThread::handleConnectHbTimeout()
             }
             catch (const exception & ex)
             {
-                TLOGERROR("TimerThread::" << __FUNCTION__ << " getEndpoint4All exception: " << ex.what() << endl);
+                TLOG_ERROR("TimerThread::" << __FUNCTION__ << " getEndpoint4All exception: " << ex.what() << endl);
             }
         }
 
@@ -268,7 +268,7 @@ void TimerThread::handleConnectHbTimeout()
                 }
                 catch (const exception & ex)
                 {
-                    TLOGERROR("TimerThread::" << __FUNCTION__ << " heartBeatReport exception again: " << ex.what() << endl);
+                    TLOG_ERROR("TimerThread::" << __FUNCTION__ << " heartBeatReport exception again: " << ex.what() << endl);
                 }
             }
 
@@ -284,7 +284,7 @@ void TimerThread::handleConnectHbTimeout()
             ret = RouterHandle::getInstance()->masterDowngrade();
             if (ret != 0)
             {
-                TLOGERROR("TimerThread::handleConnectHbTimeout masterDowngrade error:" << ret << endl);
+                TLOG_ERROR("TimerThread::handleConnectHbTimeout masterDowngrade error:" << ret << endl);
                 assert(false);
             }
 
@@ -293,11 +293,11 @@ void TimerThread::handleConnectHbTimeout()
     }
     catch (exception &ex)
     {
-        TLOGERROR("[TimerThread::handleConnectHbTimeout] exception:" << ex.what() << endl);
+        TLOG_ERROR("[TimerThread::handleConnectHbTimeout] exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("[TimerThread::handleConnectHbTimeout] unknown exception." << endl);
+        TLOG_ERROR("[TimerThread::handleConnectHbTimeout] unknown exception." << endl);
     }
 }
 
@@ -315,7 +315,7 @@ void CreateBinlogFileThread::createThread()
 
 void* CreateBinlogFileThread::Run(void* arg)
 {
-    TLOGDEBUG("[CreateBinlogFileThread::Run] start!" << endl);
+    TLOG_DEBUG("[CreateBinlogFileThread::Run] start!" << endl);
 
     pthread_detach(pthread_self());
 
@@ -355,7 +355,7 @@ void* CreateBinlogFileThread::Run(void* arg)
         //时间跳到下一个小时了，就要加锁生成文件
         if (tmpStr != sTimeStr)
         {
-            TLOGDEBUG("[CreateBinlogFileThread::Run] create file!" << endl);
+            TLOG_DEBUG("[CreateBinlogFileThread::Run] create file!" << endl);
 
             if (bRecordBinLog)
             {
@@ -393,7 +393,7 @@ void HeartBeatThread::createThread()
 
 void* HeartBeatThread::Run(void* arg)
 {
-    TLOGDEBUG("[HeartBeatThread::Run] start!" << endl);
+    TLOG_DEBUG("[HeartBeatThread::Run] start!" << endl);
 
     pthread_detach(pthread_self());
 
@@ -409,7 +409,7 @@ void* HeartBeatThread::Run(void* arg)
     if (masterAddr.length() > 0)
     {
         connectPrx = Application::getCommunicator()->stringToProxy<ControlAckPrx>(masterAddr);
-        TLOGDEBUG("HeartBeatThread::Run, connect hb master obj:" << masterAddr << endl);
+        TLOG_DEBUG("HeartBeatThread::Run, connect hb master obj:" << masterAddr << endl);
     }
 
     while (!pThis->_stop)
@@ -427,7 +427,7 @@ void* HeartBeatThread::Run(void* arg)
                 {
                     connectPrx = Application::getCommunicator()->stringToProxy<ControlAckPrx>(tmpAddr);
                     masterAddr = tmpAddr;
-                    TLOGDEBUG("HeartBeatThread::Run, connect hb master change to obj:" << masterAddr << endl);
+                    TLOG_DEBUG("HeartBeatThread::Run, connect hb master change to obj:" << masterAddr << endl);
                 }
 
                 if (connectPrx)
@@ -435,7 +435,7 @@ void* HeartBeatThread::Run(void* arg)
             }
             catch (const exception & ex)
             {
-                TLOGERROR("HeartBeatThread::" << __FUNCTION__ << " connect hb exception: " << ex.what() << endl);
+                TLOG_ERROR("HeartBeatThread::" << __FUNCTION__ << " connect hb exception: " << ex.what() << endl);
             }
         }
 

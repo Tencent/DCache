@@ -19,7 +19,7 @@ void BackUpImp::initialize()
     _config = ServerConfig::BasePath + "CacheServer.conf";
     _tcConf.parseFile(_config);
 
-    TLOGDEBUG("[BackUpImp::initialize] initialize config succ" << endl);
+    TLOG_DEBUG("[BackUpImp::initialize] initialize config succ" << endl);
 }
 
 tars::Int32 BackUpImp::dump(const std::string &dumpPath, const std::string &mirrorName, std::string &errmsg, tars::TarsCurrentPtr current)
@@ -30,7 +30,7 @@ tars::Int32 BackUpImp::dump(const std::string &dumpPath, const std::string &mirr
         if (iRet != 0)
         {
             errmsg = "[BackUpImp::dump] dump thread has started";
-            TLOGERROR(errmsg << endl);
+            TLOG_ERROR(errmsg << endl);
             return 0;
         }
         g_app.dumpThread()->start();
@@ -39,12 +39,12 @@ tars::Int32 BackUpImp::dump(const std::string &dumpPath, const std::string &mirr
     catch (const TarsException & ex)
     {
         errmsg = ex.what();
-        TLOGERROR("[BackUpImp::dump] catch exception: " << errmsg << endl);
+        TLOG_ERROR("[BackUpImp::dump] catch exception: " << errmsg << endl);
     }
     catch (const std::exception & ex)
     {
         errmsg = ex.what();
-        TLOGERROR("[BackUpImp::dump] catch exception: " << errmsg << endl);
+        TLOG_ERROR("[BackUpImp::dump] catch exception: " << errmsg << endl);
     }
     return -1;
 }
@@ -57,7 +57,7 @@ tars::Int32 BackUpImp::restore(const std::string & mirrorPath, const vector<std:
         if (iRet != 0)
         {
             errmsg = "[BackUpImp::restore] slave create thread has started";
-            TLOGERROR(errmsg << endl);
+            TLOG_ERROR(errmsg << endl);
             return -1;
         }
         g_app.slaveCreateThread()->createThread();
@@ -66,12 +66,12 @@ tars::Int32 BackUpImp::restore(const std::string & mirrorPath, const vector<std:
     catch (const TarsException & ex)
     {
         errmsg = ex.what();
-        TLOGERROR("[BackUpImp::restore] catch exception: " << errmsg << endl);
+        TLOG_ERROR("[BackUpImp::restore] catch exception: " << errmsg << endl);
     }
     catch (const std::exception & ex)
     {
         errmsg = ex.what();
-        TLOGERROR("[BackUpImp::restore] catch exception: " << errmsg << endl);
+        TLOG_ERROR("[BackUpImp::restore] catch exception: " << errmsg << endl);
     }
     return -1;
 }

@@ -54,7 +54,7 @@ void ProxyServer::initialize()
 
         initOthers(conf);
 
-        TLOGDEBUG("DCache.ProxyServer init succ" << endl);
+        TLOG_DEBUG("DCache.ProxyServer init succ" << endl);
         TARS_NOTIFY_NORMAL("[ProxyServer::init] |succ|");
         return;
     }
@@ -67,7 +67,7 @@ void ProxyServer::initialize()
         strErr = "[ProxyServer::init] UnkownException";
     }
 
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     TARS_NOTIFY_ERROR(strErr);
     exit(-1);
 }
@@ -99,7 +99,7 @@ void ProxyServer::initStatReport(TC_Config &conf)
     _statThread->init(sStatObj, reportInterval);
     _statThread->start();
 
-    TLOGDEBUG(__FUNCTION__ << "|" << __LINE__ << "|sStatObj:" << sStatObj
+    TLOG_DEBUG(__FUNCTION__ << "|" << __LINE__ << "|sStatObj:" << sStatObj
                            << "|_needStatReport:" << _needStatReport << "|reportInterval:" << reportInterval << "s" << endl);
 }
 
@@ -114,7 +114,7 @@ void ProxyServer::initRouter(TC_Config &conf)
     int iRet = _routerTableInfoFactory->init(conf);
     if (iRet)
     {
-        TLOGERROR("init RouterTableInfoFactory failed, no RouterTable can be used" << endl);
+        TLOG_ERROR("init RouterTableInfoFactory failed, no RouterTable can be used" << endl);
     }
 
     // 启动定时线程，主动拉取并同步路由信息
@@ -149,7 +149,7 @@ void ProxyServer::destroyApp()
     if (_timerThread && !_timerThread->isAlive())
     {
         delete _timerThread;
-        TLOGDEBUG("destroy pointer of TimerThread succ" << endl);
+        TLOG_DEBUG("destroy pointer of TimerThread succ" << endl);
     }
 }
 
@@ -172,7 +172,7 @@ bool ProxyServer::reloadConf(const string &command, const string &params, string
         int64_t nowus = TC_Common::now2ms();
         if ((nowus - _lastReloadConfTime) / 1000 < _reloadConfInterval)
         {
-            TLOGDEBUG(__FUNCTION__ << " load frequently, Interval: "
+            TLOG_DEBUG(__FUNCTION__ << " load frequently, Interval: "
                                    << _reloadConfInterval << "s" << endl);
             sResult = "load frequently, Interval: " + TC_Common::tostr<int>(_reloadConfInterval) + "s";
             return false;
@@ -194,7 +194,7 @@ bool ProxyServer::reloadConf(const string &command, const string &params, string
         _timerThread->reloadConf(conf);
 
         TARS_NOTIFY_NORMAL("[ProxyServer::reloadConf] |succ|");
-        TLOGDEBUG("reload config ok!" << endl);
+        TLOG_DEBUG("reload config ok!" << endl);
         sResult += "----------------------------------------------------------------------\n";
         sResult += "reload config ok!";
         _lastReloadConfTime = TC_Common::now2ms();
@@ -210,7 +210,7 @@ bool ProxyServer::reloadConf(const string &command, const string &params, string
     }
 
     TARS_NOTIFY_ERROR(strErr);
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     sResult += strErr;
     return true;
 }

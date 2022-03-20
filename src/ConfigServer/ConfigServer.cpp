@@ -25,7 +25,7 @@ void ConfigServer::initialize()
 
 void ConfigServer::destroyApp()
 {
-    TLOGDEBUG("ConfigServer::destroyApp succ." << endl);
+    TLOG_DEBUG("ConfigServer::destroyApp succ." << endl);
 }
 
 int main(int argc, char *argv[])

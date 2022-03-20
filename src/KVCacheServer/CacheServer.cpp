@@ -82,7 +82,7 @@ void CacheStringToDoFunctor::del(bool bExists, const CacheStringToDoFunctor::Dat
             if (iRet != eDbSucc && iRet != eDbRecordNotExist)
             {
                 FDLOG(_dbDayLog) << "del|" << data._key << "|Err|" << iRet << endl;
-                TLOGERROR("CacheStringToDoFunctor::del del error, key = " << data._key << ", iRet = " << iRet << endl);
+                TLOG_ERROR("CacheStringToDoFunctor::del del error, key = " << data._key << ", iRet = " << iRet << endl);
                 g_app.ppReport(PPReport::SRP_DB_ERR, 1);
                 throw runtime_error("CacheStringToDoFunctor::del del error");
             }
@@ -91,7 +91,7 @@ void CacheStringToDoFunctor::del(bool bExists, const CacheStringToDoFunctor::Dat
         catch (const TarsException & ex)
         {
             FDLOG(_dbDayLog) << "del|" << data._key << "|Err|" << ex.what() << endl;
-            TLOGERROR("CacheStringToDoFunctor::del del exception: " << ex.what() << ", key = " << data._key << endl);
+            TLOG_ERROR("CacheStringToDoFunctor::del del exception: " << ex.what() << ", key = " << data._key << endl);
             g_app.ppReport(PPReport::SRP_DB_EX, 1);
             throw runtime_error("CacheStringToDoFunctor::del del error");
         }
@@ -142,7 +142,7 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
                 }
                 else
                 {
-                    TLOGERROR("CacheStringToDoFunctor::sync reset dirty data, key = " << data._key << ", error:" << iSetRet << endl);
+                    TLOG_ERROR("CacheStringToDoFunctor::sync reset dirty data, key = " << data._key << ", error:" << iSetRet << endl);
                     if (iSetRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                     {
                         g_app.ppReport(PPReport::SRP_EX, 1);
@@ -160,11 +160,11 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
 
                 if (iRet != eDbSucc)
                 {
-                    TLOGERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << ", setDb again" << endl);
+                    TLOG_ERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << ", setDb again" << endl);
                     iRet = setDb(data);
                     if (iRet != eDbSucc)
                     {
-                        TLOGERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << endl);
+                        TLOG_ERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << endl);
                         FDLOG(_dbDayLog) << "set|" << data._key << "|Err|" << iRet << endl;
                         g_app.ppReport(PPReport::SRP_DB_ERR, 1);
                     }
@@ -180,14 +180,14 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
             }
             catch (const TarsException & ex)
             {
-                TLOGDEBUG("CacheStringToDoFunctor::sync exception, setDb again, key = " << data._key << endl);
+                TLOG_DEBUG("CacheStringToDoFunctor::sync exception, setDb again, key = " << data._key << endl);
                 try
                 {
                     iRet = setDb(data);
 
                     if (iRet != eDbSucc)
                     {
-                        TLOGERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << endl);
+                        TLOG_ERROR("CacheStringToDoFunctor::sync error, ret = " << iRet << ", key = " << data._key << endl);
                         FDLOG(_dbDayLog) << "set|" << data._key << "|Err|" << iRet << endl;
                         g_app.ppReport(PPReport::SRP_DB_ERR, 1);
                     }
@@ -200,18 +200,18 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
                 {
                     bEx = true;
                     FDLOG(_dbDayLog) << "set|" << data._key << "|Err|" << ex.what() << endl;
-                    TLOGERROR("CacheStringToDoFunctor::sync setString exception: " << ex.what() << ", key = " << data._key << endl);
+                    TLOG_ERROR("CacheStringToDoFunctor::sync setString exception: " << ex.what() << ", key = " << data._key << endl);
                     try
                     {
                         g_app.ppReport(PPReport::SRP_DB_EX, 1);
                     }
                     catch (const std::exception & ex)
                     {
-                        TLOGDEBUG("g_srp_dbex ex:" << ex.what() << endl);
+                        TLOG_DEBUG("g_srp_dbex ex:" << ex.what() << endl);
                     }
                     catch (...)
                     {
-                        TLOGDEBUG("g_srp_dbex unkown ex" << endl);
+                        TLOG_DEBUG("g_srp_dbex unkown ex" << endl);
                     }
 
                 }
@@ -244,7 +244,7 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
                     }
                     else
                     {
-                        TLOGERROR("CacheStringToDoFunctor::sync reset dirty data, key = " << data._key << ", error:" << iSetRet << endl);
+                        TLOG_ERROR("CacheStringToDoFunctor::sync reset dirty data, key = " << data._key << ", error:" << iSetRet << endl);
                         if (iSetRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
                         {
                             g_app.ppReport(PPReport::SRP_EX, 1);
@@ -256,11 +256,11 @@ void CacheStringToDoFunctor::sync(const CacheStringToDoFunctor::DataRecord &data
     }
     catch (exception& e)
     {
-        TLOGERROR("CacheStringToDoFunctor::sync exception: " << e.what() << endl);
+        TLOG_ERROR("CacheStringToDoFunctor::sync exception: " << e.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("CacheStringToDoFunctor::sync unknown exception" << endl);
+        TLOG_ERROR("CacheStringToDoFunctor::sync unknown exception" << endl);
     }
 
     TC_ThreadLock::Lock lock(_lock);
@@ -289,11 +289,11 @@ void CacheStringToDoFunctor::erase(const CacheStringToDoFunctor::DataRecord &dat
                 if (g_app.gstat()->serverType() == MASTER)
                     g_app.gstat()->setBinlogTime(0, TNOW);
             }
-            TLOGDEBUG("CacheStringToDoFunctor::erase reset dirty data, key = " << data._key << endl);
+            TLOG_DEBUG("CacheStringToDoFunctor::erase reset dirty data, key = " << data._key << endl);
         }
         else
         {
-            TLOGERROR("CacheStringToDoFunctor::erase reset dirty data, key = " << data._key << ", error:" << iRet << endl);
+            TLOG_ERROR("CacheStringToDoFunctor::erase reset dirty data, key = " << data._key << ", error:" << iRet << endl);
             if (iRet != TC_HashMapMalloc::RT_DATA_VER_MISMATCH)
             {
                 g_app.ppReport(PPReport::SRP_EX, 1);
@@ -376,19 +376,19 @@ void EraseDataInPageFunctor::operator()(int pageNoStart, int pageNoEnd)
     uint32_t iMaxPageNo = UnpackTable::__allPageCount - 1;
     if (pageNoStart < 0 || (uint32_t)pageNoStart > iMaxPageNo)
     {
-        TLOGERROR("[EraseDataInPageFunctor::operator] start page error, " << pageNoStart << " not in [0," << iMaxPageNo << "]" << endl);
+        TLOG_ERROR("[EraseDataInPageFunctor::operator] start page error, " << pageNoStart << " not in [0," << iMaxPageNo << "]" << endl);
         return;
     }
 
     if (pageNoEnd <0 || (uint32_t)pageNoEnd > iMaxPageNo)
     {
-        TLOGERROR("[EraseDataInPageFunctor::operator] end page error, " << pageNoEnd << " not in [0," << iMaxPageNo << "]" << endl);
+        TLOG_ERROR("[EraseDataInPageFunctor::operator] end page error, " << pageNoEnd << " not in [0," << iMaxPageNo << "]" << endl);
         return;
     }
 
     if (pageNoEnd < pageNoStart)
     {
-        TLOGERROR("[EraseDataInPageFunctor::operator] pageNoStart is greater than pageNoEnd." << endl);
+        TLOG_ERROR("[EraseDataInPageFunctor::operator] pageNoStart is greater than pageNoEnd." << endl);
         return;
     }
 
@@ -414,13 +414,13 @@ void EraseDataInPageFunctor::operator()(int pageNoStart, int pageNoEnd)
             if (g_app.gstat()->serverType() != MASTER)
             {
                 string sServerName = ServerConfig::Application + "." + ServerConfig::ServerName;
-                TLOGERROR("[EraseDataInPageFunctor::operator] " << sServerName << " is not MASTER, so cannot continue" << endl);
+                TLOG_ERROR("[EraseDataInPageFunctor::operator] " << sServerName << " is not MASTER, so cannot continue" << endl);
                 break;
             }
 
             if (g_route_table.isMySelfByHash(i))
             {
-                TLOGERROR("[EraseDataInPageFunctor::operator] " << i << " is still in self area" << endl);
+                TLOG_ERROR("[EraseDataInPageFunctor::operator] " << i << " is still in self area" << endl);
                 break;
             }
 
@@ -449,7 +449,7 @@ void EraseDataInPageFunctor::operator()(int pageNoStart, int pageNoEnd)
 
             if (iRet != TC_HashMapMalloc::RT_OK)
             {
-                TLOGERROR("[EraseDataInPageFunctor::operator] hashmap eraseHashByForce error, hash = " << i << ", iRet = " << iRet << endl);
+                TLOG_ERROR("[EraseDataInPageFunctor::operator] hashmap eraseHashByForce error, hash = " << i << ", iRet = " << iRet << endl);
                 g_app.ppReport(PPReport::SRP_EX, 1);
                 break;
             }
@@ -465,17 +465,17 @@ void EraseDataInPageFunctor::operator()(int pageNoStart, int pageNoEnd)
 
         if (!bFinish)
         {
-            TLOGERROR("[EraseDataInPageFunctor::operator] erase data in page: " << iPageNo << " failed" << endl);
+            TLOG_ERROR("[EraseDataInPageFunctor::operator] erase data in page: " << iPageNo << " failed" << endl);
             break;
         }
-        TLOGDEBUG("[EraseDataInPageFunctor::operator] erase data in page: " << iPageNo << " succ" << endl);
+        TLOG_DEBUG("[EraseDataInPageFunctor::operator] erase data in page: " << iPageNo << " succ" << endl);
 
         usleep(1000 * 10);
     }
 
     if (iPageNo > pageNoEnd)
     {
-        TLOGDEBUG("[EraseDataInPageFunctor::operator] erase data in [" << pageNoStart << "," << pageNoEnd << "] succ" << endl);
+        TLOG_DEBUG("[EraseDataInPageFunctor::operator] erase data in [" << pageNoStart << "," << pageNoEnd << "] succ" << endl);
     }
 }
 ////////////////////////////////////////////////////////////////
@@ -489,7 +489,7 @@ void CalculateThread::createThread()
 
     if (pthread_create(&thread, NULL, Run, (void*)this) != 0)
     {
-        TLOGERROR("[CalculateThread::createThread] Create SyncAllThread fail" << endl);
+        TLOG_ERROR("[CalculateThread::createThread] Create SyncAllThread fail" << endl);
     }
 }
 
@@ -515,11 +515,11 @@ void* CalculateThread::Run(void* arg)
             char now_str[31] = "\0";
             strftime(now_str, 31, "%d,%H,%M", &tm_now);
             string sNow(now_str);
-            //TLOGDEBUG("CalculateThread::Run, sNow:" << sNow << endl);
+            //TLOG_DEBUG("CalculateThread::Run, sNow:" << sNow << endl);
             vector<string> vNow = TC_Common::sepstr<string>(sNow, ",");
             if (vNow.size() != 3)
             {
-                TLOGERROR("CalculateThread::Run, vNow size error, sNow" << sNow << endl);
+                TLOG_ERROR("CalculateThread::Run, vNow size error, sNow" << sNow << endl);
                 FDLOG("unread") << "CalculateThread::Run, vNow size error, sNow" << sNow << endl;
                 sleep(300);
                 continue;
@@ -532,11 +532,11 @@ void* CalculateThread::Run(void* arg)
             char start_str[31] = "\0";
             strftime(start_str, 31, "%d,%H,%M", &tm_start);
             string sStart(start_str);
-            //TLOGDEBUG("CalculateThread::Run, sStart:" << sStart << endl);
+            //TLOG_DEBUG("CalculateThread::Run, sStart:" << sStart << endl);
             vector<string> vStart = TC_Common::sepstr<string>(sStart, ",");
             if (vStart.size() != 3)
             {
-                TLOGERROR("CalculateThread::Run, vStart size error, sStart" << sStart << endl);
+                TLOG_ERROR("CalculateThread::Run, vStart size error, sStart" << sStart << endl);
                 FDLOG("unread") << "CalculateThread::Run, vStart size error, sStart" << sStart << endl;
                 sleep(300);
                 continue;
@@ -604,7 +604,7 @@ void* CalculateThread::Run(void* arg)
                  " totalMem:" + TC_Common::tostr(totalMemSize) + " unuseMemPercent:" + TC_Common::tostr(unreadRatio) +
                  "% startTime:" + TC_Common::tostr(t->_startTime);
         FDLOG("unread") << result << endl;
-        TLOGERROR(result << endl);
+        TLOG_ERROR(result << endl);
 
         t->_startTime = time(NULL);
 
@@ -617,7 +617,7 @@ void* CalculateThread::Run(void* arg)
         {
             g_sHashMap.resetCalculateData();
             t->_reportCnt = 0;
-            TLOGDEBUG("CalculateThread::Run, cycle reset!" << endl);
+            TLOG_DEBUG("CalculateThread::Run, cycle reset!" << endl);
             FDLOG("unread") << "CalculateThread::Run, cycle reset!" << endl;
         }
     }
@@ -626,10 +626,16 @@ void* CalculateThread::Run(void* arg)
 }
 
 /////////////////////////////////////////////////////////////////
+void CacheServer::errorAndExit(const string &result)
+{
+    TLOG_ERROR("[CacheServer::initialize] " << result  << endl);
+    TARS_NOTIFY_ERROR(result);
+    TC_Common::msleep(100);
+    exit(-1);
+}
+
 void CacheServer::initialize()
 {
-    //initialize application here:
-    //...
 
     //禁止写远程按天日志
     TarsTimeLogger::getInstance()->enableRemote("", false);
@@ -685,7 +691,7 @@ void CacheServer::initialize()
     iRet = setrlimit(RLIMIT_CORE, &rl);
     if (iRet != 0)
     {
-        TLOGERROR("CacheServer::initialize set coredump limit fail, errno=" << errno << ", old rlim_cur:"
+        TLOG_ERROR("CacheServer::initialize set coredump limit fail, errno=" << errno << ", old rlim_cur:"
                      << iOldLimit << ", rlim_max:" << rl.rlim_max << ", try set rlim_cur:" << rl.rlim_cur << endl);
     }
 
@@ -696,8 +702,7 @@ void CacheServer::initialize()
     bool bSyncFromRouter = true;
     if (RouterHandle::getInstance()->initRoute(false, bSyncFromRouter) != 0)
     {
-        TLOGERROR("CacheServer::initialize init route failed" << endl);
-        assert(false);
+        errorAndExit("init route failed, may be you should restart router server");
     }
 
     //路由初始化完成后，获取groupName
@@ -705,20 +710,19 @@ void CacheServer::initialize()
     GroupInfo groupinfo;
     g_route_table.getGroup(sServerName, groupinfo);
     _gStat.setGroupName(groupinfo.groupName);
-    TLOGDEBUG("CacheServer::initialize groupName:" << groupinfo.groupName << endl);
+    TLOG_DEBUG("CacheServer::initialize groupName:" << groupinfo.groupName << endl);
 
     //hashmap初始化
     NormalHash *pHash = new NormalHash();
-//    typedef size_t(NormalHash::*TpMem)(const string &);
 
     bool bCreate = false;
-    string sSemKeyFile = ServerConfig::DataPath + "/SemKey.dat", sSemKey = "";
+    string sSemKeyFile = TC_File::simplifyDirectory(ServerConfig::DataPath + "/SemKey.dat");
+    string sSemKey = "";
     if (access(sSemKeyFile.c_str(), F_OK) != 0)
     {
         if (errno != ENOENT)
         {
-            TLOGERROR("[CacheServer::initialize] access file: " << sSemKeyFile << " error, errno = " << errno << endl);
-            assert(false);
+            errorAndExit("access file: " + sSemKeyFile + " error");
         }
 
         bCreate = true;
@@ -728,7 +732,9 @@ void CacheServer::initialize()
         ifstream ifs(sSemKeyFile.c_str(), ios::in | ios::binary);
         if (!ifs)
         {
-            TLOGERROR("[CacheServer::initialize] open file: " << sSemKeyFile << " failed" << endl);
+            string result = "open file: " + sSemKeyFile + " error";
+            errorAndExit(result);
+
             g_app.ppReport(PPReport::SRP_EX, 1);
         }
         else
@@ -737,36 +743,48 @@ void CacheServer::initialize()
             {
                 if (ifs.eof())
                 {
-                    TLOGERROR("[CacheServer::initialize] file: " << sSemKeyFile << " is empty" << endl);
+                    TLOG_ERROR("[CacheServer::initialize] file: " << sSemKeyFile << " is empty" << endl);
                 }
                 else
                 {
-                    TLOGERROR("[CacheServer::initialize] read file: " << sSemKeyFile << " failed" << endl);
+                    TLOG_ERROR("[CacheServer::initialize] read file: " << sSemKeyFile << " failed" << endl);
                 }
                 g_app.ppReport(PPReport::SRP_EX, 1);
             }
             else
             {
-                TLOGDEBUG("CacheServer::initialize get semkey from file: " << sSemKeyFile << " succ, semkey = " << sSemKey << endl);
+                TLOG_DEBUG("CacheServer::initialize get semkey from file: " << sSemKeyFile << " succ, semkey = " << sSemKey << endl);
             }
 
             ifs.close();
         }
     }
 
-    key_t key;
-    key = TC_Common::strto<key_t>(_tcConf.get("/Main/Cache<ShmKey>", "0"));
-    if (key == 0)
-        key = ftok(ServerConfig::BasePath.c_str(), 'D');
-
-    _shmKey = TC_Common::tostr(key);
-
-    if (!sSemKey.empty() && sSemKey != _shmKey)
+    if(sSemKey.empty())
     {
-        TLOGERROR("[CacheServer::initialize] semkey from file != ftok/config, (" << sSemKey << " != " << key << ")" << endl);
-        assert(false);
+        key_t key;
+        key = TC_Common::strto<key_t>(_tcConf.get("/Main/Cache<ShmKey>", "0"));
+        if (key == 0)
+        {
+            key = ftok(ServerConfig::BasePath.c_str(), 'D');
+        }
+
+        _shmKey = TC_Common::tostr(key);
+
+        // if (!sSemKey.empty() && sSemKey != _shmKey)
+        // {
+        //     errorAndExit("semkey from file != ftok/config, (" + sSemKey + " != " + TC_Common::tostr(key) + ")");
+        // }
     }
-    TLOGDEBUG("CacheServer::initialize semkey = " << key << endl);
+    else
+    {
+        _shmKey = sSemKey;
+    }
+
+    key_t key = TC_Common::strto<key_t>(_shmKey);
+
+    TARS_NOTIFY_ERROR("shmkey:" + _shmKey);
+    TLOG_DEBUG("CacheServer::initialize semkey = " << key << endl);
 
     size_t n = TC_Common::toSize(_tcConf["/Main/Cache<ShmSize>"], 0);
 
@@ -774,33 +792,29 @@ void CacheServer::initialize()
     {
         if (shmget(key, 0, 0) != -1 || errno != ENOENT)
         {
-            TLOGERROR("[CacheServer::initialize] shmkey: " << key << " has been used, may be a conflict key" << endl);
-            assert(false);
+            errorAndExit("shmkey: " + TC_Common::tostr(key) + " has been used, may be a conflict key");
         }
     }
     else
     {
-        if (sSemKey.empty()) //文件中读取的内容为空
+        //文件中读取的内容为空, 则第一次创建
+        if (sSemKey.empty()) 
         {
             int iShmid = shmget(key, 0, 0);
             if (iShmid == -1)
             {
-                TLOGERROR("[CacheServer::initialize] file: " << sSemKeyFile << " exist and has no content, try shmget "
-                        << key << " failed, errno = " << errno << endl);
-                assert(false);
+                errorAndExit("file: " + sSemKeyFile + " exist and has no content, try shmget " + TC_Common::tostr(key) + " error");
             }
             else
             {
                 struct shmid_ds buf;
                 if (shmctl(iShmid, IPC_STAT, &buf) != 0)
                 {
-                    TLOGERROR("[CacheServer::initialize] shmctl " << key << " failed, errno = " << errno << endl);
-                    assert(false);
+                    errorAndExit("shmctl "+ TC_Common::tostr(key) + " failed");
                 }
                 else if (buf.shm_nattch != 0)
                 {
-                    TLOGERROR("[CacheServer::initialize] number of current attach to shm: " << key << " is not zero" << endl);
-                    assert(false);
+                    errorAndExit("number of current attach to shm: " + TC_Common::tostr(key) + " is not zero error");
                 }
             }
         }
@@ -811,23 +825,18 @@ void CacheServer::initialize()
             {
                 if (MASTER == getServerType()) //主机不允许启动，应该触发主备切换
                 {
-                    TLOGERROR("[CacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
-                             << ",master server assert." << endl);
-                    assert(false);
+                    errorAndExit("file: " + sSemKeyFile + " exist, but shmget " + TC_Common::tostr(key) + " error: " + TC_Exception::getSystemError() + ",master server assert.");
                 }
                 else
                 {
                     bool hasDb = _tcConf["/Main/DbAccess<DBFlag>"] == "Y" ? true : false;
                     if (hasDb)
                     {
-                        TLOGERROR("[CacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
-                                                                     << ",allowed boot up because there is backend DB." << endl);
+                        errorAndExit("file: " + sSemKeyFile + " exist, but shmget " + TC_Common::tostr(key) + " error: " + TC_Exception::getSystemError() + ",allowed boot up because there is backend DB.");
                     }
                     else
                     {
-                        TLOGERROR("[CacheServer::initialize] file: " << sSemKeyFile << " exist, but shmget " << key << " failed, errno = " << errno
-                                                                     << ",has no backend DB, assert." << endl);
-                        assert(false);
+                        errorAndExit("file: " + sSemKeyFile + " exist, but shmget " + TC_Common::tostr(key) + " error: " + TC_Exception::getSystemError() + ",has no backend DB.");
                     }
                 }
             }
@@ -839,7 +848,7 @@ void CacheServer::initialize()
         ofstream ofs(sSemKeyFile.c_str(), ios::out | ios::binary);
         if (!ofs)
         {
-            TLOGERROR("[CacheServer::initialize] open file: " << sSemKeyFile << " failed, semkey can not be noted" << endl);
+            errorAndExit("open file: " + sSemKeyFile + " error, semkey can not be noted");
             if (bCreate)
             {
                 assert(false);
@@ -860,13 +869,13 @@ void CacheServer::initialize()
     g_sHashMap.initHashRadio(atof(_tcConf["/Main/Cache<HashRadio>"].c_str()));
     g_sHashMap.initAvgDataSize(TC_Common::strto<unsigned int>(_tcConf["/Main/Cache<AvgDataSize>"]));
     g_sHashMap.initLock(key, shmNum, -1);
-    TLOGDEBUG("CacheServer::initialize, initLock finish" << endl);
+    TLOG_DEBUG("CacheServer::initialize, initLock finish" << endl);
 
     g_sHashMap.initStore(key, n);
 
-    TLOGDEBUG("CacheServer::initialize, initStore finish" << endl);
+    TLOG_DEBUG("CacheServer::initialize, initStore finish" << endl);
     g_sHashMap.setSyncTime(TC_Common::strto<unsigned int>(_tcConf["/Main/Cache<SyncTime>"]));
-    TLOGDEBUG("g_sHashMap.setToDoFunctor" << endl);
+    TLOG_DEBUG("g_sHashMap.setToDoFunctor" << endl);
     g_sHashMap.setToDoFunctor(&_todoFunctor);
 
     TC_HashMapMalloc::hash_functor cmd = std::bind(&NormalHash::HashRawString, pHash, std::placeholders::_1); //(pHash, static_cast<TpMem>(&NormalHash::HashRawString));
@@ -902,7 +911,7 @@ void CacheServer::initialize()
 
         iRet = createBinLogFile(normalBinlogPath, false);
         assert(iRet == 0);
-        TLOGDEBUG("[CacheServer::initialize] open file succ! " << normalBinlogPath << endl);
+        TLOG_DEBUG("[CacheServer::initialize] open file succ! " << normalBinlogPath << endl);
     }
 
     if (m_bKeyRecordBinLog)
@@ -911,7 +920,7 @@ void CacheServer::initialize()
 
         iRet = createBinLogFile(keyBinlogPath, true);
         assert(iRet == 0);
-        TLOGDEBUG("[CacheServer::initialize] open file succ! " << keyBinlogPath << endl);
+        TLOG_DEBUG("[CacheServer::initialize] open file succ! " << keyBinlogPath << endl);
     }
 
     //启动定时生成binlog文件线程
@@ -939,7 +948,7 @@ void CacheServer::initialize()
     {
         if (errno != ENOENT)
         {
-            TLOGERROR("[CacheServer::initialize] access file: " << sSlaveCreatingDataFile << " error, errno = " << errno << endl);
+            TLOG_ERROR("[CacheServer::initialize] access file: " << sSlaveCreatingDataFile << " error, errno = " << errno << endl);
             assert(false);
         }
     }
@@ -950,21 +959,21 @@ void CacheServer::initialize()
         {
             os << "server can not changed from SLAVE to MASTER when in creating data status" << endl;
             TARS_NOTIFY_ERROR(os.str());
-            TLOGERROR("[CacheServer::initialize] " << os.str() << endl);
+            TLOG_ERROR("[CacheServer::initialize] " << os.str() << endl);
             assert(false);
         }
         _gStat.setSlaveCreating(true);
 
         os << "slave still in creating data status";
         TARS_NOTIFY_ERROR(os.str());
-        TLOGDEBUG("[CacheServer::initialize] " << os.str() << endl);
+        TLOG_DEBUG("[CacheServer::initialize] " << os.str() << endl);
     }
     string sDumpingDataFile = ServerConfig::DataPath + "/Dumping.dat";
     if (access(sDumpingDataFile.c_str(), F_OK) != 0)
     {
         if (errno != ENOENT)
         {
-            TLOGERROR("[CacheServer::initialize] access file: " << sDumpingDataFile << " error, errno = " << errno << endl);
+            TLOG_ERROR("[CacheServer::initialize] access file: " << sDumpingDataFile << " error, errno = " << errno << endl);
             assert(false);
         }
     }
@@ -976,7 +985,7 @@ void CacheServer::initialize()
         ostringstream os;
         os << "Dumping not finished";
         TARS_NOTIFY_ERROR(os.str());
-        TLOGERROR("[CacheServer::initialize] " << os.str() << endl);
+        TLOG_ERROR("[CacheServer::initialize] " << os.str() << endl);
     }
 
     //创建获取Binlog日志线程
@@ -1010,7 +1019,7 @@ void CacheServer::initialize()
         int iRet = _expireThread->createThread();
         if (iRet != 0)
         {
-            TLOGERROR("CacheServer::initialize create ExpireThread fail" << endl);
+            TLOG_ERROR("CacheServer::initialize create ExpireThread fail" << endl);
             exit(-1);
         }
     }
@@ -1029,7 +1038,7 @@ void CacheServer::initialize()
 
     _clodDataCntingThread.createThread();
 
-    TLOGDEBUG("CacheServer::initialize Succ" << endl);
+    TLOG_DEBUG("CacheServer::initialize Succ" << endl);
 }
 
 bool CacheServer::help(const string& command, const string& params, string& result)
@@ -1094,7 +1103,7 @@ bool CacheServer::showStatus(const string& command, const string& params, string
 }
 bool CacheServer::showStatusDetail(const string& command, const string& params, string& result)
 {
-    TLOGDEBUG("CacheServer::showStatus begin" << endl);
+    TLOG_DEBUG("CacheServer::showStatus begin" << endl);
 
     string sServerType = _gStat.serverType() == MASTER ? "Master" : "Slave";
     result = string("Server Type: ") + sServerType + "\n";
@@ -1141,20 +1150,20 @@ bool CacheServer::showStatusDetail(const string& command, const string& params, 
 
     result += g_route_table.toString();
 
-    TLOGDEBUG(result << endl);
+    TLOG_DEBUG(result << endl);
 
-    TLOGDEBUG("CacheServer::showStatus Succ" << endl);
+    TLOG_DEBUG("CacheServer::showStatus Succ" << endl);
 
     return true;
 }
 bool CacheServer::syncData(const string& command, const string& params, string& result)
 {
-    TLOGDEBUG("CacheServer::syncData begin" << endl);
+    TLOG_DEBUG("CacheServer::syncData begin" << endl);
 
     _syncAllThread.createThread();
     result = "syncdata had send";
 
-    TLOGDEBUG("CacheServer::syncData succ" << endl);
+    TLOG_DEBUG("CacheServer::syncData succ" << endl);
     return true;
 }
 
@@ -1209,7 +1218,7 @@ bool CacheServer::reloadConf(const string& command, const string& params, string
     _clodDataCntingThread._enable = (sCaculateEnable == "Y" || sCaculateEnable == "y") ? true : false;
     _clodDataCntingThread._resetCycleDays = TC_Common::strto<int>(_tcConf.get("/Main/Cache<coldDataCalCycle>", "7"));
 
-    TLOGDEBUG(result << endl);
+    TLOG_DEBUG(result << endl);
     return true;
 }
 
@@ -1268,7 +1277,7 @@ bool CacheServer::setAllDirty(const string& command, const string& params, strin
     if (ret != TC_HashMapMalloc::RT_OK)
     {
         result = os.str();
-        TLOGERROR("[CacheServer::setAllDirty] " << os.str() << endl);
+        TLOG_ERROR("[CacheServer::setAllDirty] " << os.str() << endl);
     }
     else
     {
@@ -1347,7 +1356,7 @@ int CacheServer::createBinLogFile(const string &path, bool isKeyBinLog)
         _keyBinlogFD = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
         if (_keyBinlogFD < 0)
         {
-            TLOGERROR("[CacheServer::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
+            TLOG_ERROR("[CacheServer::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
             return -1;
         }
     }
@@ -1360,7 +1369,7 @@ int CacheServer::createBinLogFile(const string &path, bool isKeyBinLog)
         _binlogFD = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
         if (_binlogFD < 0)
         {
-            TLOGERROR("[CacheServer::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
+            TLOG_ERROR("[CacheServer::createBinLogFile] open file error! " << path + "|errno:" << errno << endl);
             return -1;
         }
     }
@@ -1395,7 +1404,7 @@ void CacheServer::WriteToFile(const string &content, const string &logFile)
         if (tmpn < iContentSize - n)
         {
             string error_str = "[CacheServer::WriteToFile] write binlog " + logFile + " file error! " + TC_Common::tostr(errno);;
-            TLOGERROR(error_str << endl);
+            TLOG_ERROR(error_str << endl);
             TARS_NOTIFY_ERROR(error_str);
         }
 
@@ -1477,7 +1486,7 @@ string CacheServer::formatCacheHead(vector<TC_HashMapMalloc::tagMapHead> &tmpHea
 
 bool CacheServer::eraseDataInPage(const string& command, const string& params, string& result)
 {
-    TLOGDEBUG("CacheServer::eraseDataInPage, " << params << endl);
+    TLOG_DEBUG("CacheServer::eraseDataInPage, " << params << endl);
 
     if (_gStat.serverType() != MASTER)
     {
@@ -1520,21 +1529,21 @@ bool CacheServer::eraseDataInPage(const string& command, const string& params, s
 //在确保此命令运行完成后，不得再进行新的迁移
 bool CacheServer::eraseWrongRouterData(const string& command, const string& params, string& result)
 {
-    TLOGDEBUG("CacheServer::eraseWrongRouterData start." << endl);
+    TLOG_DEBUG("CacheServer::eraseWrongRouterData start." << endl);
     ostringstream os;
     os << "begin erase data in page ";
     const PackTable& packTable = g_route_table.getPackTable();
     size_t nRangeCount = packTable.recordList.size();
 
-    TLOGDEBUG("CacheServer::eraseWrongRouterData nRangeCount=" << nRangeCount << endl);
+    TLOG_DEBUG("CacheServer::eraseWrongRouterData nRangeCount=" << nRangeCount << endl);
     for (size_t i = 0; i < nRangeCount; ++i)
     {
-        TLOGDEBUG("CacheServer::eraseWrongRouterData groupName=" << packTable.recordList[i].groupName << "|groupName=" << _gStat.groupName() << endl);
+        TLOG_DEBUG("CacheServer::eraseWrongRouterData groupName=" << packTable.recordList[i].groupName << "|groupName=" << _gStat.groupName() << endl);
         if (packTable.recordList[i].groupName != _gStat.groupName())
         {
             int iPageNoStart = packTable.recordList[i].fromPageNo;
             int iPageNoEnd = packTable.recordList[i].toPageNo;
-            TLOGDEBUG("CacheServer::eraseWrongRouterData iPageNoStart=" << iPageNoStart << "|iPageNoEnd=" << iPageNoEnd << endl);
+            TLOG_DEBUG("CacheServer::eraseWrongRouterData iPageNoStart=" << iPageNoStart << "|iPageNoEnd=" << iPageNoEnd << endl);
             os << "[" << iPageNoStart << "," << iPageNoEnd << "],";
 
 //            TC_Functor<void, TL::TLMaker<int, int>::Result> cmd(_eraseDataInPageFunc);
@@ -1544,7 +1553,7 @@ bool CacheServer::eraseWrongRouterData(const string& command, const string& para
     }
     os << " please wait and check result later, bye.";
     result = os.str();
-    TLOGDEBUG("CacheServer::eraseWrongRouterData finish." << endl);
+    TLOG_DEBUG("CacheServer::eraseWrongRouterData finish." << endl);
     return true;
 }
 
@@ -1590,13 +1599,13 @@ bool CacheServer::addConfig(const string &filename)
 
     if (pullConfig(filename, result))
     {
-        TLOGDEBUG("CacheServer::addConfig pullConfig result = " << result << endl);
+        TLOG_DEBUG("CacheServer::addConfig pullConfig result = " << result << endl);
         TarsRemoteNotify::getInstance()->report(result);
 
         return true;
     }
 
-    TLOGERROR("[CacheServer::addConfig] pullConfig result = " << result << endl);
+    TLOG_ERROR("[CacheServer::addConfig] pullConfig result = " << result << endl);
     TarsRemoteNotify::getInstance()->report(result);
 
     return true;
@@ -1650,12 +1659,12 @@ bool CacheServer::pullConfig(const string & fileName, string &result, bool bAppC
         }
         catch (std::exception& e)
         {
-            TLOGERROR("[CacheServer::pullConfig] exception: " << e.what() << endl);
+            TLOG_ERROR("[CacheServer::pullConfig] exception: " << e.what() << endl);
             result = "[fail] get remote config '" + fileName + "' error:" + string(e.what());
         }
         catch (...)
         {
-            TLOGERROR("[CacheServer::pullConfig] unknown exception" << endl);
+            TLOG_ERROR("[CacheServer::pullConfig] unknown exception" << endl);
             result = "[fail] get remote config '" + fileName + "' unknown error";
         }
     } while (retryTimes--);
@@ -1749,6 +1758,6 @@ CacheServer::destroyApp()
             usleep(10000);
         }
     }
-    TLOGERROR("CacheServer::destroyApp Succ" << endl);
+    TLOG_ERROR("CacheServer::destroyApp Succ" << endl);
 }
 

@@ -24,13 +24,13 @@ void BinLogTimeThread::init(const string& sConf)
     _srp_binlogSynDiff = Application::getCommunicator()->getStatReport()->createPropertyReport("M/S_ReplicationLatency", PropertyReport::avg());
     if (_srp_binlogSynDiff == 0)
     {
-        TLOGERROR("BinLogTimeThread::init createPropertyReport error" << endl);
+        TLOG_ERROR("BinLogTimeThread::init createPropertyReport error" << endl);
         assert(false);
     }
 
     _saveSyncTimeInterval = TC_Common::strto<int>(_tcConf.get("/Main/BinLog<SaveSyncTimeInterval>", "10"));
 
-    TLOGDEBUG("BinLogTimerThread::init succ" << endl);
+    TLOG_DEBUG("BinLogTimerThread::init succ" << endl);
 }
 
 void BinLogTimeThread::reload()
@@ -38,7 +38,7 @@ void BinLogTimeThread::reload()
     _tcConf.parseFile(_configFile);
     _saveSyncTimeInterval = TC_Common::strto<int>(_tcConf.get("/Main/BinLog<SaveSyncTimeInterval>", "10"));
 
-    TLOGDEBUG("BinLogTimeThread::reload Succ" << endl);
+    TLOG_DEBUG("BinLogTimeThread::reload Succ" << endl);
 }
 
 void BinLogTimeThread::createThread()
@@ -99,7 +99,7 @@ void* BinLogTimeThread::Run(void* arg)
             string sTmpAddr = pthis->getBakSourceAddr();
             if (sTmpAddr != sAddr)
             {
-                TLOGDEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
+                TLOG_DEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
                 sAddr = sTmpAddr;
                 if (sAddr.length() > 0)
                 {
@@ -125,7 +125,7 @@ void* BinLogTimeThread::Run(void* arg)
             }
             else
             {
-                TLOGERROR("[BinLogTimeThread::Run] getBakSourceAddr is empty." << endl);
+                TLOG_ERROR("[BinLogTimeThread::Run] getBakSourceAddr is empty." << endl);
             }
 
             pthis->_failCnt = 0;
@@ -136,11 +136,11 @@ void* BinLogTimeThread::Run(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[BinLogTimeThread::Run] exception: " << ex.what() << endl);
+            TLOG_ERROR("[BinLogTimeThread::Run] exception: " << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[BinLogTimeThread::Run] unkown exception" << endl);
+            TLOG_ERROR("[BinLogTimeThread::Run] unkown exception" << endl);
         }
         pthis->reportBinLogDiff();
         if (++pthis->_failCnt >= 3)
@@ -172,7 +172,7 @@ string BinLogTimeThread::getBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[BinLogTimeThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[BinLogTimeThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -207,7 +207,7 @@ void BinLogTimeThread::getSyncTime()
     fin.open(sFile.c_str(), ios::in | ios::binary);
     if (!fin)
     {
-        TLOGERROR("open file: " << sFile << " error" << endl);
+        TLOG_ERROR("open file: " << sFile << " error" << endl);
         return;
     }
 
@@ -218,7 +218,7 @@ void BinLogTimeThread::getSyncTime()
         vt = TC_Common::sepstr<string>(line, "|");
         if (vt.size() != 2)
         {
-            TLOGERROR("sync_time.data is error" << endl);
+            TLOG_ERROR("sync_time.data is error" << endl);
             fin.close();
             return;
         }
@@ -231,7 +231,7 @@ void BinLogTimeThread::getSyncTime()
     }
     else
     {
-        TLOGERROR("sync_time.data is error" << endl);
+        TLOG_ERROR("sync_time.data is error" << endl);
     }
     fin.close();
 }
@@ -243,7 +243,7 @@ void BinLogTimeThread::saveSyncTime()
     int fd = open(sFile.c_str(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (fd < 0)
     {
-        TLOGERROR("Save SyncTime error, open " << sFile << " failed" << endl);
+        TLOG_ERROR("Save SyncTime error, open " << sFile << " failed" << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }

@@ -23,10 +23,10 @@ using namespace std;
 using namespace tars;
 using namespace DCache;
 
-#define MKCacheCallbackLog(class_name, module_name, main_key, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define MKCacheCallbackLog(class_name, module_name, main_key, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                           << " mk:" << main_key << "|module:" << module_name << "|object:" << object_name << "|ret:" << ret << endl)
 
-#define MKCacheCallbackExcLog(class_name, module_name, main_key, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define MKCacheCallbackExcLog(class_name, module_name, main_key, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                              << " mk:" << main_key << "|module:" << module_name << "|object:" << object_name << "|errno:" << ret << endl)
 
 #define MKCacheCallbackDo(module_name, main_key, object_name, ret, rsp, recall_fun, rsp_fun) \
@@ -50,10 +50,10 @@ using namespace DCache;
     ResponserPtr responser = make_responser(rsp_fun);                                 \
     procExceptionCall(main_key, ret, responser)
 
-#define MKCacheBatchCallbackLog(class_name, module_name, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define MKCacheBatchCallbackLog(class_name, module_name, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                      << " module:" << module_name << "|object:" << object_name << "|ret:" << ret << endl)
 
-#define MKCacheBatchCallbackExcLog(class_name, module_name, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define MKCacheBatchCallbackExcLog(class_name, module_name, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                         << " module:" << module_name << "|object:" << object_name << "|errno:" << ret << endl)
 
 #define MKCacheBatchCallbackDo(ret, rsp, reroute_fun, recall_fun, rsp_fun) \
@@ -138,7 +138,7 @@ struct ProcMKCacheCallback : public CacheCallbackComm
                     errMsg = "catch unkown exception";
                 }
 
-                TLOGERROR("MKCacheCallback::procCallback " << errMsg << endl);
+                TLOG_ERROR("MKCacheCallback::procCallback " << errMsg << endl);
 
                 FDLOG("CBError") << caller << "|mk:" << mainKey << "|module:" << moduleName << "|recall error:" << errMsg << endl;
 
@@ -472,7 +472,7 @@ struct ProcMKWCacheCallback : public CacheCallbackComm
                     errMsg = "catch unkown exception";
                 }
 
-                TLOGERROR("MKWCacheCallback::procCallback " << errMsg << endl);
+                TLOG_ERROR("MKWCacheCallback::procCallback " << errMsg << endl);
 
                 FDLOG("CBError") << caller << "|mk:" << mainKey << "|module:" << moduleName << "|recall error:" << errMsg << endl;
 
@@ -1081,7 +1081,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
         RouterTableInfo *routeTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
         if (!routeTableInfo)
         {
-            TLOGERROR("MKCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
+            TLOG_ERROR("MKCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
 
             return ET_MODULE_NAME_INVALID;
         }
@@ -1089,7 +1089,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
         int ret = routeTableInfo->update();
         if (ret != ET_SUCC)
         {
-            TLOGERROR("MKCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
+            TLOG_ERROR("MKCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
         }
         else
         {
@@ -1126,11 +1126,11 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
                     }
                     catch (exception &ex)
                     {
-                        TLOGERROR("MKCacheBatchCallback::doRecall exception:" << ex.what() << endl);
+                        TLOG_ERROR("MKCacheBatchCallback::doRecall exception:" << ex.what() << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKCacheBatchCallback::doRecall catch unkown exception" << endl);
+                        TLOG_ERROR("MKCacheBatchCallback::doRecall catch unkown exception" << endl);
                     }
 
                     return ET_CACHE_ERR;
@@ -1166,7 +1166,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
             if (ret != RouterTable::RET_SUCC)
             {
                 // 如果通过key无法获取CacheServer的节点信息
-                TLOGERROR("MKCacheBatchCallback::reRouteGetMKVBatch can not locate key:" << _req.mainKeys[i] << "|ret:" << ret << endl);
+                TLOG_ERROR("MKCacheBatchCallback::reRouteGetMKVBatch can not locate key:" << _req.mainKeys[i] << "|ret:" << ret << endl);
 
                 break;
             }
@@ -1207,7 +1207,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
             if (ret != RouterTable::RET_SUCC)
             {
                 // 如果通过key无法获取CacheServer的节点信息
-                TLOGERROR("MKCacheBatchCallback::reRouteGetMUKBatch can not locate key:" << mainKey << "|ret:" << ret << endl);
+                TLOG_ERROR("MKCacheBatchCallback::reRouteGetMUKBatch can not locate key:" << mainKey << "|ret:" << ret << endl);
 
                 break;
             }
@@ -1248,7 +1248,7 @@ struct ProcMKCacheBatchCallback : public CacheCallbackComm
             if (ret != RouterTable::RET_SUCC)
             {
                 // 如果通过key无法获取CacheServer的节点信息
-                TLOGERROR("MKCacheBatchCallback::reRouteGetMKVBatchEx can not locate key:" << mainKey << "|ret:" << ret << endl);
+                TLOG_ERROR("MKCacheBatchCallback::reRouteGetMKVBatchEx can not locate key:" << mainKey << "|ret:" << ret << endl);
 
                 break;
             }
@@ -1609,7 +1609,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
         RouterTableInfo *routeTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
         if (!routeTableInfo)
         {
-            TLOGERROR("MKWCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
+            TLOG_ERROR("MKWCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
 
             return ET_MODULE_NAME_INVALID;
         }
@@ -1617,7 +1617,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
         int ret = routeTableInfo->update();
         if (ret != ET_SUCC)
         {
-            TLOGERROR("MKWCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
+            TLOG_ERROR("MKWCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
         }
         else
         {
@@ -1634,7 +1634,7 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
                 if (ret != RouterTable::RET_SUCC)
                 {
                     // 如果通过key无法获取CacheServer的节点信息
-                    TLOGERROR("MKWCacheBatchCallback::doRecall can not locate key:" << req.data[repeatIndexs[i]].mainKey << "|ret:" << ret << endl);
+                    TLOG_ERROR("MKWCacheBatchCallback::doRecall can not locate key:" << req.data[repeatIndexs[i]].mainKey << "|ret:" << ret << endl);
                     failedIndexRet[repeatIndexs[i]] = errcode;
 
                     continue;
@@ -1676,11 +1676,11 @@ struct ProcMKWCacheBatchCallback : public CacheCallbackComm
                     }
                     catch (exception &ex)
                     {
-                        TLOGERROR("MKWCacheBatchCallback::doRecall exception:" << ex.what() << endl);
+                        TLOG_ERROR("MKWCacheBatchCallback::doRecall exception:" << ex.what() << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKWCacheBatchCallback::doRecall catch unkown exception" << endl);
+                        TLOG_ERROR("MKWCacheBatchCallback::doRecall catch unkown exception" << endl);
                     }
 
                     reportException("CBError");

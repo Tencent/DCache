@@ -55,7 +55,7 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
                 if (!ifs)
                 {
                     g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                    TLOGERROR("BinLogImp::getLog open binlog :" << sFile << " failed" << endl);
+                    TLOG_ERROR("BinLogImp::getLog open binlog :" << sFile << " failed" << endl);
                     return -1;
                 }
                 seek = 0;
@@ -69,13 +69,13 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
             else
             {
                 g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                TLOGERROR("BinLogImp::getLog access binlog :" << sFile << " error :" << errno << endl);
+                TLOG_ERROR("BinLogImp::getLog access binlog :" << sFile << " error :" << errno << endl);
                 return -1;
             }
         }
         else if (getLogFilePrefix(logfileOpt) != _binlogFile)
         {
-            TLOGERROR("BinLogImp::getLog logfile error :" << logfileOpt << endl);
+            TLOG_ERROR("BinLogImp::getLog logfile error :" << logfileOpt << endl);
             return -1;
         }
         else
@@ -88,14 +88,14 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
             if (!ifs)
             {
                 g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                TLOGERROR("BinLogImp::getLog open binlog :" << sFile << " failed, begin find next logfile" << endl);
+                TLOG_ERROR("BinLogImp::getLog open binlog :" << sFile << " failed, begin find next logfile" << endl);
                 if (findNextLogFile(sTmpCurLogfile, sTmpCurLogfile))
                 {
                     sFile = ServerConfig::LogPath + "/" + ServerConfig::Application + "/" + ServerConfig::ServerName + "/" + sTmpCurLogfile;
                     ifs.open(sFile.c_str(), ios::in | ios::binary);
                     if (!ifs)
                     {
-                        TLOGERROR("BinLogImp::getLog open binlog :" << sFile << " failed" << endl);
+                        TLOG_ERROR("BinLogImp::getLog open binlog :" << sFile << " failed" << endl);
                         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                         return -1;
                     }
@@ -105,7 +105,7 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
                 }
                 else
                 {
-                    TLOGERROR("BinLogImp::getLog can not find binlog" << endl);
+                    TLOG_ERROR("BinLogImp::getLog can not find binlog" << endl);
                     //g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                     return -1;
                 }
@@ -116,7 +116,7 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
         if (!ifs)
         {
             ifs.close();
-            TLOGERROR("BinLogImp::getLog seek binlog :" << sFile << " failed" << endl);
+            TLOG_ERROR("BinLogImp::getLog seek binlog :" << sFile << " failed" << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             return -1;
         }
@@ -124,7 +124,7 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
         string sNextLogfile;
 
         bool bNextFile = findNextLogFile(sTmpCurLogfile, sNextLogfile);
-        //TLOGDEBUG("BinLogImp::getLog Next log file: " << sNextLogfile << endl);
+        //TLOG_DEBUG("BinLogImp::getLog Next log file: " << sNextLogfile << endl);
 
         rsp.logContent.reserve(req.lineCount);
         for (int i = 0; i < req.lineCount; i++)
@@ -169,7 +169,7 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
                 }
                 else
                 {
-                    TLOGERROR("BinLogImp::getLog, getTime error! sFile:" << sTmpCurLogfile << "|content:" << rsp.logContent[i] << endl);
+                    TLOG_ERROR("BinLogImp::getLog, getTime error! sFile:" << sTmpCurLogfile << "|content:" << rsp.logContent[i] << endl);
                     FDLOG("binlogerror") << "BinLogImp::getLog, getTime error! sFile:" << sTmpCurLogfile << "|content:" << rsp.logContent[i] << endl;
                 }
             }
@@ -179,12 +179,12 @@ tars::Int32 BinLogImp::getLog(const DCache::BinLogReq &req, DCache::BinLogRsp &r
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("BinLogImp::getLog: exception: " << ex.what() << endl);
+        TLOG_ERROR("BinLogImp::getLog: exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("BinLogImp::getLog: unkown exception: " << endl);
+        TLOG_ERROR("BinLogImp::getLog: unkown exception: " << endl);
         return -1;
     }
     return 0;
@@ -231,7 +231,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
                 if (!ifs)
                 {
                     g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                    TLOGERROR("[BinLogImp::getLogCompress] open binlog :" << sFile << " failed" << endl);
+                    TLOG_ERROR("[BinLogImp::getLogCompress] open binlog :" << sFile << " failed" << endl);
                     return -1;
                 }
                 seek = 0;
@@ -245,14 +245,14 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
             else
             {
                 g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                TLOGERROR("[BinLogImp::getLogCompress] access binlog :" << sFile << " error :" << errno << endl);
+                TLOG_ERROR("[BinLogImp::getLogCompress] access binlog :" << sFile << " error :" << errno << endl);
                 return -1;
             }
         }
         else if (getLogFilePrefix(logfileOpt) != _binlogFile)
         {
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-            TLOGERROR("[BinLogImp::getLogCompress] logfile error :" << logfileOpt << endl);
+            TLOG_ERROR("[BinLogImp::getLogCompress] logfile error :" << logfileOpt << endl);
             return -1;
         }
         else
@@ -262,7 +262,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
                 if (logfileOpt.find("key_") == string::npos)
                 {
                     g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                    TLOGERROR("[BinLogImp::getLogCompress] binFileName error keySyncMode must have _key_ fileName:" << logfileOpt << endl);
+                    TLOG_ERROR("[BinLogImp::getLogCompress] binFileName error keySyncMode must have _key_ fileName:" << logfileOpt << endl);
                     return -1;
                 }
             }
@@ -273,7 +273,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
             if (!ifs)
             {
                 g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
-                TLOGERROR("[BinLogImp::getLogCompress] open binlog :" << sFile << " failed, begin find next logfile" << endl);
+                TLOG_ERROR("[BinLogImp::getLogCompress] open binlog :" << sFile << " failed, begin find next logfile" << endl);
                 return -1;
             }
         }
@@ -281,7 +281,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
         if (!ifs)
         {
             ifs.close();
-            TLOGERROR("[BinLogImp::getLogCompress] seek binlog :" << sFile << " failed" << endl);
+            TLOG_ERROR("[BinLogImp::getLogCompress] seek binlog :" << sFile << " failed" << endl);
             g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
             return -1;
         }
@@ -368,7 +368,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
                             }
                             else
                             {
-                                TLOGERROR("[BinLogImp::getLogCompress] g_sHashMap.get error iRet:" << iRet << " key:" << sKey << endl);
+                                TLOG_ERROR("[BinLogImp::getLogCompress] g_sHashMap.get error iRet:" << iRet << " key:" << sKey << endl);
                                 g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
                                 return -1;
                             }
@@ -383,7 +383,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
 
                     if (iCurSize >= (uint32_t)req.logSize || iCurLineCount >= (uint32_t)req.lineCount)
                     {
-                        TLOGDEBUG("logSzie:" << iCurSize << " lineCount:" << iCurLineCount << endl);
+                        TLOG_DEBUG("logSzie:" << iCurSize << " lineCount:" << iCurLineCount << endl);
                         break;
                     }
                 }
@@ -414,12 +414,12 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("BinLogImp::getLog: exception: " << ex.what() << endl);
+        TLOG_ERROR("BinLogImp::getLog: exception: " << ex.what() << endl);
         return -1;
     }
     catch (...)
     {
-        TLOGERROR("BinLogImp::getLog: unkown exception: " << endl);
+        TLOG_ERROR("BinLogImp::getLog: unkown exception: " << endl);
         return -1;
     }
     int64_t beginTime = TC_TimeProvider::getInstance()->getNowMs();
@@ -432,8 +432,8 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
         {
             bGzipOk = StringUtil::gzipCompress(oStr.c_str(), oStr.length(), rsp.compLog);
             if (!bGzipOk)
-                TLOGERROR("[BinLogImp::getLogCompress] gzip compress error" << endl);
-            TLOGDEBUG("gzip after size:" << rsp.compLog.size() << endl);
+                TLOG_ERROR("[BinLogImp::getLogCompress] gzip compress error" << endl);
+            TLOG_DEBUG("gzip after size:" << rsp.compLog.size() << endl);
         }
     }
 
@@ -443,7 +443,7 @@ tars::Int32 BinLogImp::getLogCompress(const DCache::BinLogReq &req, DCache::BinL
         return 1;
     }
     int64_t endTime = TC_TimeProvider::getInstance()->getNowMs();
-    TLOGDEBUG("[BinLogImp::getLogCompress] before size:" << oStr.length() << " after size:" << rsp.compLog.size() << " gzip time" << endTime - beginTime << endl);
+    TLOG_DEBUG("[BinLogImp::getLogCompress] before size:" << oStr.length() << " after size:" << rsp.compLog.size() << " gzip time" << endTime - beginTime << endl);
 
     return 0;
 }

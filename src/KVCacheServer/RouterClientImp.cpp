@@ -38,7 +38,7 @@ void RouterClientImp::initialize()
     _tpool.init(1);
     _tpool.start();
 
-    TLOGDEBUG("RouterClientImp::initialize Succ" << endl);
+    TLOG_DEBUG("RouterClientImp::initialize Succ" << endl);
 }
 
 void RouterClientImp::destroy()
@@ -99,7 +99,7 @@ bool RouterClientImp::isTransSrc(int pageNo)
 
 tars::Int32 RouterClientImp::helloBaby(tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("i am ok" << endl);
+    TLOG_DEBUG("i am ok" << endl);
     return 0;
 }
 
@@ -113,13 +113,13 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不提供接口服务
-        TLOGERROR("RouterClientImp::setBatchFroTrans: ServerType is not Master" << endl);
+        TLOG_ERROR("RouterClientImp::setBatchFroTrans: ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::setBatchFroTrans: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::setBatchFroTrans: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -136,7 +136,7 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
                 int iPageNo = g_route_table.getPageNo(data[i].k.keyItem);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("RouterClientImp::setBatchFroTrans: " << data[i].k.keyItem << " forbid set" << endl);
+                    TLOG_ERROR("RouterClientImp::setBatchFroTrans: " << data[i].k.keyItem << " forbid set" << endl);
                     return ET_FORBID_OPT;
                 }
             }
@@ -145,8 +145,8 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
             if (!g_route_table.isMySelf(data[i].k.keyItem))
             {
                 //返回模块错误
-                TLOGERROR("RouterClientImp::setBatchFroTrans: " << data[i].k.keyItem << " is not in self area" << endl);
-                TLOGERROR(g_route_table.toString() << endl);
+                TLOG_ERROR("RouterClientImp::setBatchFroTrans: " << data[i].k.keyItem << " is not in self area" << endl);
+                TLOG_ERROR(g_route_table.toString() << endl);
                 return ET_KEY_AREA_ERR;
             }
 
@@ -156,7 +156,7 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
 
                 if (iRet != TC_HashMapMalloc::RT_OK)
                 {
-                    TLOGERROR("RouterClientImp::setBatchFroTrans hashmap.set(" << data[i].k.keyItem << ") error:" << iRet << endl);
+                    TLOG_ERROR("RouterClientImp::setBatchFroTrans hashmap.set(" << data[i].k.keyItem << ") error:" << iRet << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -203,13 +203,13 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
         }
         catch (const std::exception & ex)
         {
-            TLOGERROR("RouterClientImp::setBatchFroTrans exception: " << ex.what() << " , key = " << data[i].k.keyItem << endl);
+            TLOG_ERROR("RouterClientImp::setBatchFroTrans exception: " << ex.what() << " , key = " << data[i].k.keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
         catch (...)
         {
-            TLOGERROR("RouterClientImp::setBatchFroTrans unkown_exception, key = " << data[i].k.keyItem << endl);
+            TLOG_ERROR("RouterClientImp::setBatchFroTrans unkown_exception, key = " << data[i].k.keyItem << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -220,16 +220,16 @@ tars::Int32 RouterClientImp::setBatchFroTrans(const std::string & moduleName, co
 
 tars::Int32 RouterClientImp::setBatchFroTransOnlyKey(const std::string & moduleName, const vector<std::string> & mainKey, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("RouterClientImp::setBatchFroTransOnlyKey recv moduleName:" << moduleName << ", mainKey.size:" << mainKey.size() << endl);
+    TLOG_DEBUG("RouterClientImp::setBatchFroTransOnlyKey recv moduleName:" << moduleName << ", mainKey.size:" << mainKey.size() << endl);
 
     if (g_app.gstat()->serverType() != MASTER)
     {
-        TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] ServerType is not Master" << endl);
+        TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] ServerType is not Master" << endl);
         return ET_SERVER_TYPE_ERR;
     }
     if (moduleName != _moduleName)
     {
-        TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] moduleName error" << endl);
+        TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -243,14 +243,14 @@ tars::Int32 RouterClientImp::setBatchFroTransOnlyKey(const std::string & moduleN
                 int iPageNo = g_route_table.getPageNo(*it);
                 if (isTransSrc(iPageNo))
                 {
-                    TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] " << (*it) << " forbid trans" << endl);
+                    TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] " << (*it) << " forbid trans" << endl);
                     return ET_FORBID_OPT;
                 }
             }
 
             if (!g_route_table.isMySelf(*it))
             {
-                TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] " << (*it) << " is not in self area" << endl);
+                TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] " << (*it) << " is not in self area" << endl);
                 return ET_KEY_AREA_ERR;
             }
 
@@ -278,13 +278,13 @@ tars::Int32 RouterClientImp::setBatchFroTransOnlyKey(const std::string & moduleN
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] exception: " << ex.what() << endl);
+            TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
         catch (...)
         {
-            TLOGERROR("[RouterClientImp::setBatchFroTransOnlyKey] unkown exception, " << endl);
+            TLOG_ERROR("[RouterClientImp::setBatchFroTransOnlyKey] unkown exception, " << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             return ET_SYS_ERR;
         }
@@ -295,23 +295,23 @@ tars::Int32 RouterClientImp::setBatchFroTransOnlyKey(const std::string & moduleN
 
 tars::Int32 RouterClientImp::cleanFromTransferData(const std::string & moduleName, tars::Int32 fromPageNo, tars::Int32 toPageNo, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("RouterClientImp::cleanFromTransferData, moduleName:" << moduleName << ", fromPageNo:" << fromPageNo << ", toPageNo:" << toPageNo << endl);
+    TLOG_DEBUG("RouterClientImp::cleanFromTransferData, moduleName:" << moduleName << ", fromPageNo:" << fromPageNo << ", toPageNo:" << toPageNo << endl);
     if (g_app.gstat()->serverType() != MASTER)
     {
         //SLAVE状态下不做迁移
-        TLOGERROR("[RouterClientImp::cleanFromTransferData] is not Master" << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData] is not Master" << endl);
         return 1;
     }
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("[RouterClientImp::cleanFromTransferData] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData] moduleName error, " << _moduleName << " != " << moduleName << "(config != param)" << endl);
         return 2;
     }
 
     if (fromPageNo > toPageNo)
     {
-        TLOGERROR("[RouterClientImp::cleanFromTransferData]range error! fromPageNo:" << fromPageNo << " toPageNo:" << toPageNo << endl);
+        TLOG_ERROR("[RouterClientImp::cleanFromTransferData]range error! fromPageNo:" << fromPageNo << " toPageNo:" << toPageNo << endl);
         return -1;
     }
 
@@ -327,7 +327,7 @@ int RouterClientImp::isReadyForSwitch(const std::string & moduleName, bool &bRea
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::isReadyForSwitch: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::isReadyForSwitch: moduleName error" << endl);
         return -1;
     }
 
@@ -336,7 +336,7 @@ int RouterClientImp::isReadyForSwitch(const std::string & moduleName, bool &bRea
     if (g_app.gstat()->isSlaveCreating() == true)
     {
         bReady = false;
-        TLOGERROR("RouterClientImp::isReadyForSwitch slaveCreating.. can't switch. " << endl);
+        TLOG_ERROR("RouterClientImp::isReadyForSwitch slaveCreating.. can't switch. " << endl);
     }
 
     return 0;
@@ -348,7 +348,7 @@ tars::Int32 RouterClientImp::notifyMasterDowngrade(const std::string & moduleNam
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::notifyMasterDowngrade: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::notifyMasterDowngrade: moduleName error" << endl);
         return -1;
     }
 
@@ -360,14 +360,14 @@ int RouterClientImp::disconnectFromMaster(const std::string & moduleName, tars::
     if (moduleName != _moduleName)
     {
         //返回模块错误
-        TLOGERROR("RouterClientImp::disconnectFromMaster: moduleName error" << endl);
+        TLOG_ERROR("RouterClientImp::disconnectFromMaster: moduleName error" << endl);
         return -1;
     }
 
     if (g_app.gstat()->serverType() == MASTER)
     {
         string err("RouterClientImp::disconnectFromMaster, server is master. error.");
-        TLOGERROR(err << endl);
+        TLOG_ERROR(err << endl);
         FDLOG("switch") << err << endl;
         return -1;
     }
@@ -403,7 +403,7 @@ void RouterClientImp::CleanDataFunctor::operator()(int pageNoStart, int pageNoEn
 
     if (count <= 0)
     {
-        TLOGERROR("[CleanDataFunctor::operator()] pageno error! " << pageNoStart << " " << pageNoEnd << endl);
+        TLOG_ERROR("[CleanDataFunctor::operator()] pageno error! " << pageNoStart << " " << pageNoEnd << endl);
         return;
     }
 

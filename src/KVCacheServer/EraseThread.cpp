@@ -32,7 +32,7 @@ void EraseThread::init(const string &sConf)
             _eraseThreadCount = _shmNum;
         }
     }
-    TLOGDEBUG("EraseThread::init succ" << endl);
+    TLOG_DEBUG("EraseThread::init succ" << endl);
 }
 
 void EraseThread::reload()
@@ -51,7 +51,7 @@ void EraseThread::reload()
         _maxEraseCountOneTime = TC_Common::strto<unsigned int>(_tcConf.get("/Main/Cache<MaxEraseCountOneTime>", "500"));
     }
 
-    TLOGDEBUG("EraseThread::reload succ" << endl);
+    TLOG_DEBUG("EraseThread::reload succ" << endl);
 }
 
 class Arg
@@ -67,10 +67,10 @@ void EraseThread::createThread()
     if (!_enableErase)
         return;
     //创建线程
-    TLOGDEBUG("EraseThread::createThread enter." << endl);
+    TLOG_DEBUG("EraseThread::createThread enter." << endl);
     if (_isStart)
     {
-        TLOGDEBUG("EraseThread::createThread has start before." << endl);
+        TLOG_DEBUG("EraseThread::createThread has start before." << endl);
         return;
     }
 
@@ -88,7 +88,7 @@ void EraseThread::createThread()
         {
             throw runtime_error("Create EraseThread fail");
         }
-        TLOGDEBUG("EraseThread::createThread create thread " << i << " succ." << endl);
+        TLOG_DEBUG("EraseThread::createThread create thread " << i << " succ." << endl);
     }
 }
 
@@ -133,7 +133,7 @@ void* EraseThread::EraseData(void* pArg)
 
     if ((--pthis->_activeJmemCount) < 1)
     {
-        TLOGDEBUG("EraseThread all thread finished." << endl);
+        TLOG_DEBUG("EraseThread all thread finished." << endl);
         pthis->setRuning(false);
         pthis->setStart(false);
     }

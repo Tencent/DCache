@@ -394,6 +394,11 @@ protected:
     *格式化TC_HashMap的head信息
     */
     string formatCacheHead(vector<TC_Multi_HashMap_Malloc::tagMapHead>& vHead);
+
+    /**
+    * 错误上报并退出
+    */
+    void errorAndExit(const string &result);
 protected:
     TC_Config _tcConf;
 

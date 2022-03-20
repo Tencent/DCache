@@ -24,13 +24,13 @@ void MKBinLogTimeThread::init(const string& sConf)
     _srp_binlogSynDiff = Application::getCommunicator()->getStatReport()->createPropertyReport("M/S_ReplicationLatency", PropertyReport::avg());
     if (_srp_binlogSynDiff == 0)
     {
-        TLOGERROR("MKBinLogTimeThread::init createPropertyReport error" << endl);
+        TLOG_ERROR("MKBinLogTimeThread::init createPropertyReport error" << endl);
         assert(false);
     }
 
     _saveSyncTimeInterval = TC_Common::strto<int>(_tcConf.get("/Main/BinLog<SaveSyncTimeInterval>", "30"));
 
-    TLOGDEBUG("MKBinLogTimerThread::init succ" << endl);
+    TLOG_DEBUG("MKBinLogTimerThread::init succ" << endl);
 }
 
 void MKBinLogTimeThread::reload()
@@ -38,7 +38,7 @@ void MKBinLogTimeThread::reload()
     _tcConf.parseFile(_config);
     _saveSyncTimeInterval = TC_Common::strto<int>(_tcConf.get("/Main/BinLog<SaveSyncTimeInterval>", "30"));
 
-    TLOGDEBUG("MKBinLogTimeThread::reload Succ" << endl);
+    TLOG_DEBUG("MKBinLogTimeThread::reload Succ" << endl);
 }
 
 void MKBinLogTimeThread::createThread()
@@ -105,7 +105,7 @@ void* MKBinLogTimeThread::Run(void* arg)
             string sTmpAddr = pthis->getBakSourceAddr();
             if (sTmpAddr != sAddr)
             {
-                TLOGDEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
+                TLOG_DEBUG("MasterBinLogAddr changed from " << sAddr << " to " << sTmpAddr << endl);
                 sAddr = sTmpAddr;
                 if (sAddr.length() > 0)
                 {
@@ -132,11 +132,11 @@ void* MKBinLogTimeThread::Run(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("[MKBinLogTimeThread::Run] exception: " << ex.what() << endl);
+            TLOG_ERROR("[MKBinLogTimeThread::Run] exception: " << ex.what() << endl);
         }
         catch (...)
         {
-            TLOGERROR("[MKBinLogTimeThread::Run] unkown exception" << endl);
+            TLOG_ERROR("[MKBinLogTimeThread::Run] unkown exception" << endl);
         }
         pthis->reportBinLogDiff();
         if (++pthis->_failCount >= 3)
@@ -168,7 +168,7 @@ string MKBinLogTimeThread::getBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("[MKBinLogTimeThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("[MKBinLogTimeThread::getBakSourceAddr] getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_BINLOG_ERR, 1);
         return "";
     }
@@ -203,7 +203,7 @@ void MKBinLogTimeThread::getSyncTime()
     fin.open(sFile.c_str(), ios::in | ios::binary);
     if (!fin)
     {
-        TLOGERROR("open file: " << sFile << " error" << endl);
+        TLOG_ERROR("open file: " << sFile << " error" << endl);
         return;
     }
 
@@ -214,7 +214,7 @@ void MKBinLogTimeThread::getSyncTime()
         vt = TC_Common::sepstr<string>(line, "|");
         if (vt.size() != 2)
         {
-            TLOGERROR("sync_time.data is error" << endl);
+            TLOG_ERROR("sync_time.data is error" << endl);
             fin.close();
             return;
         }
@@ -227,7 +227,7 @@ void MKBinLogTimeThread::getSyncTime()
     }
     else
     {
-        TLOGERROR("sync_time.data is error" << endl);
+        TLOG_ERROR("sync_time.data is error" << endl);
     }
     fin.close();
 }
@@ -239,7 +239,7 @@ void MKBinLogTimeThread::saveSyncTime()
     int fd = open(sFile.c_str(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (fd < 0)
     {
-        TLOGERROR("Save SyncTime error, open " << sFile << " failed" << endl);
+        TLOG_ERROR("Save SyncTime error, open " << sFile << " failed" << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return;
     }

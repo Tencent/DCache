@@ -43,7 +43,7 @@ public:
 
     void reloadConf(const RouterServerConfig &conf)
     {
-        TLOGDEBUG("OuterProxyFactory reload config ..." << endl);
+        TLOG_DEBUG("OuterProxyFactory reload config ..." << endl);
         init(conf.getProxyMaxSilentTime(1800));
     }
 
@@ -108,7 +108,7 @@ public:
 
     virtual void clearProxy()
     {
-        TLOGDEBUG("before clear, the number of Proxy in ProxyFactory is: "
+        TLOG_DEBUG("before clear, the number of Proxy in ProxyFactory is: "
                   << _proxyInfoFactory.size() << endl);
         time_t now = TC_TimeProvider::getInstance()->getNow();
 
@@ -124,7 +124,7 @@ public:
             }
         }
 
-        TLOGDEBUG("after clear, the number of Proxy in ProxyFactory is: "
+        TLOG_DEBUG("after clear, the number of Proxy in ProxyFactory is: "
                   << _proxyInfoFactory.size() << endl);
     }
 

@@ -70,7 +70,7 @@ void* ExpandThread::Run(void* arg)
                         TC_DBConf routerDbInfo;
                         if (pthis->getRouterDBInfo(data[i]["app_name"], routerDbInfo) != 0)
                         {
-                            TLOGERROR(FUN_LOG << "get router db info failed|app name:" << data[i]["app_name"] << endl);
+                            TLOG_ERROR(FUN_LOG << "get router db info failed|app name:" << data[i]["app_name"] << endl);
                             continue;
                         }
 
@@ -88,7 +88,7 @@ void* ExpandThread::Run(void* arg)
                             TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
                             if (transferData.size() == 0)
                             {
-                               TLOGERROR(FUN_LOG << "not find record in t_router_transfer|sql:" << sSql << endl);
+                               TLOG_ERROR(FUN_LOG << "not find record in t_router_transfer|sql:" << sSql << endl);
                                continue;
                             }
 
@@ -122,7 +122,7 @@ void* ExpandThread::Run(void* arg)
                                     if (it->second > 10)
                                     {
                                         string error_str = "too much expand error|moduleName:" + it->first + "|info:" + transferData[0]["remark"];
-                                        TLOGERROR(FUN_LOG << error_str << endl);
+                                        TLOG_ERROR(FUN_LOG << error_str << endl);
                                         TARS_NOTIFY_ERROR(error_str);
 
                                         it->second = 0;
@@ -180,12 +180,12 @@ void* ExpandThread::Run(void* arg)
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR(FUN_LOG << "check expand status catch exception:" << ex.what() << endl);
+            TLOG_ERROR(FUN_LOG << "check expand status catch exception:" << ex.what() << endl);
             sleep(1);
         }
         catch (...)
         {
-            TLOGERROR(FUN_LOG << "check expand status catch unkown exception" << endl);
+            TLOG_ERROR(FUN_LOG << "check expand status catch unkown exception" << endl);
             sleep(1);
         }
     }
@@ -216,18 +216,18 @@ int ExpandThread::getRouterObj(const string & appName, string & routerObj, strin
         else
         {
             errmsg = "not find router info in t_cache_router";
-            TLOGERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << "|sql:" << sSql << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("get router obj from relation db t_cache_router table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get router obj from relation db t_cache_router table catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;
@@ -252,7 +252,7 @@ int ExpandThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo
     }
     else
     {
-        TLOGERROR(FUN_LOG << "not find router db config in relation db table t_cache_router|app name:" << appName << endl);
+        TLOG_ERROR(FUN_LOG << "not find router db config in relation db table t_cache_router|app name:" << appName << endl);
     }
 
     return -1;
@@ -265,7 +265,7 @@ int ExpandThread::defragRouterRecord(const string & app, const std::string & rou
         if (app.empty() || routerName.empty())
         {
             errmsg = "defrag router record|app or router server name can not be empty";
-			TLOGERROR(FUN_LOG << errmsg << endl);
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
             return -1;
         }
 
@@ -292,7 +292,7 @@ int ExpandThread::defragRouterRecord(const string & app, const std::string & rou
     catch (const TarsException& ex)
     {
         errmsg = string("defrag router record all catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;

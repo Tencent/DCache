@@ -23,11 +23,11 @@ void MKControlAckImp::initialize()
     }
     catch (exception &ex)
     {
-        TLOGERROR("MKControlAckImp::initialize exception:" << ex.what() << endl);
+        TLOG_ERROR("MKControlAckImp::initialize exception:" << ex.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR("MKControlAckImp::initialize unknown exception." << endl);
+        TLOG_ERROR("MKControlAckImp::initialize unknown exception." << endl);
     }
 
 }
@@ -36,7 +36,7 @@ tars::Int32 MKControlAckImp::connectHb(tars::TarsCurrentPtr current)
 {
     if (g_app.gstat()->serverType() != MASTER)
     {
-        TLOGERROR("MKControlAckImp::connectHb, server is not master. maybe downgrade." << endl);
+        TLOG_ERROR("MKControlAckImp::connectHb, server is not master. maybe downgrade." << endl);
         return -1;
     }
 
