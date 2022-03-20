@@ -218,10 +218,10 @@ namespace DCache
 
         void initStore(key_t keyShm, size_t length)
         {
-            TLOGDEBUG("initStore start" << endl);
+            TLOG_DEBUG("initStore start" << endl);
             _shm.init(length, keyShm);
             size_t oneJmemLength = length / _jmemNum;
-            TLOGDEBUG("_jmemNum=" << _jmemNum << "|oneJmemLength=" << oneJmemLength << endl);
+            TLOG_DEBUG("_jmemNum=" << _jmemNum << "|oneJmemLength=" << oneJmemLength << endl);
 
             if (_shm.iscreate())
             {
@@ -237,7 +237,7 @@ namespace DCache
                     _hashMapVec[i]->initStore(i*oneJmemLength, oneJmemLength, _shm.getPointer(), false);
                 }
             }
-            TLOGDEBUG("initStore finish" << endl);
+            TLOG_DEBUG("initStore finish" << endl);
         }
 
         void initLock(key_t iKey, unsigned short SemNum, short index)
@@ -247,7 +247,7 @@ namespace DCache
             {
                 _hashMapVec[i]->initLock(iKey, SemNum, i);
             }
-            TLOGDEBUG("initLock finish" << endl);
+            TLOG_DEBUG("initLock finish" << endl);
         }
         void setSyncTime(uint32_t iSyncTime)
         {
@@ -255,7 +255,7 @@ namespace DCache
             {
                 _hashMapVec[i]->setSyncTime(iSyncTime);
             }
-            TLOGDEBUG("setSyncTime finish" << endl);
+            TLOG_DEBUG("setSyncTime finish" << endl);
         }
 
         void setToDoFunctor(CacheToDoFunctor *todo_of)
@@ -264,7 +264,7 @@ namespace DCache
             {
                 _hashMapVec[i]->setToDoFunctor(todo_of);
             }
-            TLOGDEBUG("setToDoFunctor finish" << endl);
+            TLOG_DEBUG("setToDoFunctor finish" << endl);
         }
 
         void setHashFunctor(TC_HashMapMalloc::hash_functor hashf)
@@ -273,7 +273,7 @@ namespace DCache
             {
                 _hashMapVec[i]->setHashFunctor(hashf);
             }
-            TLOGDEBUG("setHashFunctor finish" << endl);
+            TLOG_DEBUG("setHashFunctor finish" << endl);
         }
         void setAutoErase(bool bAutoErase)
         {
@@ -281,7 +281,7 @@ namespace DCache
             {
                 _hashMapVec[i]->setAutoErase(bAutoErase);
             }
-            TLOGDEBUG("setAutoErase finish" << endl);
+            TLOG_DEBUG("setAutoErase finish" << endl);
         }
 
         int eraseByForce(const string& k)

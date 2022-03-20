@@ -26,10 +26,10 @@ using namespace std;
 using namespace tars;
 using namespace DCache;
 
-#define CacheCallbackLog(class_name, module_name, key_item, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define CacheCallbackLog(class_name, module_name, key_item, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                         << " key:" << key_item << "|module:" << module_name << "|object:" << object_name << "|ret:" << ret << endl)
 
-#define CacheCallbackExcLog(class_name, module_name, key_item, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define CacheCallbackExcLog(class_name, module_name, key_item, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                            << " key:" << key_item << "|module:" << module_name << "|object:" << object_name << "|errno:" << ret << endl)
 
 #define CacheCallbackDo(module_name, key_item, object_name, ret, rsp, recall_fun, rsp_fun) \
@@ -53,10 +53,10 @@ using namespace DCache;
     ResponserPtr responser = make_responser(rsp_fun);                             \
     procExceptionCall(ret, responser)
 
-#define CacheBatchCallbackLog(class_name, module_name, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define CacheBatchCallbackLog(class_name, module_name, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                    << " module:" << module_name << "|object:" << object_name << "|ret:" << ret << endl)
 
-#define CacheBatchCallbackExcLog(class_name, module_name, object_name, ret) TLOGDEBUG(LOG_MEM_FUN(class_name) \
+#define CacheBatchCallbackExcLog(class_name, module_name, object_name, ret) TLOG_DEBUG(LOG_MEM_FUN(class_name) \
                                                                                       << " module:" << module_name << "|object:" << object_name << "|errno:" << ret << endl)
 
 #define CacheBatchCallbackExcDo(module_name, object_name, ret, rsp_fun)          \
@@ -145,7 +145,7 @@ struct GetKVCallback : public CacheCallbackComm, public CachePrxCallback
                     errMsg = "catch unkown exception";
                 }
 
-                TLOGERROR("CacheCallback::procCallback " << errMsg << endl);
+                TLOG_ERROR("CacheCallback::procCallback " << errMsg << endl);
 
                 FDLOG("CBError") << caller << "|key:" << keyItem << "|module:" << moduleName << "|recall error:" << errMsg << endl;
 
@@ -261,7 +261,7 @@ struct ProcWCacheCallback : public CacheCallbackComm
                     errMsg = "catch unkown exception";
                 }
 
-                TLOGERROR("WCacheCallback::procCallback " << errMsg << endl);
+                TLOG_ERROR("WCacheCallback::procCallback " << errMsg << endl);
 
                 FDLOG("CBError") << caller << "|key:" << keyItem << "|module:" << moduleName << "|recall error:" << errMsg << endl;
 
@@ -366,7 +366,7 @@ struct UpdateKVCallback : public ProcWCacheCallback<UpdateKVReq, UpdateKVCallbac
 
     virtual void callback_updateKV(int ret, const UpdateKVRsp &rsp)
     {
-        TLOGDEBUG("WCacheCallback::callback_updateKV key:" << _key << "|module:" << _req.moduleName << "|object:" << _objectName << "|ret:" << ret << endl);
+        TLOG_DEBUG("WCacheCallback::callback_updateKV key:" << _key << "|module:" << _req.moduleName << "|object:" << _objectName << "|ret:" << ret << endl);
 
         ResponserPtr responser = make_responser(&Proxy::async_response_updateKV, rsp);
 
@@ -375,7 +375,7 @@ struct UpdateKVCallback : public ProcWCacheCallback<UpdateKVReq, UpdateKVCallbac
 
     virtual void callback_updateKV_exception(int ret)
     {
-        TLOGERROR("WCacheCallback::callback_updateKV_exception key:" << _key << "|module:" << _req.moduleName << "|object:" << _objectName << "|errno:" << ret << endl);
+        TLOG_ERROR("WCacheCallback::callback_updateKV_exception key:" << _key << "|module:" << _req.moduleName << "|object:" << _objectName << "|errno:" << ret << endl);
 
         UpdateKVRsp rsp;
         ResponserPtr responser = make_responser(&Proxy::async_response_updateKV, rsp);
@@ -522,14 +522,14 @@ struct ProcCacheBatchCallback : public CacheCallbackComm
         RouterTableInfo *routeTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
         if (!routeTableInfo)
         {
-            TLOGERROR("CacheBatchCallback::doRecall do not support module:" << moduleName << endl);
+            TLOG_ERROR("CacheBatchCallback::doRecall do not support module:" << moduleName << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
         int ret = routeTableInfo->update(); // 更新路由表
         if (ret != ET_SUCC)
         {
-            TLOGERROR("CacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
+            TLOG_ERROR("CacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
         }
         else
         {
@@ -551,7 +551,7 @@ struct ProcCacheBatchCallback : public CacheCallbackComm
                 if (ret != RouterTable::RET_SUCC)
                 {
                     // 如果通过key无法获取CacheServer的节点信息
-                    TLOGERROR("CacheBatchCallback::doRecall can not locate key:" << _req.keys[i] << "|ret:" << ret << endl);
+                    TLOG_ERROR("CacheBatchCallback::doRecall can not locate key:" << _req.keys[i] << "|ret:" << ret << endl);
                     break;
                 }
 
@@ -587,11 +587,11 @@ struct ProcCacheBatchCallback : public CacheCallbackComm
                     }
                     catch (exception &ex)
                     {
-                        TLOGERROR("CacheBatchCallback::doRecall exception:" << ex.what() << endl);
+                        TLOG_ERROR("CacheBatchCallback::doRecall exception:" << ex.what() << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("CacheBatchCallback::doRecall catch unkown exception" << endl);
+                        TLOG_ERROR("CacheBatchCallback::doRecall catch unkown exception" << endl);
                     }
 
                     return ET_SYS_ERR;
@@ -906,7 +906,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
                 }
                 else
                 {
-                    TLOGERROR("in procCallback() callback ret = " << ret << endl);
+                    TLOG_ERROR("in procCallback() callback ret = " << ret << endl);
                     param->allWriteSucc = false;
                     for (size_t i = 0; i < _req.data.size(); ++i)
                     {
@@ -969,7 +969,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
         RouterTableInfo *routeTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
         if (!routeTableInfo)
         {
-            TLOGERROR("ProcWCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
+            TLOG_ERROR("ProcWCacheBatchCallback::doRecall do not support module:" << moduleName << endl);
 
             return ET_MODULE_NAME_INVALID;
         }
@@ -977,7 +977,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
         int ret = routeTableInfo->update();
         if (ret != ET_SUCC)
         {
-            TLOGERROR("ProcWCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
+            TLOG_ERROR("ProcWCacheBatchCallback::doRecall update route table failed, module:" << moduleName << "|ret:" << ret << endl);
         }
         else
         {
@@ -998,7 +998,7 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
                     if (ret != RouterTable::RET_SUCC)
                     {
                         // 如果通过key无法获取CacheServer的节点信息
-                        TLOGERROR("ProcWCacheBatchCallback::doRecall can not locate key:" << _req.data[i].keyItem << "|ret:" << ret << endl);
+                        TLOG_ERROR("ProcWCacheBatchCallback::doRecall can not locate key:" << _req.data[i].keyItem << "|ret:" << ret << endl);
 
                         param->allWriteSucc = false;
                         keyResult[_req.data[i].keyItem] = WRITE_ERROR;
@@ -1042,11 +1042,11 @@ struct ProcWCacheBatchCallback : public CacheCallbackComm
                     }
                     catch (exception &ex)
                     {
-                        TLOGERROR("WCacheBatchCallback::doRecall exception:" << ex.what() << endl);
+                        TLOG_ERROR("WCacheBatchCallback::doRecall exception:" << ex.what() << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("WCacheBatchCallback::doRecall catch unkown exception" << endl);
+                        TLOG_ERROR("WCacheBatchCallback::doRecall catch unkown exception" << endl);
                     }
 
                     reportException("CBError");

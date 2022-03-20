@@ -43,7 +43,7 @@ int ConfigImp::readConfig(const string &appName, const string &serverName, strin
 
 int ConfigImp::readConfigByHost(const string &appServerName, const string &host, string &config, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("ConfigImp::readConfigByHost appServerName:" << appServerName << "|host:" << host << endl);
+    TLOG_DEBUG("ConfigImp::readConfigByHost appServerName:" << appServerName << "|host:" << host << endl);
     
     config = "";
 
@@ -64,7 +64,7 @@ int ConfigImp::readConfigByHost(const string &appServerName, const string &host,
 
         TC_Mysql::MysqlData res = _mysqlConfig.queryRecord(sSql);
 
-        TLOGDEBUG("ConfigImp::readConfigByHost sql:" << sSql << "|res.size:" << res.size() << endl);
+        TLOG_DEBUG("ConfigImp::readConfigByHost sql:" << sSql << "|res.size:" << res.size() << endl);
 
         if(res.size() != 0)
         {
@@ -128,23 +128,23 @@ int ConfigImp::readConfigByHost(const string &appServerName, const string &host,
     catch(TC_Mysql_Exception & ex)
     {
         config = ex.what();
-        TLOGERROR("ConfigImp::readConfigByHost exception:" << ex.what() << endl);
+        TLOG_ERROR("ConfigImp::readConfigByHost exception:" << ex.what() << endl);
         return -1;
     }
     catch(...)
     {
-        TLOGERROR("ConfigImp::readConfigByHost unknown exception." << endl);
+        TLOG_ERROR("ConfigImp::readConfigByHost unknown exception." << endl);
         return  -1;
     }
 
-    TLOGDEBUG("ConfigImp::readConfigByHost config:\n" << config << endl);
+    TLOG_DEBUG("ConfigImp::readConfigByHost config:\n" << config << endl);
 
     return 0;
 }
 
 int ConfigImp::readAppConfig(const string &appName, string &config, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("ConfigImp::readAppConfig app:" << appName << endl);
+    TLOG_DEBUG("ConfigImp::readAppConfig app:" << appName << endl);
 
     config = "";
 
@@ -161,7 +161,7 @@ int ConfigImp::readAppConfig(const string &appName, string &config, tars::TarsCu
 
         TC_Mysql::MysqlData res = _mysqlConfig.queryRecord(sSql);
 
-        TLOGDEBUG("ConfigImp::readAppConfig sql:" << sSql << "|res.size:" << res.size() << endl);
+        TLOG_DEBUG("ConfigImp::readAppConfig sql:" << sSql << "|res.size:" << res.size() << endl);
 
         map<string, string> content;
         content.clear();
@@ -182,12 +182,12 @@ int ConfigImp::readAppConfig(const string &appName, string &config, tars::TarsCu
     catch(TC_Mysql_Exception & ex)
     {
         config = ex.what();
-        TLOGERROR("ConfigImp::readAppConfig exception:" << ex.what() << endl);
+        TLOG_ERROR("ConfigImp::readAppConfig exception:" << ex.what() << endl);
         return -1;
     }
     catch(...)
     {
-        TLOGERROR("ConfigImp::readAppConfig unknown exception." << endl);
+        TLOG_ERROR("ConfigImp::readAppConfig unknown exception." << endl);
         return -1;
     }
 
@@ -215,12 +215,12 @@ int ConfigImp::loadItems()
     }
     catch(TC_Mysql_Exception & ex)
     {
-        TLOGERROR("ConfigImp::readMapTable exception:" << ex.what() << endl);
+        TLOG_ERROR("ConfigImp::readMapTable exception:" << ex.what() << endl);
         return -1;
     }
     catch(...)
     {
-        TLOGERROR("ConfigImp::readMapTable unknown exception." << endl);
+        TLOG_ERROR("ConfigImp::readMapTable unknown exception." << endl);
         return -1;
     }
 
@@ -240,7 +240,7 @@ int ConfigImp::getReferenceIds(const string &appServerName, const string &host, 
 
         TC_Mysql::MysqlData res = _mysqlConfig.queryRecord(sql);
         
-        TLOGDEBUG("ConfigImp::loadConfigByHost sql:" << sql << "|res.size:" << res.size() << endl);
+        TLOG_DEBUG("ConfigImp::loadConfigByHost sql:" << sql << "|res.size:" << res.size() << endl);
 
         for(size_t i = 0 ; i < res.size(); ++i)
         {
@@ -250,12 +250,12 @@ int ConfigImp::getReferenceIds(const string &appServerName, const string &host, 
     }
     catch(TC_Mysql_Exception & ex)
     {
-        TLOGERROR("ConfigImp::getReferenceIds exception:" << ex.what() << endl);
+        TLOG_ERROR("ConfigImp::getReferenceIds exception:" << ex.what() << endl);
         return -1;
     }
     catch(...)
     {
-        TLOGERROR("ConfigImp::getReferenceIds unknown exception" << endl);
+        TLOG_ERROR("ConfigImp::getReferenceIds unknown exception" << endl);
         return -1;
     }
 
@@ -274,7 +274,7 @@ int ConfigImp::readConfigById(const int configId, string& config)
 
         TC_Mysql::MysqlData res = _mysqlConfig.queryRecord(sSql);
 
-        TLOGDEBUG("ConfigImp::readConfigById sql:" << sSql << "|res.size:" << res.size() << endl);
+        TLOG_DEBUG("ConfigImp::readConfigById sql:" << sSql << "|res.size:" << res.size() << endl);
 
         if(res.size() != 0) 
         {
@@ -297,12 +297,12 @@ int ConfigImp::readConfigById(const int configId, string& config)
     }
     catch(TC_Mysql_Exception & ex)
     {
-        TLOGERROR("ConfigImp::readConfigById exception:" << ex.what() << endl);
+        TLOG_ERROR("ConfigImp::readConfigById exception:" << ex.what() << endl);
         return -1;
     }
     catch(...)
     {
-        TLOGERROR("ConfigImp::readConfigById unknown exception" << endl);
+        TLOG_ERROR("ConfigImp::readConfigById unknown exception" << endl);
         return -1;
     }
 

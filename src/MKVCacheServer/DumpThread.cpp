@@ -27,7 +27,7 @@ int DumpThread::init(const string &dumpPath, const string &mirrorName, const str
 {
     if (_isStart)
     {
-        TLOGDEBUG("[DumpThread::init] DumpThread has started" << endl);
+        TLOG_DEBUG("[DumpThread::init] DumpThread has started" << endl);
         return -1;
     }
 
@@ -99,7 +99,7 @@ void DumpThread::doDump()
             // -1 表示 cacheToBinlog在dump时候出现错误
             if (iRet < 0)
             {
-                TLOGERROR("dump error: " << errmsg << endl);
+                TLOG_ERROR("dump error: " << errmsg << endl);
                 break;
             }
 
@@ -135,7 +135,7 @@ int DumpThread::cacheToBinlog(const string & dumpPath, const string & mirrorName
     if (!TC_File::makeDirRecursive(dumpPath))
     {
         errmsg = "[DumpThread::cacheToBinlog] cannot create dir: " + dumpPath;
-        TLOGERROR(errmsg << endl);
+        TLOG_ERROR(errmsg << endl);
         FDLOG(_dumpDayLog) << errmsg << endl;
         return -1;
     }

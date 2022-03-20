@@ -48,7 +48,7 @@ void RouterServer::initialize()
                               ".RouterObj");
         if (!addConfig(ServerConfig::ServerName + ".conf"))
         {
-            TLOGERROR(FILE_FUN << "add config error." << endl);
+            TLOG_ERROR(FILE_FUN << "add config error." << endl);
             exit(-1);
         }
         _conf.init(ServerConfig::BasePath + "/" + ServerConfig::ServerName + ".conf");
@@ -56,7 +56,7 @@ void RouterServer::initialize()
                                        _conf.getAdminRegObj("tars.tarsregistry.AdminRegObj"));
        if (setUpEtcd() != 0)
        {
-           TLOGERROR(FILE_FUN << "set up etcd error" << endl);
+           TLOG_ERROR(FILE_FUN << "set up etcd error" << endl);
            exit(-1);
        }
 
@@ -119,7 +119,7 @@ void RouterServer::initialize()
         os << "unkown error" << endl;
     }
 
-    TLOGERROR(os.str() << endl);
+    TLOG_ERROR(os.str() << endl);
 
     TARS_NOTIFY_ERROR("RouterServer::initialize|" + os.str());
     exit(-1);
@@ -142,7 +142,7 @@ bool RouterServer::reloadRouter(const string &command, const string &params, str
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -171,7 +171,7 @@ bool RouterServer::reloadRouter(const string &command, const string &params, str
                 TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
             }
         }
-        TLOGDEBUG(os.str() << endl);
+        TLOG_DEBUG(os.str() << endl);
         result = os.str();
         return true;
     }
@@ -189,7 +189,7 @@ bool RouterServer::reloadRouter(const string &command, const string &params, str
     }
 
     TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -211,13 +211,13 @@ bool RouterServer::reloadRouterByModule(const string &command, const string &par
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
         else
         {
-            TLOGDEBUG("RouterServer::reloadRouterByModule moduleName:" << params << endl);
+            TLOG_DEBUG("RouterServer::reloadRouterByModule moduleName:" << params << endl);
             int rc = _dbHandle->reloadRouter(params);
             if (rc == 0)
             {
@@ -241,7 +241,7 @@ bool RouterServer::reloadRouterByModule(const string &command, const string &par
                 TARS_NOTIFY_ERROR(string("RouterServer::reloadRouter|") + os.str());
             }
         }
-        TLOGDEBUG(os.str() << endl);
+        TLOG_DEBUG(os.str() << endl);
         result = os.str();
         return true;
     }
@@ -259,7 +259,7 @@ bool RouterServer::reloadRouterByModule(const string &command, const string &par
     }
 
     TARS_NOTIFY_ERROR("RouterServer::reloadRouterByModule|" + os.str());
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -279,13 +279,13 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
             {
                 os << "master still not set, reload conf fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::reloadConf|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -303,7 +303,7 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
             _timerThread.getThreadControl().join();
 
             //重启定时线程
-            TLOGDEBUG("restart timer thread ..." << endl);
+            TLOG_DEBUG("restart timer thread ..." << endl);
             _timerThread.init(_conf, _dbHandle, _outerProxy);
             _timerThread.start();
 
@@ -312,14 +312,14 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
             _switchThread.getThreadControl().join();
 
             //重启切换线程
-            TLOGDEBUG("restart switch thread ..." << endl);
+            TLOG_DEBUG("restart switch thread ..." << endl);
             _switchThread.init(createAdminRegProxyWrapper(), _dbHandle);
             _switchThread.start();
         }
         os << "reload config ok!" << endl;
 
         TARS_NOTIFY_NORMAL("RouterServer::reloadConf|Succ|");
-        TLOGDEBUG(os.str() << endl);
+        TLOG_DEBUG(os.str() << endl);
         result = os.str();
         return true;
     }
@@ -345,7 +345,7 @@ bool RouterServer::reloadConf(const string &command, const string &params, strin
     }
 
     TARS_NOTIFY_ERROR(string("RouterServer::reloadConf|") + os.str());
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -364,13 +364,13 @@ bool RouterServer::getVersions(const string &command, const string &params, stri
             {
                 os << "master still not set, get versions fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::getVersions|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -410,7 +410,7 @@ bool RouterServer::getVersions(const string &command, const string &params, stri
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -429,13 +429,13 @@ bool RouterServer::getRouterInfos(const string &command, const string &params, s
             {
                 os << "master still not set, get router infos fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::getRouterInfos|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -486,7 +486,7 @@ bool RouterServer::getRouterInfos(const string &command, const string &params, s
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -505,13 +505,13 @@ bool RouterServer::getTransferInfos(const string &command, const string &params,
             {
                 os << "master still not set, get transfer infos fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::getTransferInfos|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -547,14 +547,14 @@ bool RouterServer::getTransferInfos(const string &command, const string &params,
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
 
 bool RouterServer::getTransferingInfos(const string &command, const string &params, string &result)
 {
-    TLOGDEBUG("Enter RouterServer::getTransferingInfos" << endl);
+    TLOG_DEBUG("Enter RouterServer::getTransferingInfos" << endl);
     string moduleName = params;
     ostringstream os;
     try
@@ -568,13 +568,13 @@ bool RouterServer::getTransferingInfos(const string &command, const string &para
             {
                 os << "master still not set, get transfering infos fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::getTransferingInfos|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -611,7 +611,7 @@ bool RouterServer::getTransferingInfos(const string &command, const string &para
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -630,13 +630,13 @@ bool RouterServer::clearTransferInfos(const string &command, const string &param
             {
                 os << "master still not set, clear transfer infos fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::clearTransferInfos|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -660,7 +660,7 @@ bool RouterServer::clearTransferInfos(const string &command, const string &param
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -679,13 +679,13 @@ bool RouterServer::notifyCacheServers(const string &command, const string &param
             {
                 os << "master still not set, notify cache servers fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::notifyCacheServers|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -728,7 +728,7 @@ bool RouterServer::notifyCacheServers(const string &command, const string &param
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -748,13 +748,13 @@ bool RouterServer::defragRouteRecords(const string &command, const string &param
             {
                 os << "master still not set, defrag route records fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -814,7 +814,7 @@ bool RouterServer::defragRouteRecords(const string &command, const string &param
             }
         }
 
-        TLOGDEBUG(os.str() << endl);
+        TLOG_DEBUG(os.str() << endl);
         result = os.str();
         return true;
     }
@@ -832,7 +832,7 @@ bool RouterServer::defragRouteRecords(const string &command, const string &param
     }
 
     TARS_NOTIFY_ERROR(string("RouterServer::defragRouteRecords|") + os.str());
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -851,13 +851,13 @@ bool RouterServer::deleteAllProxy(const string &command, const string &params, s
             {
                 os << "master still not set, delete all proxy fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::deleteAllProxy|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -880,7 +880,7 @@ bool RouterServer::deleteAllProxy(const string &command, const string &params, s
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -899,13 +899,13 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "master still not set, switch by group fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::switchByGroup|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -922,12 +922,12 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             os << "unkown error" << endl;
         }
 
-        TLOGERROR(os.str() << endl);
+        TLOG_ERROR(os.str() << endl);
         result = os.str();
         return false;
     }
     
-    TLOGDEBUG("swicth start" << endl);
+    TLOG_DEBUG("swicth start" << endl);
     vector<string> names = SEPSTR(params, " ");
     if (names.size() != 4)
     {
@@ -935,7 +935,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
         return false;
     }
 
-    TLOGDEBUG("get command [switchByGroup]|" << names[0] << "|" << names[1] << "|" << names[2]
+    TLOG_DEBUG("get command [switchByGroup]|" << names[0] << "|" << names[1] << "|" << names[2]
     << "|" << names[3] << endl);
 
     bool forceSwitch = (TC_Common::lower(names[2]) == "true") ? true : false;
@@ -962,7 +962,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[swicth_by_group_fail] module is transfering: " << names[0]
                    << ", reject grant" << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -983,7 +983,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                         {
                             os << "[swicth_by_group_fail] group is switching! module:" << names[0]
                                << " group:" << names[1] << endl;
-                            TLOGERROR(FILE_FUN << os.str() << endl);
+                            TLOG_ERROR(FILE_FUN << os.str() << endl);
                             result = os.str();
                             returnValue = false;
                             switchResult = 3;
@@ -994,7 +994,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                     else
                     {
                         os << "[swicth_by_group_fail] can not find module " << names[0] << endl;
-                        TLOGERROR(FILE_FUN << os.str() << endl);
+                        TLOG_ERROR(FILE_FUN << os.str() << endl);
                         result = os.str();
                         returnValue = false;
                         switchResult = 3;
@@ -1004,7 +1004,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                 else
                 {
                     os << "[swicth_by_group_fail] can not find module " << names[0] << endl;
-                    TLOGERROR(FILE_FUN << os.str() << endl);
+                    TLOG_ERROR(FILE_FUN << os.str() << endl);
                     result = os.str();
                     returnValue = false;
                     switchResult = 3;
@@ -1027,7 +1027,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[swicth_by_group_fail]do not support module: " << names[0]
                    << ", reject grant" << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1038,7 +1038,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[swicth_by_group_fail]module: " << names[0]
                    << " do not have group: " << names[1] << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1062,7 +1062,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[swicth_by_group_fail]no masterServer find module: " << names[0]
                    << " group: " << names[1] << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1084,13 +1084,13 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[swicth_by_group_fail]no slaveServer find module: " << names[0]
                    << " group: " << names[1] << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
                 break;
             }
-            TLOGDEBUG("curMasterServer: " << curMasterServer << " "
+            TLOG_DEBUG("curMasterServer: " << curMasterServer << " "
                                           << "curSlaveServer: " << curSlaveServer << endl);
             // it指向组信息 it1指向主机，it2指向要切合的备机 修改路由
             it1->second.ServerStatus = "S";
@@ -1137,7 +1137,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                     if (iRet != 0)
                     {
                         os << "[swicth_by_group_fail]备机可能处于自建状态,不允许切换" << endl;
-                        TLOGERROR(FILE_FUN << os.str() << endl);
+                        TLOG_ERROR(FILE_FUN << os.str() << endl);
                         returnValue = false;
                         result = os.str();
                         switchResult = 3;
@@ -1149,7 +1149,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                         {
                             os << "[swicth_by_group_fail]备机的binlog差异为" << difBinlogTime
                                << endl;
-                            TLOGERROR(FILE_FUN << os.str() << endl);
+                            TLOG_ERROR(FILE_FUN << os.str() << endl);
                             result = os.str();
                             returnValue = false;
                             switchResult = 3;
@@ -1160,7 +1160,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                 catch (const exception &ex)
                 {
                     os << "[swicth_by_group_fail]获取备机binlog差异发生异常:" << ex.what() << endl;
-                    TLOGERROR(FILE_FUN << os.str() << endl);
+                    TLOG_ERROR(FILE_FUN << os.str() << endl);
                     result = os.str();
                     returnValue = false;
                     switchResult = 3;
@@ -1179,7 +1179,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                 if (iRet != 0)
                 {
                     os << "[swicth_by_group_fail]备机处于自建状态,不允许切换" << endl;
-                    TLOGERROR(FILE_FUN << os.str() << endl);
+                    TLOG_ERROR(FILE_FUN << os.str() << endl);
                     result = os.str();
                     returnValue = false;
                     switchResult = 3;
@@ -1190,7 +1190,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             {
                 os << "[pRouterClientPrx->setRouterInfoForSwicth]  exception: " << ex.what()
                    << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 // result=os.str();
             }
             //如果上面步骤全部成功 修改内存和数据库
@@ -1198,7 +1198,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
                     names[0], names[1], curMasterServer, curSlaveServer, packTable) != 0)
             {
                 os << "[swicth_by_group_fail]更新数据库和内存路由表失败,请手工处理" << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1210,7 +1210,7 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
             _dbHandle->updateStatusToRelationDB(curMasterServer, "S");
             switchResult = 1;
         } while (0);
-        TLOGDEBUG("swicth end" << endl);
+        TLOG_DEBUG("swicth end" << endl);
         if (cleanSwitchInfo)
         {
             TC_ThreadLock::Lock lock(_moduleSwitchingLock);
@@ -1275,19 +1275,19 @@ bool RouterServer::switchByGroup(const string &command, const string &params, st
     catch (TarsException &e)
     {
         os << "Tars exception:" << e.what() << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
     catch (exception &e)
     {
         os << "std exception:" << e.what() << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
     catch (...)
     {
         os << "unkown error" << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
 
@@ -1333,13 +1333,13 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
             {
                 os << "master still not set, switch mirror by group fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::switchMirrorByGroup|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -1356,12 +1356,12 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
             os << "unkown error" << endl;
         }
 
-        TLOGERROR(os.str() << endl);
+        TLOG_ERROR(os.str() << endl);
         result = os.str();
         return false;
     }
 
-    TLOGDEBUG("swicthMirror start" << endl);
+    TLOG_DEBUG("swicthMirror start" << endl);
     vector<string> names = SEPSTR(params, " ");
     if (names.size() != 3)
     {
@@ -1391,7 +1391,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
             {
                 os << "[swicth_mirror_by_group_fail] module is transfering: " << names[0]
                    << ", reject grant" << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1412,7 +1412,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
                         {
                             os << "[swicth_by_group_fail] group is switching! module:" << names[0]
                                << " group:" << names[1] << endl;
-                            TLOGERROR(FILE_FUN << os.str() << endl);
+                            TLOG_ERROR(FILE_FUN << os.str() << endl);
                             result = os.str();
                             returnValue = false;
                             switchResult = 3;
@@ -1423,7 +1423,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
                     else
                     {
                         os << "[swicth_by_group_fail] can not find module " << names[0] << endl;
-                        TLOGERROR(FILE_FUN << os.str() << endl);
+                        TLOG_ERROR(FILE_FUN << os.str() << endl);
                         result = os.str();
                         returnValue = false;
                         switchResult = 3;
@@ -1433,7 +1433,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
                 else
                 {
                     os << "[swicth_by_group_fail] can not find module " << names[0] << endl;
-                    TLOGERROR(FILE_FUN << os.str() << endl);
+                    TLOG_ERROR(FILE_FUN << os.str() << endl);
                     result = os.str();
                     returnValue = false;
                     switchResult = 3;
@@ -1455,7 +1455,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
                     names[0], names[1], names[2], false, masterImage, slaveImage) != 0)
             {
                 os << "[swicth_by_group_fail]更新数据库和内存路由表失败,请手工处理" << endl;
-                TLOGERROR(FILE_FUN << os.str() << endl);
+                TLOG_ERROR(FILE_FUN << os.str() << endl);
                 result = os.str();
                 returnValue = false;
                 switchResult = 3;
@@ -1467,7 +1467,7 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
             _dbHandle->updateStatusToRelationDB(slaveImage, "B");
             switchResult = 1;
         } while (0);
-        TLOGDEBUG("swicth_mirror end" << endl);
+        TLOG_DEBUG("swicth_mirror end" << endl);
         if (cleanSwitchInfo)
         {
             TC_ThreadLock::Lock lock(_moduleSwitchingLock);
@@ -1516,19 +1516,19 @@ bool RouterServer::switchMirrorByGroup(const string &command, const string &para
     catch (TarsException &e)
     {
         os << "Tars exception:" << e.what() << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
     catch (exception &e)
     {
         os << "std exception:" << e.what() << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
     catch (...)
     {
         os << "unkown error" << endl;
-        TLOGERROR(FILE_FUN << os.str() << endl);
+        TLOG_ERROR(FILE_FUN << os.str() << endl);
         result = os.str();
     }
     if (cleanSwitchInfo)
@@ -1561,13 +1561,13 @@ bool RouterServer::showHeartBeatInfo(const string &command, const string &params
             {
                 os << "master still not set, show heart beat info fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::showHeartBeatInfo|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -1616,7 +1616,7 @@ bool RouterServer::showHeartBeatInfo(const string &command, const string &params
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -1635,13 +1635,13 @@ bool RouterServer::resetServerStatus(const string &command, const string &params
             {
                 os << "master still not set, reset server status fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::resetServerStatus|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -1684,7 +1684,7 @@ bool RouterServer::resetServerStatus(const string &command, const string &params
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -1703,13 +1703,13 @@ bool RouterServer::checkModule(const string &command, const string &params, stri
             {
                 os << "master still not set, check module fail!";
                 TARS_NOTIFY_ERROR(string("RouterServer::checkModule|") + os.str());
-                TLOGDEBUG(os.str() << endl);
+                TLOG_DEBUG(os.str() << endl);
                 result = os.str();
                 return true;
             }
             else
             {
-                TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
+                TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master - " << masterRouterObj << endl);
                 return prx->procAdminCommand(command, params, result);
             }
         }
@@ -1739,7 +1739,7 @@ bool RouterServer::checkModule(const string &command, const string &params, stri
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -1796,7 +1796,7 @@ bool RouterServer::help(const string &command, const string &params, string &res
         os << "unkown error" << endl;
     }
 
-    TLOGDEBUG(os.str() << endl);
+    TLOG_DEBUG(os.str() << endl);
     result = os.str();
     return true;
 }
@@ -1827,7 +1827,7 @@ int RouterServer::setUpEtcd()
 
 //    if (!isEnableEtcd())
 //    {
-       TLOGDEBUG("RouterServer::setUpEtcd ETCD is not enable" << endl);
+       TLOG_DEBUG("RouterServer::setUpEtcd ETCD is not enable" << endl);
        setRouterType(ROUTER_MASTER);
        return 0;
 //    }
@@ -1836,7 +1836,7 @@ int RouterServer::setUpEtcd()
 //    auto etcdHost = std::make_shared<EtcdHost>();
 //    if (_etcdHandle->init(_conf, etcdHost) != 0)
 //    {
-//        TLOGERROR("RouterServer::setUpEtcd init etcd handle error" << endl);
+//        TLOG_ERROR("RouterServer::setUpEtcd init etcd handle error" << endl);
 //        return -1;
 //    }
 
@@ -1873,7 +1873,7 @@ void RouterServer::addSwitchThread(DoSwitchThreadPtr threadPtr)
 
 void RouterServer::removeFinishedSwitchThreads()
 {
-    TLOGDEBUG(FILE_FUN << "before removeFinishedSwitchThreads size:" << _doSwitchThreads.size()
+    TLOG_DEBUG(FILE_FUN << "before removeFinishedSwitchThreads size:" << _doSwitchThreads.size()
                        << endl);
     {
         TC_ThreadLock::Lock lock(_doSwitchThreadsLock);
@@ -1888,7 +1888,7 @@ void RouterServer::removeFinishedSwitchThreads()
                 it++;
         }
     }
-    TLOGDEBUG(FILE_FUN << "after removeFinishedSwitchThreads size:" << _doSwitchThreads.size()
+    TLOG_DEBUG(FILE_FUN << "after removeFinishedSwitchThreads size:" << _doSwitchThreads.size()
                        << endl);
 }
 
@@ -2440,7 +2440,7 @@ void RouterServer::upgrade()
         os << "unkown error" << endl;
     }
 
-    TLOGERROR(os.str() << endl);
+    TLOG_ERROR(os.str() << endl);
 
     TARS_NOTIFY_ERROR("RouterServer::upgrade|" + os.str());
 
@@ -2454,7 +2454,7 @@ int RouterServer::getMasterRouterPrx(RouterPrx &prx, string &masterRouterObj) co
     if (masterRouterObj == "")
     {
         // 全局对象中的RouterObj还未被设置
-        TLOGERROR(FILE_FUN << "master router obj not set" << endl);
+        TLOG_ERROR(FILE_FUN << "master router obj not set" << endl);
         return -1;
     }
 

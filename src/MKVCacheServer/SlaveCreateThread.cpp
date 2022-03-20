@@ -709,7 +709,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -736,7 +736,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -763,7 +763,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -790,7 +790,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -817,7 +817,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
 
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -835,7 +835,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.addSet(mk, value, encode.GetExpireTime(), 0, encode.GetDirty(), TC_Multi_HashMap_Malloc::DELETE_FALSE);
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::restoreFromBinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -853,7 +853,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.delSetSetBit(mk, value, time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -870,7 +870,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.delSetSetBit(mk, time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -889,7 +889,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), encode.GetExpireTime(), 0, encode.GetDirty(), false, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -907,7 +907,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), encode.GetExpireTime(), 0, encode.GetDirty(), true, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -925,7 +925,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.delZSetSetBit(mk, value, time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -942,7 +942,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.delZSetSetBit(mk, time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -966,7 +966,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                         iRet = g_HashMap.delRangeZSetSetBit(mk, encode.GetScoreMin(), encode.GetScoreMax(), 0, time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[SlaveCreateThread::Import5BinLog] map set error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -988,7 +988,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1013,7 +1013,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1042,7 +1042,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1067,7 +1067,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1096,7 +1096,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1120,7 +1120,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1140,7 +1140,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     {
                         //严重错误
                         g_app.ppReport(PPReport::SRP_EX, 1);
-                        TLOGERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
+                        TLOG_ERROR("[MKDbAccessCallback::WirteBinLog] set error, ret = " << iRet << endl);
                     }
                     else
                     {
@@ -1159,7 +1159,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                     iRet = g_HashMap.delZSetSetBit(mk, encode.GetOldValue(), time(NULL));
                     if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                     {
-                        TLOGERROR("[MKBinLogThread::WirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
+                        TLOG_ERROR("[MKBinLogThread::WirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                     else
@@ -1177,7 +1177,7 @@ int SlaveCreateThread::restoreFromBinLog(const string& fullFileName, string& ret
                         iRet = g_HashMap.addZSet(mk, value, encode.GetScore(), _ExpireTime, 0, encode.GetDirty(), false, TC_Multi_HashMap_Malloc::DELETE_FALSE);
                         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
                         {
-                            TLOGERROR("[MKBinLogThread::WirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
+                            TLOG_ERROR("[MKBinLogThread::WirteBinLog] update zset error, key = " << mk << " iRet = " << iRet << endl);
                             g_app.ppReport(PPReport::SRP_EX, 1);
                         }
                         else

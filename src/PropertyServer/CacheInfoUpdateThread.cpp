@@ -27,7 +27,7 @@ CacheInfoUpdateThread::~CacheInfoUpdateThread()
 
 void CacheInfoUpdateThread::terminate()
 {
-    TLOGDEBUG("CacheInfoUpdateThread::terminate");
+    TLOG_DEBUG("CacheInfoUpdateThread::terminate");
 
     _terminate = true;
 
@@ -38,7 +38,7 @@ void CacheInfoUpdateThread::terminate()
 
 void CacheInfoUpdateThread::run()
 {
-    TLOGDEBUG("CacheInfoUpdateThread::run once in " << _reloadInterval << " ms" << endl);
+    TLOG_DEBUG("CacheInfoUpdateThread::run once in " << _reloadInterval << " ms" << endl);
     
     while(!_terminate)
     {	

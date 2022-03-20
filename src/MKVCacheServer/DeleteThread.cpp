@@ -26,7 +26,7 @@ void DeleteThread::init(const string &sConf)
     _deleteInterval = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DeleteInterval>", "300"));
     _deleteSpeed = TC_Common::strto<size_t>(_tcConf.get("/Main/Cache<DeleteSpeed>", "0"));
 
-    TLOGDEBUG("[DeleteThread::init] DeleteSpeed:" << _deleteSpeed << " DbInterval:" << _deleteInterval << endl);
+    TLOG_DEBUG("[DeleteThread::init] DeleteSpeed:" << _deleteSpeed << " DbInterval:" << _deleteInterval << endl);
 
     string dbFlag = _tcConf["/Main/DbAccess<DBFlag>"];
     if ((dbFlag == "Y") || (dbFlag == "y"))
@@ -50,13 +50,13 @@ void DeleteThread::init(const string &sConf)
         vector<string> vTival = TC_Common::sepstr<string>(vTime[i], "-", false);
         if (vTival.size() != 2)
         {
-            TLOGERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
         //检查获取的时间是否正确
         if ((vTival[0].size() != 4) || (vTival[1].size() != 4))
         {
-            TLOGERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -64,7 +64,7 @@ void DeleteThread::init(const string &sConf)
         {
             if ((!isdigit(vTival[0][j])) || (!isdigit(vTival[1][j])))
             {
-                TLOGERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
+                TLOG_ERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
                 assert(false);
             }
         }
@@ -78,7 +78,7 @@ void DeleteThread::init(const string &sConf)
 
         if (m_iSyncBlockBegin > m_iSyncBlockEnd)
         {
-            TLOGERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[DeleteThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -87,7 +87,7 @@ void DeleteThread::init(const string &sConf)
 
         _blockingTime.push_back(make_pair(m_iSyncBlockBegin, m_iSyncBlockEnd));
 
-        TLOGDEBUG("[DeleteThread::init] " << m_iSyncBlockBegin << " " << m_iSyncBlockEnd << endl);
+        TLOG_DEBUG("[DeleteThread::init] " << m_iSyncBlockBegin << " " << m_iSyncBlockEnd << endl);
     }
 
     string sKeyType = _tcConf.get("/Main/Cache<MainKeyType>", "hash");
@@ -100,7 +100,7 @@ void DeleteThread::init(const string &sConf)
     else if (sKeyType == "list")
         _storeKeyType = TC_Multi_HashMap_Malloc::MainKey::LIST_TYPE;
 
-    TLOGDEBUG("DeleteThread::init succ" << endl);
+    TLOG_DEBUG("DeleteThread::init succ" << endl);
 }
 
 void DeleteThread::reload()
@@ -110,7 +110,7 @@ void DeleteThread::reload()
     _deleteInterval = TC_Common::strto<int>(_tcConf.get("/Main/Cache<DeleteInterval>", "100"));
     _deleteSpeed = TC_Common::strto<size_t>(_tcConf.get("/Main/Cache<DeleteSpeed>", "0"));
 
-    TLOGDEBUG("[DeleteThread::reload] DeleteSpeed:" << _deleteSpeed << " DbInterval:" << _deleteInterval << endl);
+    TLOG_DEBUG("[DeleteThread::reload] DeleteSpeed:" << _deleteSpeed << " DbInterval:" << _deleteInterval << endl);
 
     string dbFlag = _tcConf["/Main/DbAccess<DBFlag>"];
     if ((dbFlag == "Y") || (dbFlag == "y"))
@@ -131,7 +131,7 @@ void DeleteThread::reload()
     else if (sKeyType == "list")
         _storeKeyType = TC_Multi_HashMap_Malloc::MainKey::LIST_TYPE;
 
-    TLOGDEBUG("DeleteThread::reload succ" << endl);
+    TLOG_DEBUG("DeleteThread::reload succ" << endl);
 }
 
 void DeleteThread::createThread()
@@ -171,7 +171,7 @@ void* DeleteThread::Run(void* arg)
                 {
                     pthis->deleteData(tNow);
                     g_app.gstat()->setDeleteTime(tNow);
-                    TLOGDEBUG("master delete data, t= " << TC_Common::tm2str(tNow) << endl);
+                    TLOG_DEBUG("master delete data, t= " << TC_Common::tm2str(tNow) << endl);
                 }
                 else if (g_app.gstat()->serverType() == SLAVE)
                 {
@@ -180,7 +180,7 @@ void* DeleteThread::Run(void* arg)
                     {
                         if (sTmpCacheAddr != sMasterCacheAddr)
                         {
-                            TLOGDEBUG("MasterCacheAddr changed from " << sMasterCacheAddr << " to " << sTmpCacheAddr << endl);
+                            TLOG_DEBUG("MasterCacheAddr changed from " << sMasterCacheAddr << " to " << sTmpCacheAddr << endl);
                             sMasterCacheAddr = sTmpCacheAddr;
                             pMasterCachePrx = Application::getCommunicator()->stringToProxy<MKCachePrx>(sMasterCacheAddr);
                         }
@@ -193,7 +193,7 @@ void* DeleteThread::Run(void* arg)
                             pthis->deleteData(tDeleteSlave);
                         }
 
-                        TLOGDEBUG("slave delete data, t= " << TC_Common::tm2str(tDelete) << " - 60" << endl);
+                        TLOG_DEBUG("slave delete data, t= " << TC_Common::tm2str(tDelete) << " - 60" << endl);
                     }
                 }
                 tLastDb = tNow;
@@ -202,19 +202,19 @@ void* DeleteThread::Run(void* arg)
         }
         catch (const TarsException & ex)
         {
-            TLOGERROR("DeleteThread::Run: exception: " << ex.what() << endl);
+            TLOG_ERROR("DeleteThread::Run: exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             usleep(100000);
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("DeleteThread::Run: exception: " << ex.what() << endl);
+            TLOG_ERROR("DeleteThread::Run: exception: " << ex.what() << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             usleep(100000);
         }
         catch (...)
         {
-            TLOGERROR("DeleteThread::Run: unkown exception: " << endl);
+            TLOG_ERROR("DeleteThread::Run: unkown exception: " << endl);
             g_app.ppReport(PPReport::SRP_EX, 1);
             usleep(100000);
         }
@@ -253,7 +253,7 @@ void DeleteThread::deleteData(time_t t)
                     {
                         if (it->first <= nows && nows <= it->second)
                         {
-                            TLOGDEBUG("[DeleteThread::deleteData] block delete data! " << nows << endl);
+                            TLOG_DEBUG("[DeleteThread::deleteData] block delete data! " << nows << endl);
                             sleep(30);
                             break;
                         }
@@ -294,7 +294,7 @@ void DeleteThread::deleteData(time_t t)
                             continue;
                         }
 
-                        TLOGDEBUG("[DeleteThread::deleteData] " << vv[i]._mkey << " " << vv[i]._iDeleteTime << endl);
+                        TLOG_DEBUG("[DeleteThread::deleteData] " << vv[i]._mkey << " " << vv[i]._iDeleteTime << endl);
 
                         if (vv[i]._iDeleteTime != 0 && t >= vv[i]._iDeleteTime)
                         {
@@ -330,7 +330,7 @@ void DeleteThread::deleteData(time_t t)
                                     if (iRet < 0)
                                     {
                                         FDLOG(_dbDayLog) << "[DeleteThread::deleteData] del " << vv[i]._mkey << "|" << sLogCond << "|failed|" << iRet << endl;
-                                        TLOGERROR("DeleteThread::deleteData delString error, key = " << vv[i]._mkey << ", iRet = " << iRet << endl);
+                                        TLOG_ERROR("DeleteThread::deleteData delString error, key = " << vv[i]._mkey << ", iRet = " << iRet << endl);
 
                                         failCount++;
 
@@ -346,7 +346,7 @@ void DeleteThread::deleteData(time_t t)
                                 catch (const std::exception & ex)
                                 {
                                     FDLOG(_dbDayLog) << "[DeleteThread::deleteData] del db " << vv[i]._mkey << "|" << sLogCond << "|failed|" << ex.what() << endl;
-                                    TLOGERROR("DeleteThread::deleteData delString exception: " << ex.what() << ", key = " << vv[i]._mkey << endl);
+                                    TLOG_ERROR("DeleteThread::deleteData delString exception: " << ex.what() << ", key = " << vv[i]._mkey << endl);
 
                                     g_app.ppReport(PPReport::SRP_DB_EX, 1);
                                     failCount++;
@@ -374,7 +374,7 @@ void DeleteThread::deleteData(time_t t)
 
                             if (iRet != TC_Multi_HashMap_Malloc::RT_OK)
                             {
-                                TLOGERROR("[DeleteThread::deleteData] del |" << vv[i]._mkey << "|" << ((_storeKeyType == TC_Multi_HashMap_Malloc::MainKey::HASH_TYPE) ? FormatLog::tostr(vv[i]._ukey) : FormatLog::tostr(vv[i]._ukey, false)) << "|failed|" << iRet << endl);
+                                TLOG_ERROR("[DeleteThread::deleteData] del |" << vv[i]._mkey << "|" << ((_storeKeyType == TC_Multi_HashMap_Malloc::MainKey::HASH_TYPE) ? FormatLog::tostr(vv[i]._ukey) : FormatLog::tostr(vv[i]._ukey, false)) << "|failed|" << iRet << endl);
                                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                                 failCount++;
                             }
@@ -387,7 +387,7 @@ void DeleteThread::deleteData(time_t t)
                     }
                     catch (const std::exception &ex)
                     {
-                        TLOGERROR("[DeleteThread::deleteData] exception: " << ex.what() << ", mkey = " << vv[i]._mkey << endl);
+                        TLOG_ERROR("[DeleteThread::deleteData] exception: " << ex.what() << ", mkey = " << vv[i]._mkey << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                         failCount++;
                     }
@@ -400,11 +400,11 @@ void DeleteThread::deleteData(time_t t)
     } while ((failCount != 0) && (isStart()));
     if (!isStart())
     {
-        TLOGDEBUG("DeleteThread by stop" << endl);
+        TLOG_DEBUG("DeleteThread by stop" << endl);
     }
     else
     {
-        TLOGDEBUG("DeleteThread::deleteData finish" << endl);
+        TLOG_DEBUG("DeleteThread::deleteData finish" << endl);
     }
 }
 
@@ -416,7 +416,7 @@ string DeleteThread::getBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("DeleteThread::getBakSourceAddr getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("DeleteThread::getBakSourceAddr getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return "";
     }

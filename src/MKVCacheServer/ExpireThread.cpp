@@ -29,7 +29,7 @@ void ExpireThread::init(const string &sConf)
 
     _expireSpeed = TC_Common::strto<int>(_tcConf["/Main/Cache<ExpireSpeed>"]);
 
-    TLOGDEBUG("ExpireThread::init succ" << endl);
+    TLOG_DEBUG("ExpireThread::init succ" << endl);
 }
 
 void ExpireThread::reload()
@@ -45,7 +45,7 @@ void ExpireThread::reload()
 
     _expireSpeed = TC_Common::strto<int>(_tcConf["/Main/Cache<ExpireSpeed>"]);
 
-    TLOGDEBUG("ExpireThread::reload succ" << endl);
+    TLOG_DEBUG("ExpireThread::reload succ" << endl);
 }
 
 void ExpireThread::createThread()
@@ -154,7 +154,7 @@ void ExpireThread::eraseData()
                     }
                     catch (const std::exception &ex)
                     {
-                        TLOGERROR("ExpireThread::eraseData exception: " << ex.what() << ", mkey = " << vv[i]._mkey << endl);
+                        TLOG_ERROR("ExpireThread::eraseData exception: " << ex.what() << ", mkey = " << vv[i]._mkey << endl);
                         g_app.ppReport(PPReport::SRP_EX, 1);
                     }
                 }
@@ -168,11 +168,11 @@ void ExpireThread::eraseData()
     }
     if (!isStart())
     {
-        TLOGDEBUG("ExpireThread by stop" << endl);
+        TLOG_DEBUG("ExpireThread by stop" << endl);
     }
     else
     {
-        TLOGDEBUG("expire data finish" << endl);
+        TLOG_DEBUG("expire data finish" << endl);
     }
 }
 

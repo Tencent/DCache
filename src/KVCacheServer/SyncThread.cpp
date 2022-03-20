@@ -34,13 +34,13 @@ void SyncThread::init(const string &sConf)
         vector<string> vTival = TC_Common::sepstr<string>(vTime[i], "-", false);
         if (vTival.size() != 2)
         {
-            TLOGERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
         //检查获取的时间是否正确
         if ((vTival[0].size() != 4) || (vTival[1].size() != 4))
         {
-            TLOGERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -48,7 +48,7 @@ void SyncThread::init(const string &sConf)
         {
             if ((!isdigit(vTival[0][j])) || (!isdigit(vTival[1][j])))
             {
-                TLOGERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
+                TLOG_ERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
                 assert(false);
             }
         }
@@ -62,7 +62,7 @@ void SyncThread::init(const string &sConf)
 
         if (m_iSyncBlockBegin > m_iSyncBlockEnd)
         {
-            TLOGERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
+            TLOG_ERROR("[SyncThread::init] block time error! | " << vTime[i] << endl);
             assert(false);
         }
 
@@ -71,10 +71,10 @@ void SyncThread::init(const string &sConf)
 
         _blockTime.push_back(make_pair(m_iSyncBlockBegin, m_iSyncBlockEnd));
 
-        TLOGDEBUG("[SyncThread::init] " << m_iSyncBlockBegin << " " << m_iSyncBlockEnd << endl);
+        TLOG_DEBUG("[SyncThread::init] " << m_iSyncBlockBegin << " " << m_iSyncBlockEnd << endl);
     }
 
-    TLOGDEBUG("SyncThread::init succ" << endl);
+    TLOG_DEBUG("SyncThread::init succ" << endl);
 }
 
 void SyncThread::reload()
@@ -85,7 +85,7 @@ void SyncThread::reload()
     _threadNum = TC_Common::strto<int>(_tcConf["/Main/Cache<SyncThreadNum>"]);
     _syncSpeed = TC_Common::strto<size_t>(_tcConf["/Main/Cache<SyncSpeed>"]);
 
-    TLOGDEBUG("SyncThread::reload succ" << endl);
+    TLOG_DEBUG("SyncThread::reload succ" << endl);
 }
 
 void SyncThread::createThread()
@@ -136,7 +136,7 @@ void* SyncThread::Run(void* arg)
                     }
                     twpool.waitForAllDone();
                     pthis->_syncTime = tNow;
-                    TLOGDEBUG("SyncThread::Run, master sync data, t= " << TC_Common::tm2str(pthis->_syncTime) << endl);
+                    TLOG_DEBUG("SyncThread::Run, master sync data, t= " << TC_Common::tm2str(pthis->_syncTime) << endl);
                 }
                 else if (g_app.gstat()->serverType() == SLAVE)
                 {
@@ -145,7 +145,7 @@ void* SyncThread::Run(void* arg)
                     {
                         if (sTmpCacheAddr != sBakSourceAddr)
                         {
-                            TLOGDEBUG("MasterCacheAddr changed from " << sBakSourceAddr << " to " << sTmpCacheAddr << endl);
+                            TLOG_DEBUG("MasterCacheAddr changed from " << sBakSourceAddr << " to " << sTmpCacheAddr << endl);
                             sBakSourceAddr = sTmpCacheAddr;
                             pMasterCachePrx = Application::getCommunicator()->stringToProxy<CachePrx>(sBakSourceAddr);
                         }
@@ -164,7 +164,7 @@ void* SyncThread::Run(void* arg)
                             twpool.waitForAllDone();
                         }
 
-                        TLOGDEBUG("slave sync data, t= " << TC_Common::tm2str(tSync) << " - 60" << endl);
+                        TLOG_DEBUG("slave sync data, t= " << TC_Common::tm2str(tSync) << " - 60" << endl);
                     }
                 }
                 tLastDb = tNow;
@@ -173,17 +173,17 @@ void* SyncThread::Run(void* arg)
         }
         catch (const TarsException & ex)
         {
-            TLOGERROR("SyncThread::Run: exception: " << ex.what() << endl);
+            TLOG_ERROR("SyncThread::Run: exception: " << ex.what() << endl);
             usleep(100000);
         }
         catch (const std::exception &ex)
         {
-            TLOGERROR("SyncThread::Run: exception: " << ex.what() << endl);
+            TLOG_ERROR("SyncThread::Run: exception: " << ex.what() << endl);
             usleep(100000);
         }
         catch (...)
         {
-            TLOGERROR("SyncThread::Run: unkown exception: " << endl);
+            TLOG_ERROR("SyncThread::Run: unkown exception: " << endl);
             usleep(100000);
         }
     }
@@ -218,7 +218,7 @@ void SyncThread::syncData(time_t t)
             {
                 if (it->first <= nows && nows <= it->second)
                 {
-                    TLOGDEBUG("[SyncThread::syncData] block sync data! " << nows << endl);
+                    TLOG_DEBUG("[SyncThread::syncData] block sync data! " << nows << endl);
                     sleep(30);
                     break;
                 }
@@ -253,7 +253,7 @@ void SyncThread::syncData(time_t t)
             }
             else if (iRet != TC_HashMapMalloc::RT_NONEED_SYNC && iRet != TC_HashMapMalloc::RT_ONLY_KEY)
             {
-                TLOGERROR("SyncThread::syncData sync data error:" << iRet << endl);
+                TLOG_ERROR("SyncThread::syncData sync data error:" << iRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 break;
             }
@@ -262,11 +262,11 @@ void SyncThread::syncData(time_t t)
     }
     if (!isStart())
     {
-        TLOGDEBUG("SyncThread by stop" << endl);
+        TLOG_DEBUG("SyncThread by stop" << endl);
     }
     else
     {
-        TLOGDEBUG("syncData finish" << endl);
+        TLOG_DEBUG("syncData finish" << endl);
     }
 }
 
@@ -278,7 +278,7 @@ string SyncThread::geBakSourceAddr()
     int iRet = g_route_table.getBakSource(sServerName, server);
     if (iRet != UnpackTable::RET_SUCC)
     {
-        TLOGERROR("SyncThread::geBakSourceAddr getBakSource error, iRet = " << iRet << endl);
+        TLOG_ERROR("SyncThread::geBakSourceAddr getBakSource error, iRet = " << iRet << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return "";
     }

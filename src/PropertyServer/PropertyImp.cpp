@@ -30,7 +30,7 @@ void PropertyImp::initialize()
 
 int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPropMsgBody> &propMsg, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("PropertyImp::reportPropMsg size:" << propMsg.size() << endl);
+    TLOG_DEBUG("PropertyImp::reportPropMsg size:" << propMsg.size() << endl);
 
     for (map<DCache::StatPropMsgHead, DCache::StatPropMsgBody>::const_iterator it = propMsg.begin(); it != propMsg.end(); ++it)
     {
@@ -44,7 +44,7 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
             head.displaySimple(os);
             os << "|body:";
             body.displaySimple(os);
-            TLOGDEBUG("PropertyImp::reportPropMsg |" << os.str() << endl);
+            TLOG_DEBUG("PropertyImp::reportPropMsg |" << os.str() << endl);
         }
         
         if (body.vInfo.size() == 0)
@@ -60,7 +60,7 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
         if (rate > 0.9)
         {
             propHashMap.expand(propHashMap.getMapHead()._iMemSize * 2);
-            TLOGERROR("PropertyImp::reportPropMsg hashmap expand to " << propHashMap.getMapHead()._iMemSize << endl);
+            TLOG_ERROR("PropertyImp::reportPropMsg hashmap expand to " << propHashMap.getMapHead()._iMemSize << endl);
         }
 
         PropHead tHead;
@@ -90,7 +90,7 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
             ostringstream os;
             os.str("");
             head.displaySimple(os);
-            TLOGERROR("PropertyImp::reportPropMsg invalid property:" << sPropertyName << "|head:" << os.str() << endl);
+            TLOG_ERROR("PropertyImp::reportPropMsg invalid property:" << sPropertyName << "|head:" << os.str() << endl);
             
             continue;
         }
@@ -106,7 +106,7 @@ int PropertyImp::reportPropMsg(const map<DCache::StatPropMsgHead, DCache::StatPr
         int iRet = propHashMap.add(tHead, body);
         if (iRet != TC_HashMap::RT_OK)
         {
-            TLOGERROR("PropertyImp::reportPropMsg add hashmap record return:" << iRet << endl);
+            TLOG_ERROR("PropertyImp::reportPropMsg add hashmap record return:" << iRet << endl);
         }
     }
     
@@ -122,12 +122,12 @@ int PropertyImp::queryPropData(const DCache::QueryPropCond & req,vector<DCache::
     }
     catch(const std::exception& e)
     {
-        TLOGERROR(__FUNCTION__ << "|exception:" << e.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << "|exception:" << e.what() << endl);
         ret = -1;
     }
     catch(...)
     {
-        TLOGERROR(__FUNCTION__ << "|unknow exception" << endl);
+        TLOG_ERROR(__FUNCTION__ << "|unknow exception" << endl);
         ret = -1;
     }
 
@@ -161,11 +161,11 @@ void PropertyImp::dump2file()
             if(iRet != 0)
             {
                 TC_File::removeFile(sFile, false);
-                TLOGERROR("PropertyImp::dump2file |" << iRet << "|" << sFile << endl);
+                TLOG_ERROR("PropertyImp::dump2file |" << iRet << "|" << sFile << endl);
             }
             else
             {
-                TLOGDEBUG("PropertyImp::dump2file |" << sFile << endl);
+                TLOG_DEBUG("PropertyImp::dump2file |" << sFile << endl);
             }
         }
     }

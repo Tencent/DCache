@@ -21,7 +21,7 @@
 
 void PropertyDbManager::init(TC_Config& conf)
 {
-    TLOGDEBUG("PropertyDbManager::init begin ..." << endl);
+    TLOG_DEBUG("PropertyDbManager::init begin ..." << endl);
 
     int proFieldNum = TC_Common::strto<int>(conf["/Main/DB<PropertyFieldNum>"]);
     _sql = "CREATE TABLE `${TABLE}` ( "
@@ -91,7 +91,7 @@ void PropertyDbManager::init(TC_Config& conf)
     _ipAndPort += "|port:";
     _ipAndPort += TC_Common::tostr(tcDBConf._port);
 
-    TLOGDEBUG("PropertyDbManager::init ok" << endl);
+    TLOG_DEBUG("PropertyDbManager::init ok" << endl);
 }
 
 int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDate, const string &sFlag)
@@ -100,7 +100,7 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
 
     string sTbNamePre = "";
 
-    TLOGDEBUG("PropertyDbManager::insert2Db begin ..." << endl);
+    TLOG_DEBUG("PropertyDbManager::insert2Db begin ..." << endl);
 
     try
     {
@@ -155,15 +155,15 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
 
         int64_t iEnd = TNOWMS;
 
-        TLOGDEBUG("PropertyDbManager::insert2Db|" << getIpAndPort() << "|" << sDate << "|" << sFlag << "|" << mPropMsg.size() << "|" << (iEnd - iBegin) << endl);
+        TLOG_DEBUG("PropertyDbManager::insert2Db|" << getIpAndPort() << "|" << sDate << "|" << sFlag << "|" << mPropMsg.size() << "|" << (iEnd - iBegin) << endl);
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR("PropertyDbManager::insert2Db TC_Mysql_Exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::insert2Db TC_Mysql_Exception: " << ex.what() << endl);
     }
     catch (exception &ex)
     {
-        TLOGERROR("PropertyDbManager::insert2Db exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::insert2Db exception: " << ex.what() << endl);
     }
 
     return 0;
@@ -336,17 +336,17 @@ int PropertyDbManager::queryPropData(const DCache::QueryPropCond &req, vector<DC
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR(__FUNCTION__ << "|sql:" << _mysql.getLastSQL() << "|exception: " << ex.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << "|sql:" << _mysql.getLastSQL() << "|exception: " << ex.what() << endl);
         ret = -1;
     }
     catch (std::exception &ex)
     {
-        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
         ret = -1;
     }
     catch (...)
     {
-        TLOGERROR(__FUNCTION__ << "|unknow exception:" << endl);
+        TLOG_ERROR(__FUNCTION__ << "|unknow exception:" << endl);
         ret = -1;
     }
 
@@ -428,12 +428,12 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
             createTable(sTbName);
         }
         //因为会输出1千条记录，这里做截取
-        TLOGERROR("PropertyDbManager::insert2Db exception: " << err.substr(0,64) << endl);
+        TLOG_ERROR("PropertyDbManager::insert2Db exception: " << err.substr(0,64) << endl);
         return 1;
     }
     catch (exception &ex)
     {
-        TLOGERROR("PropertyDbManager::insert2Db exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::insert2Db exception: " << ex.what() << endl);
         return 1;
     }
 
@@ -457,7 +457,7 @@ bool PropertyDbManager::hasTableExist(const string &sTbName)
     }
     catch(TC_Mysql_Exception &ex)
     {
-        TLOGERROR("PropertyDbManager::hasTableExist exception:" << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::hasTableExist exception:" << ex.what() << endl);
     }
 
     return false;
@@ -476,7 +476,7 @@ int PropertyDbManager::createTable(const string &sTbName)
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR("PropertyDbManager::createTable exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::createTable exception: " << ex.what() << endl);
         return 1;
     }
 
@@ -489,13 +489,13 @@ int PropertyDbManager::createEcsTable(const string &sTbName, const string &sSql)
     {
         if (!hasTableExist(sTbName))
         {
-            TLOGDEBUG("PropertyDbManager::createEcsTable " << sSql << endl);
+            TLOG_DEBUG("PropertyDbManager::createEcsTable " << sSql << endl);
             _mysql.execute(sSql);
         }
     }
     catch (TC_Mysql_Exception& ex)
     {
-        TLOGERROR("PropertyDbManager::createEcsTable exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::createEcsTable exception: " << ex.what() << endl);
         return 1;
     }
 
@@ -515,7 +515,7 @@ int PropertyDbManager::updateEcsStatus(const string &sLastTime, const string &sT
             
             int iRet = _mysql.updateRecord("t_ecstatus", rd, sCondition);
             
-            TLOGDEBUG("PropertyDbManager::updateEcsStatus iRet: " <<iRet <<"|" << _mysql.getLastSQL() << endl);
+            TLOG_DEBUG("PropertyDbManager::updateEcsStatus iRet: " <<iRet <<"|" << _mysql.getLastSQL() << endl);
 
             if (iRet == 0 )
             {
@@ -527,13 +527,13 @@ int PropertyDbManager::updateEcsStatus(const string &sLastTime, const string &sT
 
             if (iRet != 1)
             {
-                TLOGERROR("PropertyDbManager::updateEcsStatus erro: ret:" << iRet << "\n" << _mysql.getLastSQL() << endl);
+                TLOG_ERROR("PropertyDbManager::updateEcsStatus erro: ret:" << iRet << "\n" << _mysql.getLastSQL() << endl);
             }
         }
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR("PropertyDbManager::updateEcsStatus exception: " << ex.what() << endl);
+        TLOG_ERROR("PropertyDbManager::updateEcsStatus exception: " << ex.what() << endl);
         createEcsTable("t_ecstatus", _sqlStatus);
         return 1;
     }
@@ -559,7 +559,7 @@ int PropertyDbManager::getLastTimestamp(string &date, string &time)
             vector<string> vtmp = TC_Common::sepstr<string>(TC_Common::trim(record["lasttime"]), " ");
             if (vtmp.size() != 2)
             {
-                TLOGERROR(__FUNCTION__ << "|parse lasttime error: lasttime:" << record["lasttime"] << endl);
+                TLOG_ERROR(__FUNCTION__ << "|parse lasttime error: lasttime:" << record["lasttime"] << endl);
                 return -1;
             }
 
@@ -568,7 +568,7 @@ int PropertyDbManager::getLastTimestamp(string &date, string &time)
         }
         else
         {
-            TLOGERROR(__FUNCTION__ << "|no data" << endl);
+            TLOG_ERROR(__FUNCTION__ << "|no data" << endl);
             return -1;
         }
 
@@ -576,17 +576,17 @@ int PropertyDbManager::getLastTimestamp(string &date, string &time)
     }
     catch (TC_Mysql_Exception &ex)
     {
-        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
         ret = -1;
     }
     catch (std::exception &ex)
     {
-        TLOGERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << "|exception: " << ex.what() << endl);
         ret = -1;
     }
     catch (...)
     {
-        TLOGERROR(__FUNCTION__ << "|unknow exception" << endl);
+        TLOG_ERROR(__FUNCTION__ << "|unknow exception" << endl);
         ret = -1;
     }
     
@@ -602,7 +602,7 @@ string PropertyDbManager::createDBValue(const PropKey &key, const PropValue &val
     size_t iSize = v.size();
     if (iSize < 2)
     {
-        TLOGERROR("PropertyDbManager::createDBValue invalid server name:" << key.moduleName << endl);
+        TLOG_ERROR("PropertyDbManager::createDBValue invalid server name:" << key.moduleName << endl);
         return "";
     }
 
@@ -645,7 +645,7 @@ string PropertyDbManager::createDBValue(const PropKey &key, const PropValue &val
             << "','" << _mysql.escapeString(key.setArea)
             << "','" << _mysql.escapeString(key.setID)
             << "'";
-        TLOGERROR("PropertyDbManager::createDBValue no module info for server:" << key.moduleName << endl);
+        TLOG_ERROR("PropertyDbManager::createDBValue no module info for server:" << key.moduleName << endl);
     }
 
     const map<string, string> &nameMap = g_app.getPropertyNameMap();
@@ -681,7 +681,7 @@ string PropertyDbManager::createDBValue(const PropKey &key, const PropValue &val
     }
     os << ")";
     
-    TLOGDEBUG("PropertyDbManager::creatDBValue " << os.str() << endl);
+    TLOG_DEBUG("PropertyDbManager::creatDBValue " << os.str() << endl);
     return os.str();
 }
 
@@ -695,7 +695,7 @@ int PropertyDbManager::sendAlarmSMS(const string &sMsg)
     string errInfo = "ERROR:" + ServerConfig::LocalIp + "_" + sMsg +  ":统计入库失败，请及时处理!";
     TARS_NOTIFY_ERROR(errInfo);
 
-    TLOGERROR("TARS_NOTIFY_ERROR " << errInfo << endl);
+    TLOG_ERROR("TARS_NOTIFY_ERROR " << errInfo << endl);
 
     return 0;
 }

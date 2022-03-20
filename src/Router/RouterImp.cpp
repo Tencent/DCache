@@ -46,7 +46,7 @@ int RouterImp::queryGroupHeartBeatInfo(const string &moduleName,
     }
 
     *info = &(it2->second);
-    TLOGDEBUG(FILE_FUN << "it2->second.masterServer = " << it2->second.masterServer << endl);
+    TLOG_DEBUG(FILE_FUN << "it2->second.masterServer = " << it2->second.masterServer << endl);
     return 0;
 }
 
@@ -79,12 +79,12 @@ void RouterImp::initialize()
     int ret = _dbHandle->getIdcMap(_cityToIDC);
     if (ret != 0)
     {
-        TLOGERROR(FILE_FUN << "getIdcMap error:" << ret << "| try aggin." << endl);
+        TLOG_ERROR(FILE_FUN << "getIdcMap error:" << ret << "| try aggin." << endl);
         sleep(1);
         ret = _dbHandle->getIdcMap(_cityToIDC);
         if (ret != 0)
         {
-            TLOGERROR(FILE_FUN << "getIdcMap error:" << ret << endl);
+            TLOG_ERROR(FILE_FUN << "getIdcMap error:" << ret << endl);
         }
     }
 
@@ -100,7 +100,7 @@ tars::Int32 RouterImp::getRouterInfo(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -109,7 +109,7 @@ tars::Int32 RouterImp::getRouterInfo(const string &moduleName,
     }
 
     int rc = _dbHandle->getPackTable(moduleName, packTable);
-    TLOGDEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
+    TLOG_DEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
                                << moduleName << "|" << rc << endl);
 
     return rc == 0 ? ROUTER_SUCC : ROUTER_INFO_ERR;
@@ -121,7 +121,7 @@ tars::Int32 RouterImp::getRouterInfoFromCache(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -131,14 +131,14 @@ tars::Int32 RouterImp::getRouterInfoFromCache(const string &moduleName,
 
     if (g_app.isModuleSwitching(moduleName))
     {
-        TLOGDEBUG(current->getIp()
+        TLOG_DEBUG(current->getIp()
                   << "|" << current->getPort() << "|" << __FUNCTION__ << "|" << moduleName << "|"
                   << "SWICTHING" << endl);
         return ROUTER_INFO_ERR;
     }
 
     int rc = _dbHandle->getPackTable(moduleName, packTable);
-    TLOGDEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
+    TLOG_DEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
                                << moduleName << "|" << rc << endl);
 
     return rc == 0 ? ROUTER_SUCC : ROUTER_INFO_ERR;
@@ -152,7 +152,7 @@ tars::Int32 RouterImp::getTransRouterInfo(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -162,7 +162,7 @@ tars::Int32 RouterImp::getTransRouterInfo(const string &moduleName,
     }
 
     int rc = _dbHandle->getRouterInfo(moduleName, transInfoListVer, transferingInfoList, packTable);
-    TLOGDEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
+    TLOG_DEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
                                << moduleName << "|" << rc << endl);
 
     return rc == 0 ? ROUTER_SUCC : ROUTER_INFO_ERR;
@@ -171,7 +171,7 @@ tars::Int32 RouterImp::getTransRouterInfo(const string &moduleName,
 tars::Int32 RouterImp::getVersion(const std::string &moduleName, tars::TarsCurrentPtr current)
 {
     int version = _dbHandle->getVersion(moduleName);
-    TLOGDEBUG(FILE_FUN << current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__
+    TLOG_DEBUG(FILE_FUN << current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__
                        << "|" << moduleName << "|" << version << endl);
     return version;
 }
@@ -182,7 +182,7 @@ tars::Int32 RouterImp::getRouterVersion(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -191,7 +191,7 @@ tars::Int32 RouterImp::getRouterVersion(const string &moduleName,
     }
 
     int v = _dbHandle->getVersion(moduleName);
-    TLOGDEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
+    TLOG_DEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|"
                                << moduleName << "|" << v << endl);
 
     if (v != -1)
@@ -208,7 +208,7 @@ tars::Int32 RouterImp::getRouterVersionBatch(const vector<string> &moduleList,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -216,7 +216,7 @@ tars::Int32 RouterImp::getRouterVersionBatch(const vector<string> &moduleList,
         return _prx->getRouterVersionBatch(moduleList, mapModuleVersion);
     }
 
-    TLOGDEBUG(FILE_FUN << "get request from : " << current->getIp() << ":" << current->getPort()
+    TLOG_DEBUG(FILE_FUN << "get request from : " << current->getIp() << ":" << current->getPort()
                        << endl);
 
     tars::Int32 v;
@@ -224,7 +224,7 @@ tars::Int32 RouterImp::getRouterVersionBatch(const vector<string> &moduleList,
     for (it = moduleList.begin(); it != moduleList.end(); ++it)
     {
         v = _dbHandle->getVersion(*it);
-        TLOGDEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|" << *it
+        TLOG_DEBUG(current->getIp() << "|" << current->getPort() << "|" << __FUNCTION__ << "|" << *it
                                    << "|" << v << endl);
         mapModuleVersion.insert(make_pair(*it, v));
     }
@@ -235,7 +235,7 @@ tars::Int32 RouterImp::getModuleList(vector<string> &moduleList, tars::TarsCurre
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -253,7 +253,7 @@ tars::Int32 RouterImp::heartBeatReport(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -261,7 +261,7 @@ tars::Int32 RouterImp::heartBeatReport(const string &moduleName,
         return _prx->heartBeatReport(moduleName, groupName, serverName);
     }
 
-    TLOGDEBUG("[heartBeatReport]entered.module:" << moduleName << "|group:" << groupName
+    TLOG_DEBUG("[heartBeatReport]entered.module:" << moduleName << "|group:" << groupName
                                                  << "|server:" << serverName << "|ip"
                                                  << current->getIp() << endl);
 
@@ -270,7 +270,7 @@ tars::Int32 RouterImp::heartBeatReport(const string &moduleName,
     string errMsg;
     if (queryGroupHeartBeatInfo(moduleName, groupName, errMsg, &info) != 0)
     {
-        TLOGERROR(FILE_FUN << errMsg << endl);
+        TLOG_ERROR(FILE_FUN << errMsg << endl);
         return 0;
     }
 
@@ -316,7 +316,7 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -326,7 +326,7 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
 
     //先在路由表中查询该group，查看其是否是无镜像备机
     string serverName;
-    TLOGDEBUG("RouterImp::recoverMirrorStat: new request|" << moduleName << "|" << groupName << "|"
+    TLOG_DEBUG("RouterImp::recoverMirrorStat: new request|" << moduleName << "|" << groupName << "|"
                                                            << mirrorIdc << endl);
 
     {
@@ -335,7 +335,7 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
 
         if (queryMirrorInfo(moduleName, groupName, mirrorIdc, errMsg, &idcList) != 0)
         {
-            TLOGERROR(errMsg << endl);
+            TLOG_ERROR(errMsg << endl);
             return -1;
         }
 
@@ -344,7 +344,7 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
         {
             errMsg = "RouterImp::recoverMirrorStat idc has more than 1 mirror " + moduleName + "|" +
                      groupName + "|" + mirrorIdc;
-            TLOGERROR(errMsg << endl);
+            TLOG_ERROR(errMsg << endl);
             return -1;
         }
 
@@ -356,19 +356,19 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
     {
         errMsg = "RouterImp::recoverMirrorStat mirror not recover " + moduleName + "|" + groupName +
                  "|" + mirrorIdc;
-        TLOGERROR(FILE_FUN << errMsg << endl);
+        TLOG_ERROR(FILE_FUN << errMsg << endl);
         return -1;
     }
 
-    TLOGDEBUG("RouterImp::recoverMirrorStat find group success" << endl);
+    TLOG_DEBUG("RouterImp::recoverMirrorStat find group success" << endl);
     //设置DB与MEM的状态, 并将版本号+1
     if (_dbHandle->recoverMirrorInDbAndMem(moduleName, groupName, serverName) != 0)
     {
         errMsg = "RouterImp::recoverMirrorStat update db failed";
-        TLOGERROR(FILE_FUN << errMsg << endl);
+        TLOG_ERROR(FILE_FUN << errMsg << endl);
         return -1;
     }
-    TLOGDEBUG("RouterImp::recoverMirrorStat recoverMirrorInDbAndMem success" << endl);
+    TLOG_DEBUG("RouterImp::recoverMirrorStat recoverMirrorInDbAndMem success" << endl);
 
     //更改心跳信息:修改group的状态
     {
@@ -382,7 +382,7 @@ tars::Int32 RouterImp::recoverMirrorStat(const string &moduleName,
             map<string, int>::iterator its = groupInfo->serverStatus.find(serverName);
             if (its != groupInfo->serverStatus.end()) its->second = 0;
 
-            TLOGDEBUG(FILE_FUN << "RouterImp::recoverMirrorStat update heardBeat success" << endl);
+            TLOG_DEBUG(FILE_FUN << "RouterImp::recoverMirrorStat update heardBeat success" << endl);
         }
     }
     //通知PROXY reload router
@@ -404,7 +404,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -415,7 +415,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
     string curMasterServer;
     string curSlaveServer;
 
-    TLOGDEBUG("RouterImp::switchByGroup: new request|" << moduleName << "|" << groupName << "|"
+    TLOG_DEBUG("RouterImp::switchByGroup: new request|" << moduleName << "|" << groupName << "|"
                                                        << forceSwitch << "|" << maxBinlogDiffTime
                                                        << endl);
 
@@ -456,7 +456,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                             errMsg =
                                 "[swicth_by_group_fail] group is switching! module:" + moduleName +
                                 " group:" + groupName;
-                            TLOGERROR(errMsg << endl);
+                            TLOG_ERROR(errMsg << endl);
                             switchResult = 3;
                             break;
                         }
@@ -465,7 +465,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                     else
                     {
                         errMsg = "[swicth_by_group_fail] can not find module " + moduleName;
-                        TLOGERROR(errMsg << endl);
+                        TLOG_ERROR(errMsg << endl);
                         switchResult = 3;
                         break;
                     }
@@ -473,7 +473,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                 else
                 {
                     errMsg = "[swicth_by_group_fail] can not find module " + moduleName;
-                    TLOGERROR(errMsg << endl);
+                    TLOG_ERROR(errMsg << endl);
                     switchResult = 3;
                     break;
                 }
@@ -542,7 +542,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
                 break;
             }
 
-            TLOGDEBUG("curMasterServer" << curMasterServer << " "
+            TLOG_DEBUG("curMasterServer" << curMasterServer << " "
                                         << "curSlaveServer" << curSlaveServer << endl);
             // it指向组信息 it1指向主机，it2指向要切合的备机 修改路由
             it1->second.ServerStatus = "S";
@@ -680,7 +680,7 @@ tars::Int32 RouterImp::switchByGroup(const string &moduleName,
             switchResult = 1;
         } while (0);
 
-        TLOGDEBUG("swicth end" << endl);
+        TLOG_DEBUG("swicth end" << endl);
 
         if (cleanSwitchInfo)
         {
@@ -789,7 +789,7 @@ tars::Int32 RouterImp::getIdcInfo(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -811,7 +811,7 @@ tars::Int32 RouterImp::getIdcInfo(const string &moduleName,
             ret = _dbHandle->getMasterIdc(moduleName, idcInfo.idc);
             if (ret != 0)
             {
-                TLOGERROR(__FUNCTION__ << ":getMasterIdc err:" << ret << endl);
+                TLOG_ERROR(__FUNCTION__ << ":getMasterIdc err:" << ret << endl);
                 idcInfo.idc = "";
             }
         }
@@ -819,11 +819,11 @@ tars::Int32 RouterImp::getIdcInfo(const string &moduleName,
     }
     catch (exception &e)
     {
-        TLOGERROR(__FUNCTION__ << ":exception:" << e.what() << endl);
+        TLOG_ERROR(__FUNCTION__ << ":exception:" << e.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR(__FUNCTION__ << ": unknow exception:" << endl);
+        TLOG_ERROR(__FUNCTION__ << ": unknow exception:" << endl);
     }
     return -1;
 }
@@ -834,7 +834,7 @@ tars::Int32 RouterImp::serviceRestartReport(const string &moduleName,
 {
     if (!isMaster())
     {
-        TLOGDEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
+        TLOG_DEBUG(FILE_FUN << "This is slave, request will proxy to master" << endl);
         if (updateMasterPrx() != 0)
         {
             return ROUTER_INFO_ERR;
@@ -842,13 +842,13 @@ tars::Int32 RouterImp::serviceRestartReport(const string &moduleName,
         return _prx->serviceRestartReport(moduleName, groupName);
     }
 
-    TLOGDEBUG("[serviceRestartReport]entered.module:" << moduleName << "|group:" << groupName
+    TLOG_DEBUG("[serviceRestartReport]entered.module:" << moduleName << "|group:" << groupName
                                                       << endl);
 
     //主机上报重启后，如果当前模块和组正在做迁移，则唤醒迁移线程
     if (!_dbHandle->hasTransferingLoc(moduleName, groupName)) return 0;
 
-    TLOGDEBUG("[RouterImp::serviceRestartReport]: weakup the waiting transfering thread" << endl);
+    TLOG_DEBUG("[RouterImp::serviceRestartReport]: weakup the waiting transfering thread" << endl);
     map<string, map<string, TransferMutexCondPtr>> transferMutexCond;
     if (_dbHandle->getTransferMutexCond(transferMutexCond) != 0) return 0;
 
@@ -887,23 +887,23 @@ int RouterImp::sendHeartBeat(const string &serverName)
     try
     {
         pRouterClientPrx->helloBaby();
-        TLOGDEBUG(FILE_FUN << "RouterImp::heartBeatSend send heartBeat ok, ServerName:"
+        TLOG_DEBUG(FILE_FUN << "RouterImp::heartBeatSend send heartBeat ok, ServerName:"
                            << serverName << endl);
         return 0;
     }
     catch (const TarsException &ex)
     {
-        TLOGERROR(FILE_FUN << "RouterImp::heartBeatSend catch exception: " << ex.what() << endl);
+        TLOG_ERROR(FILE_FUN << "RouterImp::heartBeatSend catch exception: " << ex.what() << endl);
         try
         {
             pRouterClientPrx->helloBaby();
-            TLOGDEBUG(FILE_FUN << "RouterImp::heartBeatSend send heartBeat ok, ServerName:"
+            TLOG_DEBUG(FILE_FUN << "RouterImp::heartBeatSend send heartBeat ok, ServerName:"
                                << serverName << endl);
             return 0;
         }
         catch (const TarsException &ex)
         {
-            TLOGERROR(FILE_FUN << "RouterImp::heartBeatSend catch exception: " << ex.what()
+            TLOG_ERROR(FILE_FUN << "RouterImp::heartBeatSend catch exception: " << ex.what()
                                << endl);
         }
     }
@@ -913,17 +913,17 @@ int RouterImp::sendHeartBeat(const string &serverName)
 int RouterImp::updateMasterPrx()
 {
     std::string o = g_app.getMasterRouterObj();
-    TLOGDEBUG(FILE_FUN << "master router obj = " << o << endl);
+    TLOG_DEBUG(FILE_FUN << "master router obj = " << o << endl);
     if (o == "" || o == _selfObj)
     {
         // 全局对象中的RouterObj还未被设置
-        TLOGERROR(FILE_FUN << "master router obj not set" << endl);
+        TLOG_ERROR(FILE_FUN << "master router obj not set" << endl);
         return -1;
     }
 
     if (_masterRouterObj != o)
     {
-        TLOGDEBUG(FILE_FUN << "master router obj update from " << _masterRouterObj << " to " << o
+        TLOG_DEBUG(FILE_FUN << "master router obj update from " << _masterRouterObj << " to " << o
                            << endl);
         _masterRouterObj = o;
         _prx = Application::getCommunicator()->stringToProxy<RouterPrx>(_masterRouterObj);

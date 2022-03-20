@@ -91,7 +91,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                 string errmsg("");
                 if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
                 {
-                   TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << "|errmsg:" << errmsg << endl);
+                   TLOG_ERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << "|errmsg:" << errmsg << endl);
                    continue;
                 }
 
@@ -124,7 +124,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                         int iRet = _adminRegPrx->stopServer("DCache", cacheData[j]["cache_name"], cacheData[j]["cache_ip"], resultStr);
                                         if (iRet != 0)
                                         {
-                                            TLOGERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
+                                            TLOG_ERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
                                                               << "|server ip:" << cacheData[j]["cache_ip"]
                                                               << "|errmsg:" << resultStr
                                                               << endl);
@@ -139,11 +139,11 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                     }
                                     catch (exception& e)
                                     {
-                                        TLOGERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
+                                        TLOG_ERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
                                     }
                                     catch (...)
                                     {
-                                        TLOGERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
+                                        TLOG_ERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
                                     }
 
                                     --retryTimes;
@@ -154,7 +154,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                 {
                                     // 停止服务失败，则不能下线
                                     bFailed = true;
-                                    TLOGERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
+                                    TLOG_ERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
                                                       << "|server ip:" << cacheData[j]["cache_ip"] << endl);
                                     break;
                                 }
@@ -177,7 +177,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                             request.info.groupName  = data[i]["src_group"];
                             request.requestId       = data[i]["src_group"];
 
-                            TLOGDEBUG(FUN_LOG << "for transfer|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
+                            TLOG_DEBUG(FUN_LOG << "for transfer|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
                                               << "|module name:" << data[i]["module_name"]
                                               << "|group name:" << data[i]["src_group"]
                                               << endl);
@@ -205,7 +205,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                 string errmsg("");
                 if (getRouterDBInfo(data[i]["app_name"], routerDbInfo, errmsg) != 0)
                 {
-                   TLOGERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << endl);
+                   TLOG_ERROR(FUN_LOG << "get router db info falied|app name:" << data[i]["app_name"] << "|module name:" << data[i]["module_name"] << endl);
                    continue;
                 }
 
@@ -243,7 +243,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                             int iRet = _adminRegPrx->stopServer("DCache", cacheData[j]["cache_name"], cacheData[j]["cache_ip"], resultStr);
                                             if (iRet != 0)
                                             {
-                                                TLOGERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
+                                                TLOG_ERROR(FUN_LOG << "stop server failed|servername:" << cacheData[j]["cache_name"]
                                                                   << "|server ip:" << cacheData[j]["cache_ip"]
                                                                   << "|errmsg:" << resultStr
                                                                   << endl);
@@ -257,11 +257,11 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                         }
                                         catch (exception& e)
                                         {
-                                            TLOGERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
+                                            TLOG_ERROR(FUN_LOG << "notice admin stop server catch exception:" << e.what() << endl);
                                         }
                                         catch (...)
                                         {
-                                            TLOGERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
+                                            TLOG_ERROR(FUN_LOG << "notice admin stop server catch unkown exception" << endl);
                                         }
 
                                         --retryTimes;
@@ -272,7 +272,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                     {
                                         // 停止服务失败，则不能下线
                                         bFailed = true;
-                                        TLOGERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
+                                        TLOG_ERROR(FUN_LOG << "stop server tried 3 times and all failed|servername:" << cacheData[j]["cache_name"]
                                                           << "|server ip:" << cacheData[j]["cache_ip"] << endl);
                                         break;
                                     }
@@ -295,7 +295,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                                 request.info.groupName  = srcGroupName[ii];
                                 request.requestId       = srcGroupName[ii];
 
-                                TLOGDEBUG(FUN_LOG << "for reduce|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
+                                TLOG_DEBUG(FUN_LOG << "for reduce|uninstall the group which the router record is zero|app name:" << data[i]["app_name"]
                                                   << "|module name:" << data[i]["module_name"]
                                                   << "|group name:" << srcGroupName[ii]
                                                   << endl);
@@ -312,11 +312,11 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
     }
     catch (exception& e)
     {
-        TLOGERROR(FUN_LOG << "catch exception:" << e.what() << endl);
+        TLOG_ERROR(FUN_LOG << "catch exception:" << e.what() << endl);
     }
     catch (...)
     {
-        TLOGERROR(FUN_LOG << "catch unkown exception" << endl);
+        TLOG_ERROR(FUN_LOG << "catch unkown exception" << endl);
     }
 }
 
@@ -342,18 +342,18 @@ int UndeployThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbIn
         else
         {
             errmsg = string("not find router db config in relation db table t_cache_router|app name:") + appName;
-            TLOGERROR(FUN_LOG << errmsg << endl);
+            TLOG_ERROR(FUN_LOG << errmsg << endl);
         }
     }
     catch(exception &ex)
     {
         errmsg = string("get router db info from relation db t_cache_router table catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
     catch (...)
     {
         errmsg = "get router db info from relation db t_cache_router table catch unknown exception";
-        TLOGERROR(FUN_LOG << errmsg << endl);
+        TLOG_ERROR(FUN_LOG << errmsg << endl);
     }
 
     return -1;

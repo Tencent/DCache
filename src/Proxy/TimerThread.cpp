@@ -29,13 +29,13 @@ TimerThread::~TimerThread() {}
 void TimerThread::init(TC_Config &conf)
 {
     readConf(conf);
-    TLOGDEBUG("init TimerThread succ" << endl);
+    TLOG_DEBUG("init TimerThread succ" << endl);
 }
 
 void TimerThread::reloadConf(TC_Config &conf)
 {
     readConf(conf);
-    TLOGDEBUG("TimerThread reload config ..." << endl);
+    TLOG_DEBUG("TimerThread reload config ..." << endl);
 }
 
 void TimerThread::readConf(TC_Config &conf)
@@ -74,7 +74,7 @@ void TimerThread::run()
         
         if (_stop)
         {
-            TLOGDEBUG("now! stop TimerThread" << endl);
+            TLOG_DEBUG("now! stop TimerThread" << endl);
             break;
         }
 
@@ -105,7 +105,7 @@ void TimerThread::syncRouterTableFactory()
         strErr = "[TimerThread::syncRouterTableFactory] UnkownException";
     }
 
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     TARS_NOTIFY_WARN(strErr);
 }
 
@@ -127,6 +127,6 @@ void TimerThread::syncRouterTable()
         strErr = "[TimerThread::synRouterTable] UnkownException";
     }
 
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     TARS_NOTIFY_WARN(strErr);
 }

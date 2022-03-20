@@ -75,7 +75,7 @@ int Rigup::enter(const vector<ConfigItem> &items, const map<string, string> &con
         {
             if(!insertItem(items[i]._item, items[i]._path, it->second))
             {
-                TLOGERROR("Rigup::enter insert item:" << items[i]._item << "|path:" << items[i]._path << "|content:" << it->second << endl);
+                TLOG_ERROR("Rigup::enter insert item:" << items[i]._item << "|path:" << items[i]._path << "|content:" << it->second << endl);
                 iRet = -1;
             }
         } 

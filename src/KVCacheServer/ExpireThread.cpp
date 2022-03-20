@@ -29,7 +29,7 @@ void ExpireThread::init(const string &sConf)
 
     _expireSpeed = TC_Common::strto<size_t>(_tcConf["/Main/Cache<ExpireSpeed>"]);
 
-    TLOGDEBUG("ExpireThread::init succ" << endl);
+    TLOG_DEBUG("ExpireThread::init succ" << endl);
 }
 
 void ExpireThread::reload()
@@ -46,7 +46,7 @@ void ExpireThread::reload()
 
     _expireSpeed = TC_Common::strto<size_t>(_tcConf["/Main/Cache<ExpireSpeed>"]);
 
-    TLOGDEBUG("ExpireThread::reload succ" << endl);
+    TLOG_DEBUG("ExpireThread::reload succ" << endl);
 }
 
 tars::Int32 ExpireThread::createThread()
@@ -58,13 +58,13 @@ tars::Int32 ExpireThread::createThread()
     {
         if (pthread_create(&thread, NULL, Run, (void*)this) != 0)
         {
-            TLOGERROR("Create ExpireThread fail" << endl);
+            TLOG_ERROR("Create ExpireThread fail" << endl);
             return -1;
         }
     }
     else
     {
-        TLOGDEBUG("ExpireThread is running, can not be create again" << endl);
+        TLOG_DEBUG("ExpireThread is running, can not be create again" << endl);
         return -1;
     }
 
@@ -101,7 +101,7 @@ void ExpireThread::eraseData()
 
     size_t iCount = 0;
     SHashMap::dcache_hash_iterator it = g_sHashMap.hashBegin();
-    TLOGDEBUG("expire data start" << endl);
+    TLOG_DEBUG("expire data start" << endl);
     while (isStart() && it != g_sHashMap.hashEnd())
     {
         time_t tNow = TC_TimeProvider::getInstance()->getNow();
@@ -146,7 +146,7 @@ void ExpireThread::eraseData()
                 }
                 catch (std::exception& ex)
                 {
-                    TLOGERROR("ExpireThread::eraseData exception: " << ex.what() << ", key = " << vExpireData[i].first << endl);
+                    TLOG_ERROR("ExpireThread::eraseData exception: " << ex.what() << ", key = " << vExpireData[i].first << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                 }
             }
@@ -154,10 +154,10 @@ void ExpireThread::eraseData()
     }
     if (!isStart())
     {
-        TLOGDEBUG("ExpireThread by stop" << endl);
+        TLOG_DEBUG("ExpireThread by stop" << endl);
     }
     else
     {
-        TLOGDEBUG("expire data finish" << endl);
+        TLOG_DEBUG("expire data finish" << endl);
     }
 }

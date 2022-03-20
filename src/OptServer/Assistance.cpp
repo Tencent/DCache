@@ -54,7 +54,7 @@ int Tool::getNodeObj(TC_Mysql &mysqlTarsDb, const string & sIp, string & sNodeOb
             }
             else
             {
-                TLOGERROR(FUN_LOG << "node's last_heartbeat is old:" << nodeData[0]["time"] << ", now is:"<< now << "|node name:" << mysqlTarsDb.escapeString(sIp) << endl);
+                TLOG_ERROR(FUN_LOG << "node's last_heartbeat is old:" << nodeData[0]["time"] << ", now is:"<< now << "|node name:" << mysqlTarsDb.escapeString(sIp) << endl);
                 return -1;
             }
         }
@@ -62,7 +62,7 @@ int Tool::getNodeObj(TC_Mysql &mysqlTarsDb, const string & sIp, string & sNodeOb
     }
     catch (exception &ex)
     {
-        TLOGERROR(FUN_LOG << "query from t_node_info catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "query from t_node_info catch exception:" << ex.what() << endl);
     }
 
     return -1;
@@ -73,7 +73,7 @@ void Tool::parseServerName(const string & sFullServerName, string & application,
     string::size_type pos = sFullServerName.find_first_of(".");
     if (string::npos == pos)
     {
-        TLOGERROR(FUN_LOG << "server name is invalild, right eg: Test.TestServer|server name:" << sFullServerName << endl);
+        TLOG_ERROR(FUN_LOG << "server name is invalild, right eg: Test.TestServer|server name:" << sFullServerName << endl);
         throw runtime_error("server name is invalild, right eg: Test.TestServer|server name:" + sFullServerName);
     }
 
@@ -93,7 +93,7 @@ bool Tool::isInactive(TC_Mysql &mysqlTarsDb, const string & application, const s
         if (serverData[0]["present_state"] != "inactive")
         {
             sError = "server's state is not inactive|app name:" + application + "|server name:" + servername + "|ip:" + host + "|setting_state:" + serverData[0]["setting_state"] + "|present_state:" + serverData[0]["present_state"];
-            TLOGERROR(FUN_LOG << sError << endl);
+            TLOG_ERROR(FUN_LOG << sError << endl);
             return false;
         }
     }
@@ -108,7 +108,7 @@ bool Tool::isInactive(TC_Mysql &mysqlTarsDb, const string & application, const s
             sError = "query server result count:" + TC_Common::tostr(serverData.size()) + " more than 1|app name:" + application + "|server name:" + servername + "|ip:" + host + "|sql:" + sQuerySql;
         }
 
-        TLOGERROR(FUN_LOG << sError << endl);
+        TLOG_ERROR(FUN_LOG << sError << endl);
         return false;
     }
 
@@ -148,7 +148,7 @@ void Tool::delRelation4CacheServer(TC_Mysql &mysqlRelationDb, const string & sFu
 
 int Tool::cleanProxyConf(TC_Mysql &mysqlRelationDb, const string &proxyName)
 {
-    TLOGDEBUG(FUN_LOG << "proxy server name:" << proxyName << endl);
+    TLOG_DEBUG(FUN_LOG << "proxy server name:" << proxyName << endl);
 
     try
     {
@@ -160,17 +160,17 @@ int Tool::cleanProxyConf(TC_Mysql &mysqlRelationDb, const string &proxyName)
             string sWhere = "where id = '" + proxyData[0]["id"] +"'";
             int n = mysqlRelationDb.deleteRecord("t_proxy_app", sWhere);
 
-            TLOGDEBUG(FUN_LOG << "delete t_proxy_app affect row:" << n << "|proxy server name:" << proxyName << endl);
+            TLOG_DEBUG(FUN_LOG << "delete t_proxy_app affect row:" << n << "|proxy server name:" << proxyName << endl);
         }
         else if (proxyData.size() > 1)
         {
-            TLOGERROR(FUN_LOG << "query proxy-app count:" << proxyData.size() << " more than 1|proxy server name:" << proxyName << endl);
+            TLOG_ERROR(FUN_LOG << "query proxy-app count:" << proxyData.size() << " more than 1|proxy server name:" << proxyName << endl);
             return -1;
         }
     }
     catch(exception &ex)
     {
-        TLOGERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
         return -1;
     }
 
@@ -179,7 +179,7 @@ int Tool::cleanProxyConf(TC_Mysql &mysqlRelationDb, const string &proxyName)
 
 int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
 {
-    TLOGDEBUG(FUN_LOG << "router server name:" << routerName << endl);
+    TLOG_DEBUG(FUN_LOG << "router server name:" << routerName << endl);
 
     try
     {
@@ -190,11 +190,11 @@ int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
             string sWhere = "where id = '" + routerData[0]["id"] +"'";
             int n = mysqlRelationDb.deleteRecord("t_router_app", sWhere);
 
-            TLOGDEBUG(FUN_LOG << "delete t_router_app affect row:" << n << "|router server name:" << routerName << endl);
+            TLOG_DEBUG(FUN_LOG << "delete t_router_app affect row:" << n << "|router server name:" << routerName << endl);
         }
         else if (routerData.size() > 1)
         {
-            TLOGERROR(FUN_LOG << "query router-app count:" << routerData.size() << " more than 1|router server name:" << routerName << endl);
+            TLOG_ERROR(FUN_LOG << "query router-app count:" << routerData.size() << " more than 1|router server name:" << routerName << endl);
             return -1;
         }
 
@@ -205,17 +205,17 @@ int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
             string sWhere = "where id = '" + prdata[0]["id"] +"'";
             int n = mysqlRelationDb.deleteRecord("t_proxy_router", sWhere);
 
-            TLOGDEBUG(FUN_LOG << "delete t_proxy_router affect row:" << n << "|router server name:" << routerName << endl);
+            TLOG_DEBUG(FUN_LOG << "delete t_proxy_router affect row:" << n << "|router server name:" << routerName << endl);
         }
         else if (prdata.size() > 1)
         {
-            TLOGERROR(FUN_LOG << "query proxy-router count:" << routerData.size() << " more than 1|router server name:" << routerName << endl);
+            TLOG_ERROR(FUN_LOG << "query proxy-router count:" << routerData.size() << " more than 1|router server name:" << routerName << endl);
             return -1;
         }
     }
     catch(exception &ex)
     {
-        TLOGERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
         return -1;
     }
     return 0;
@@ -223,7 +223,7 @@ int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
 
 int Tool::cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessName)
 {
-    TLOGDEBUG(FUN_LOG << "dbaccess server name:" << dbaccessName << endl);
+    TLOG_DEBUG(FUN_LOG << "dbaccess server name:" << dbaccessName << endl);
 
     try
     {
@@ -235,17 +235,17 @@ int Tool::cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessNam
             string sWhere = "where id = '" + dbaccessData[0]["id"] +"'";
             int n = mysqlRelationDb.deleteRecord("t_dbaccess_app", sWhere);
 
-            TLOGDEBUG(FUN_LOG << "delete t_dbaccess_app affect row:" << n << "|dbaccess server name:" << dbaccessName << endl);
+            TLOG_DEBUG(FUN_LOG << "delete t_dbaccess_app affect row:" << n << "|dbaccess server name:" << dbaccessName << endl);
         }
         else if (dbaccessData.size() > 1)
         {
-            TLOGERROR(FUN_LOG << "query dbaccess-app count:" << dbaccessData.size() << " more than 1|dbaccess server name:" << dbaccessName << endl);
+            TLOG_ERROR(FUN_LOG << "query dbaccess-app count:" << dbaccessData.size() << " more than 1|dbaccess server name:" << dbaccessName << endl);
             return -1;
         }
     }
     catch(exception &ex)
     {
-        TLOGERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "catch exception:" << ex.what() << endl);
         return -1;
     }
 
@@ -292,7 +292,7 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
                 string sNodeObj("");
                 if (-1 == getNodeObj(mysqlTarsDb, cacheData[0]["ip"], sNodeObj))
                 {
-                    TLOGERROR(FUN_LOG << "failed to get node obj|cache server name:" + sFullCacheServer + "|ip:" + cacheData[0]["ip"] << endl);
+                    TLOG_ERROR(FUN_LOG << "failed to get node obj|cache server name:" + sFullCacheServer + "|ip:" + cacheData[0]["ip"] << endl);
                 }
                 else
                 {
@@ -308,7 +308,7 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
                     catch(exception &e)
                     {
                         string sError =  e.what();
-                        TLOGERROR(FUN_LOG << "del cache catch exception:" + sError << endl);
+                        TLOG_ERROR(FUN_LOG << "del cache catch exception:" + sError << endl);
                         if (string::npos == sError.find("timeout"))
                         {
                             throw runtime_error(e.what());
@@ -338,13 +338,13 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
         }
         else
         {
-            TLOGERROR(FUN_LOG << "query from t_router_server can not find cache server's ip or result size:" + TC_Common::tostr(cacheData.size()) + " more than one|cache server name:" + sFullCacheServer << endl);
+            TLOG_ERROR(FUN_LOG << "query from t_router_server can not find cache server's ip or result size:" + TC_Common::tostr(cacheData.size()) + " more than one|cache server name:" + sFullCacheServer << endl);
             throw runtime_error("uninstall dcache error: cannot find cache server "+ sFullCacheServer + "'s ip or more than one:" + TC_Common::tostr(cacheData.size()));
         }
     }
     catch (exception &ex)
     {
-        TLOGERROR(FUN_LOG << "query from t_router_server catch exception:" << ex.what() << endl);
+        TLOG_ERROR(FUN_LOG << "query from t_router_server catch exception:" << ex.what() << endl);
     }
 }
 
@@ -355,7 +355,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
         if (sTarsServerName.empty() || sIp.empty())
         {
             sError = "server name or ip is empty|server name:" + sTarsServerName + "|ip:"+ sIp;
-            TLOGERROR(FUN_LOG << sError << endl);
+            TLOG_ERROR(FUN_LOG << sError << endl);
             return -1;
         }
 
@@ -377,7 +377,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
             if (-1 == getNodeObj(mysqlTarsDb, sIp, sNodeObj))
             {
                 sError = "failed to get node obj|server name:" + sTarsServerName + "|ip:" + sIp;
-                TLOGERROR(FUN_LOG << sError << endl);
+                TLOG_ERROR(FUN_LOG << sError << endl);
             }
             else
             {
@@ -402,7 +402,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
                     if (iRet != -10)
                     {
                         sError = string("destroy server catch exception:") + ex.what();
-                        TLOGERROR(FUN_LOG << sError << endl);
+                        TLOG_ERROR(FUN_LOG << sError << endl);
                         return -1;
                     }
                     else
@@ -442,18 +442,18 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
                 mysqlTarsDb.deleteRecord("t_config_files", sWhere);
             }
 
-            TLOGDEBUG(FUN_LOG << "success to destroy server remotely|server name:" << sTarsServerName << endl);
+            TLOG_DEBUG(FUN_LOG << "success to destroy server remotely|server name:" << sTarsServerName << endl);
             return 0;
         }
         catch(exception &ex)
         {
             sError = string("operate db catch exception:") + ex.what();
-            TLOGERROR(FUN_LOG << sError << endl);
+            TLOG_ERROR(FUN_LOG << sError << endl);
         }
         catch(...)
         {
             sError = "operate db catch unknow exception";
-            TLOGERROR(FUN_LOG << sError << endl);
+            TLOG_ERROR(FUN_LOG << sError << endl);
         }
 
         return 0;
@@ -461,12 +461,12 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
     catch(exception &ex)
     {
         sError = string("catch exception:") + ex.what();
-        TLOGERROR(FUN_LOG << sError << endl);
+        TLOG_ERROR(FUN_LOG << sError << endl);
     }
     catch(...)
     {
         sError = "catch unknow exception";
-        TLOGERROR(FUN_LOG << sError << endl);
+        TLOG_ERROR(FUN_LOG << sError << endl);
     }
 
     return -1;

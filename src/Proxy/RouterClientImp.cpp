@@ -22,7 +22,7 @@ using namespace std;
 
 void RouterClientImp::initialize()
 {
-    TLOGDEBUG("begin to initialize RouterClientImp servant ..." << endl);
+    TLOG_DEBUG("begin to initialize RouterClientImp servant ..." << endl);
 }
 
 int RouterClientImp::setRouterInfo(const string &moduleName, const PackTable &packTable, TarsCurrentPtr current)
@@ -33,7 +33,7 @@ int RouterClientImp::setRouterInfo(const string &moduleName, const PackTable &pa
         RouterTableInfo *pRouterTableInfo = g_app._routerTableInfoFactory->getRouterTableInfo(moduleName);
         if (!pRouterTableInfo)
         {
-            TLOGDEBUG("setRouterInfo failed, do not support this module: " << moduleName << endl);
+            TLOG_DEBUG("setRouterInfo failed, do not support this module: " << moduleName << endl);
             TARS_NOTIFY_WARN("[RouterClientImp::setRouterInfo] |failed| Invalid Module");
             return ET_MODULE_NAME_INVALID;
         }
@@ -43,13 +43,13 @@ int RouterClientImp::setRouterInfo(const string &moduleName, const PackTable &pa
         if (iRet == 0)
         {
             pRouterTableInfo->setRouterTableToFile(); // 重新加载路由成功后，更新本地文件
-            TLOGDEBUG("RouterServer push router info for module: " << moduleName << " succ" << endl);
+            TLOG_DEBUG("RouterServer push router info for module: " << moduleName << " succ" << endl);
             TARS_NOTIFY_NORMAL("[RouterClientImp::setRouterInfo] |succ|");
             return ET_SUCC;
         }
         else
         {
-            TLOGDEBUG("RouterServer push router info for module: " << moduleName << " failed, reload errno=" << iRet << endl);
+            TLOG_DEBUG("RouterServer push router info for module: " << moduleName << " failed, reload errno=" << iRet << endl);
             TARS_NOTIFY_WARN("[RouterClientImp::setRouterInfo] |failed| [RouterTable::reload]");
             return ET_SYS_ERR;
         }
@@ -63,7 +63,7 @@ int RouterClientImp::setRouterInfo(const string &moduleName, const PackTable &pa
         strErr = "[RouterClientImp::setRouterInfo] UnkownException";
     }
 
-    TLOGERROR(strErr << endl);
+    TLOG_ERROR(strErr << endl);
     TARS_NOTIFY_WARN(strErr);
     return ET_SYS_ERR;
 }
@@ -73,7 +73,7 @@ int RouterClientImp::setRouterInfo(const string &moduleName, const PackTable &pa
 int RouterClientImp::setTransRouterInfo(const string &moduleName, int transInfoListVer,
                                         const vector<TransferInfo> &transferingInfoList, const PackTable &packTable, TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: setTransRouterInfo" << endl);
+    TLOG_DEBUG("invalid access, do not support command: setTransRouterInfo" << endl);
     return ET_COMMAND_INVALID;
 }
 
@@ -81,55 +81,55 @@ tars::Int32
 RouterClientImp::fromTransferStart(const std::string &moduleName, tars::Int32 transInfoListVer, const vector<TransferInfo> &transferingInfoList,
                                    const PackTable &packTable, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: fromTransferStart" << endl);
+    TLOG_DEBUG("invalid access, do not support command: fromTransferStart" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::fromTransferDo(const TransferInfo &transferingInfo, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: fromTransferDo" << endl);
+    TLOG_DEBUG("invalid access, do not support command: fromTransferDo" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::toTransferStart(const string &moduleName, tars::Int32 transInfoListVer, const vector<TransferInfo> &transferingInfoList, const TransferInfo &transferingInfo, const PackTable &packTable, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: toTransferStart" << endl);
+    TLOG_DEBUG("invalid access, do not support command: toTransferStart" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::recallLease(tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: recallLease" << endl);
+    TLOG_DEBUG("invalid access, do not support command: recallLease" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::grantLease(tars::Int32 leaseHoldTime, tars::TarsCurrentPtr curren)
 {
-    TLOGDEBUG("invalid access, do not support command: grantLease" << endl);
+    TLOG_DEBUG("invalid access, do not support command: grantLease" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::getBinlogdif(tars::Int32 &difBinlogTime, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: getBinlogdif" << endl);
+    TLOG_DEBUG("invalid access, do not support command: getBinlogdif" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32
 RouterClientImp::setRouterInfoForSwicth(const std::string &moduleName, const DCache::PackTable &packTable, tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("invalid access, do not support command: setRouterInfoForSwicth" << endl);
+    TLOG_DEBUG("invalid access, do not support command: setRouterInfoForSwicth" << endl);
     return ET_COMMAND_INVALID;
 }
 
 tars::Int32 RouterClientImp::helloBaby(tars::TarsCurrentPtr current)
 {
-    TLOGDEBUG("i am ok" << endl);
+    TLOG_DEBUG("i am ok" << endl);
     return 0;
 }
 
@@ -143,7 +143,7 @@ tars::Int32 RouterClientImp::helleBabyByName(const std::string &serverName, tars
     }
     catch (const TarsException &ex)
     {
-        TLOGERROR("[RouterClientImp::helleBabyByName] exception: " << ex.what() << " cacheObj:" << cacheObj << endl);
+        TLOG_ERROR("[RouterClientImp::helleBabyByName] exception: " << ex.what() << " cacheObj:" << cacheObj << endl);
     }
     return -1;
 }

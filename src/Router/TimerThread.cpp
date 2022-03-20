@@ -84,7 +84,7 @@ void TimerThread::init(const RouterServerConfig &conf,
         exit(-1);
     }
 
-    TLOGDEBUG("init TimerThread succ!" << endl);
+    TLOG_DEBUG("init TimerThread succ!" << endl);
 }
 
 void TimerThread::run()
@@ -101,7 +101,7 @@ void TimerThread::run()
                 lastType = ROUTER_SLAVE;
             }
 
-            TLOGDEBUG(FILE_FUN << "this is slave, just sleep" << endl);
+            TLOG_DEBUG(FILE_FUN << "this is slave, just sleep" << endl);
 
             {
                 TC_ThreadLock::Lock lock(*this);

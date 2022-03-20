@@ -64,11 +64,11 @@ void MKCacheImp::initialize()
     _orderByDesc = (sOrderDesc == "Y" || sOrderDesc == "y") ? true : false;
 
     _hitIndex = g_app.gstat()->genHitIndex();
-    TLOGDEBUG("MKCacheImp::initialize _hitIndex:" << _hitIndex << endl);
+    TLOG_DEBUG("MKCacheImp::initialize _hitIndex:" << _hitIndex << endl);
 
     _mkeyMaxSelectCount = TC_Common::strto<size_t>(_tcConf.get("/Main<MKeyMaxBlockCount>", "20000"));
     g_app.gstat()->getFieldConfig(_fieldConf);
-    TLOGDEBUG("MKCacheImp::initialize Succ" << endl);
+    TLOG_DEBUG("MKCacheImp::initialize Succ" << endl);
 }
 
 //////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ bool MKCacheImp::reloadConf(const string& command, const string& params, string&
 
     _mkeyMaxSelectCount = TC_Common::strto<size_t>(_tcConf.get("/Main<MKeyMaxBlockCount>", "20000"));
 
-    TLOGDEBUG("MKCacheImp::reloadConf Succ" << endl);
+    TLOG_DEBUG("MKCacheImp::reloadConf Succ" << endl);
     result = "SUCC";
 
     return true;
@@ -109,21 +109,21 @@ tars::Int32 MKCacheImp::getMKV(const DCache::GetMKVReq &req, DCache::GetMKVRsp &
     bool bGetMKCout = req.retEntryCnt;
     vector<map<std::string, std::string> > &vtData = rsp.data;
 
-    TLOGDEBUG("MKCacheImp::getMKV recv : " << mainKey << "|" << field << "|" << FormatLog::tostr(vtCond) << "|" << bGetMKCout << endl);
+    TLOG_DEBUG("MKCacheImp::getMKV recv : " << mainKey << "|" << field << "|" << FormatLog::tostr(vtCond) << "|" << bGetMKCout << endl);
     int iMKRecord;
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::getMKV: moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::getMKV: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::getMKV: " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::getMKV: " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -134,7 +134,7 @@ tars::Int32 MKCacheImp::getMKV(const DCache::GetMKVReq &req, DCache::GetMKVRsp &
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, false, context[API_IDC], updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -164,7 +164,7 @@ tars::Int32 MKCacheImp::getMKV(const DCache::GetMKVReq &req, DCache::GetMKVRsp &
 
         if (!checkCondition(vtCond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
         {
-            TLOGERROR("MKCacheImp::getMKV: param error" << endl);
+            TLOG_ERROR("MKCacheImp::getMKV: param error" << endl);
             return iRetCode;
         }
 
@@ -191,13 +191,13 @@ tars::Int32 MKCacheImp::getMKV(const DCache::GetMKVReq &req, DCache::GetMKVRsp &
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::getMKV exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMKV exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMKV unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMKV unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -211,11 +211,11 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
     const vector<DCache::Condition> & vtCond = req.cond;
     vector<DCache::MainKeyValue> & vtData = rsp.data;
 
-    TLOGDEBUG("MKCacheImp::getMKVBatch recv : " << vtMainKey.size() << "|" << TC_Common::tostr(vtMainKey.begin(), vtMainKey.end(), ";") << "|" << field << "|" << FormatLog::tostr(vtCond) << endl);
+    TLOG_DEBUG("MKCacheImp::getMKVBatch recv : " << vtMainKey.size() << "|" << TC_Common::tostr(vtMainKey.begin(), vtMainKey.end(), ";") << "|" << field << "|" << FormatLog::tostr(vtCond) << endl);
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKCacheImp::getMKVBatch: moduleName error" << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatch: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -245,7 +245,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
         int iRetCode;
         if (!checkCondition(vtCond, vtUKCond, vtValueCond, stLimit, bUKey, iRetCode))
         {
-            TLOGERROR("MKCacheImp::getMKVBatch: param error" << endl);
+            TLOG_ERROR("MKCacheImp::getMKVBatch: param error" << endl);
             return iRetCode;
         }
 
@@ -273,7 +273,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
             {
                 if (!g_route_table.isMySelf(vtMainKey[i]))
                 {
-                    TLOGERROR("MKCacheImp::getMKVBatch: " << vtMainKey[i] << " is not in self area" << endl);
+                    TLOG_ERROR("MKCacheImp::getMKVBatch: " << vtMainKey[i] << " is not in self area" << endl);
                     vtData.clear();
                     map<string, string>& context = current->getContext();
                     //API直连模式，返回增量更新路由
@@ -285,7 +285,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                         int ret = RouterHandle::getInstance()->getUpdateServant(vtMainKey, false, context[API_IDC], updateServant);
                         if (ret != 0)
                         {
-                            TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                            TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                         }
                         else
                         {
@@ -306,7 +306,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                     }
                     else
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch: error, mainKey = " << vtMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch: error, mainKey = " << vtMainKey[i] << endl);
                         vtData.clear();
                         return ET_SYS_ERR;
                     }
@@ -324,7 +324,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
             {
                 if (!g_route_table.isMySelf(vtMainKey[i]))
                 {
-                    TLOGERROR("MKCacheImp::getMKVBatch: " << vtMainKey[i] << " is not in self area" << endl);
+                    TLOG_ERROR("MKCacheImp::getMKVBatch: " << vtMainKey[i] << " is not in self area" << endl);
                     vtData.clear();
                     map<string, string>& context = current->getContext();
                     //API直连模式，返回增量更新路由
@@ -336,7 +336,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                         int ret = RouterHandle::getInstance()->getUpdateServant(vtMainKey, false, context[API_IDC], updateServant);
                         if (ret != 0)
                         {
-                            TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                            TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                         }
                         else
                         {
@@ -357,13 +357,13 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                     }
                     else if (iRet == -2)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch: error, select data count exceed the max, mainKey = " << vtMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch: error, select data count exceed the max, mainKey = " << vtMainKey[i] << endl);
                         vtData.clear();
                         return ET_DATA_TOO_MUCH;
                     }
                     else
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch: error, mainKey = " << vtMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch: error, mainKey = " << vtMainKey[i] << endl);
                         vtData.clear();
                         return ET_SYS_ERR;
                     }
@@ -378,14 +378,14 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
     }
     catch (std::exception& ex)
     {
-        TLOGERROR("MKCacheImp::getMKVBatch exception: " << ex.what() << ", mainKey = " << vtMainKey[i] << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatch exception: " << ex.what() << ", mainKey = " << vtMainKey[i] << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMKVBatch unkown exception, ,mainKey = " << vtMainKey[i] << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatch unkown exception, ,mainKey = " << vtMainKey[i] << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
@@ -423,7 +423,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
             {
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKCacheImp::getMKVBatch: async select db, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                    TLOG_DEBUG("MKCacheImp::getMKVBatch: async select db, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                     try
                     {
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
@@ -433,11 +433,11 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                     }
                     catch (std::exception& ex)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch exception: " << ex.what() << ", mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch exception: " << ex.what() << ", mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch unkown exception, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch unkown exception, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     if (pParam->setEnd())
@@ -449,7 +449,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                 }
                 else
                 {
-                    TLOGDEBUG("MKCacheImp::getMKVBatch: set into cbparam, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                    TLOG_DEBUG("MKCacheImp::getMKVBatch: set into cbparam, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                 }
             }
             else
@@ -468,7 +468,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                 {
                     if (iRet == -2)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch: select second error, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch: select second error, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                         if (pParam->setEnd())
                         {
                             MKVBatchRsp rsp;
@@ -477,7 +477,7 @@ tars::Int32 MKCacheImp::getMKVBatch(const DCache::MKVBatchReq &req, DCache::MKVB
                     }
                     else
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatch: select second error, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatch: select second error, mainKey = " << vtNeedDBAccessMainKey[i] << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         if (pParam->setEnd())
                         {
@@ -526,17 +526,17 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
     const std::string & field = req.field;
     vector<DCache::Record> &vtData = rsp.data;
 
-    TLOGDEBUG("MKCacheImp::getMUKBatch recv : " << vtMUKey.size() << "|" << field << "|" << endl);
+    TLOG_DEBUG("MKCacheImp::getMUKBatch recv : " << vtMUKey.size() << "|" << field << "|" << endl);
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKCacheImp::getMUKBatch: moduleName error" << endl);
+        TLOG_ERROR("MKCacheImp::getMUKBatch: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
     if (vtMUKey.empty())
     {
-        TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " mainkey and ukey param has not been set yet" << endl);
+        TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " mainkey and ukey param has not been set yet" << endl);
         return ET_INPUT_PARAM_ERROR;
     }
 
@@ -559,14 +559,14 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
             int iRetCode;
             if (!checkRecord(vtMUKey[i], sMainKey, vtUKCond, iRetCode))
             {
-                TLOGERROR("MKCacheImp::getMUKBatch: param error" << endl);
+                TLOG_ERROR("MKCacheImp::getMUKBatch: param error" << endl);
                 vtData.clear();
                 return iRetCode;
             }
 
             if (!g_route_table.isMySelf(sMainKey))
             {
-                TLOGERROR("MKCacheImp::getMUKBatch: " << sMainKey << " is not in self area" << endl);
+                TLOG_ERROR("MKCacheImp::getMUKBatch: " << sMainKey << " is not in self area" << endl);
                 vtData.clear();
 
                 map<string, string>& context = current->getContext();
@@ -585,7 +585,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                     int ret = RouterHandle::getInstance()->getUpdateServant(vtMainKey, false, context[API_IDC], updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                     else
                     {
@@ -621,7 +621,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                 }
                 else
                 {
-                    TLOGERROR("MKCacheImp::getMUKBatch: error, mainKey = " << sMainKey << endl);
+                    TLOG_ERROR("MKCacheImp::getMUKBatch: error, mainKey = " << sMainKey << endl);
                     vtData.clear();
                     return ET_SYS_ERR;
                 }
@@ -636,7 +636,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                 else if (keyValue.value.size() > 1)
                 {
                     //非唯一数据
-                    TLOGERROR(__FUNCTION__ << ":" << __LINE__ << " keyvalue size error:" << keyValue.value.size() << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":" << __LINE__ << " keyvalue size error:" << keyValue.value.size() << endl);
                     vtData.clear();
                     return ET_SYS_ERR;
                 }
@@ -653,14 +653,14 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
     }
     catch (std::exception& ex)
     {
-        TLOGERROR("MKCacheImp::getMUKBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMUKBatch exception: " << ex.what() << ", mainKey = " << sMainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMUKBatch unkown exception, ,mainKey = " << sMainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMUKBatch unkown exception, ,mainKey = " << sMainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
@@ -701,7 +701,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
             {
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKCacheImp::getMUKBatch: async select db, mainKey = " << needDbIt->first << endl);
+                    TLOG_DEBUG("MKCacheImp::getMUKBatch: async select db, mainKey = " << needDbIt->first << endl);
                     try
                     {
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
@@ -711,11 +711,11 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                     }
                     catch (std::exception& ex)
                     {
-                        TLOGERROR("MKCacheImp::getMUKBatch exception: " << ex.what() << ", mainKey = " << needDbIt->first << endl);
+                        TLOG_ERROR("MKCacheImp::getMUKBatch exception: " << ex.what() << ", mainKey = " << needDbIt->first << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKCacheImp::getMUKBatch unkown exception, mainKey = " << needDbIt->first << endl);
+                        TLOG_ERROR("MKCacheImp::getMUKBatch unkown exception, mainKey = " << needDbIt->first << endl);
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     if (pParam->setEnd())
@@ -727,7 +727,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
                 }
                 else
                 {
-                    TLOGDEBUG("MKCacheImp::getMUKBatch: set into cbparam, mainKey = " << needDbIt->first << endl);
+                    TLOG_DEBUG("MKCacheImp::getMUKBatch: set into cbparam, mainKey = " << needDbIt->first << endl);
                 }
             }
             else
@@ -752,7 +752,7 @@ tars::Int32 MKCacheImp::getMUKBatch(const DCache::MUKBatchReq &req, DCache::MUKB
 
                     if (iRet != 0)
                     {
-                        TLOGERROR("MKCacheImp::getMUKBatch: select second error, mainKey = " << needDbIt->first << endl);
+                        TLOG_ERROR("MKCacheImp::getMUKBatch: select second error, mainKey = " << needDbIt->first << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         if (pParam->setEnd())
                         {
@@ -812,14 +812,14 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::getMainKeyCount: moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::getMainKeyCount: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::getMainKeyCount: " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::getMainKeyCount: " << mainKey << " is not in self area" << endl);
             map<string, string>& context = current->getContext();
             //API直连模式，返回增量更新路由
             if (VALUE_YES == context[GET_ROUTE])
@@ -830,7 +830,7 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
                 int ret = RouterHandle::getInstance()->getUpdateServant(mainKey, false, context[API_IDC], updateServant);
                 if (ret != 0)
                 {
-                    TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                    TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                 }
                 else
                 {
@@ -852,7 +852,7 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
                     && iCheckRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                     && iCheckRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
             {
-                TLOGERROR("MKCacheImp::getMainKeyCount: checkMainKey error, ret = " << iCheckRet << ",mainKey = " << mainKey << endl);
+                TLOG_ERROR("MKCacheImp::getMainKeyCount: checkMainKey error, ret = " << iCheckRet << ",mainKey = " << mainKey << endl);
                 return ET_SYS_ERR;
             }
             else if (iCheckRet == TC_Multi_HashMap_Malloc::RT_PART_DATA || iCheckRet == TC_Multi_HashMap_Malloc::RT_NO_DATA)
@@ -871,14 +871,14 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
                         if (isCreate)
                         {
                             current->setResponse(false);
-                            TLOGDEBUG("MKCacheImp::getMainKeyCount: async select db, mainKey = " << mainKey << endl);
+                            TLOG_DEBUG("MKCacheImp::getMainKeyCount: async select db, mainKey = " << mainKey << endl);
                             DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, _storeKeyType);
                             //异步调用DBAccess
                             asyncDbSelect(mainKey, cb);
                         }
                         else
                         {
-                            TLOGDEBUG("MKCacheImp::getMainKeyCount: set into cbparam, mainKey = " << mainKey << endl);
+                            TLOG_DEBUG("MKCacheImp::getMainKeyCount: set into cbparam, mainKey = " << mainKey << endl);
                         }
                     }
 
@@ -886,13 +886,13 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
                 }
                 catch (std::exception& ex)
                 {
-                    TLOGERROR("MKCacheImp::getMainKeyCount exception: " << ex.what() << ", mainKey = " << mainKey << endl);
+                    TLOG_ERROR("MKCacheImp::getMainKeyCount exception: " << ex.what() << ", mainKey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
                 catch (...)
                 {
-                    TLOGERROR("MKCacheImp::getMainKeyCount unkown exception, ,mainKey = " << mainKey << endl);
+                    TLOG_ERROR("MKCacheImp::getMainKeyCount unkown exception, ,mainKey = " << mainKey << endl);
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     return ET_SYS_ERR;
                 }
@@ -906,13 +906,13 @@ tars::Int32 MKCacheImp::getMainKeyCount(const DCache::MainKeyReq &req, tars::Tar
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::getMainKeyCount exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMainKeyCount exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMainKeyCount unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::getMainKeyCount unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -925,14 +925,14 @@ tars::Int32 MKCacheImp::getAllMainKey(const DCache::GetAllKeysReq &req, DCache::
     int index = req.index;
     int count = req.count;
 
-    TLOGDEBUG("MKCacheImp::getMKAllMainKey recv : " << index << "|" << count << endl);
+    TLOG_DEBUG("MKCacheImp::getMKAllMainKey recv : " << index << "|" << count << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::getMKAllMainKey: moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::getMKAllMainKey: moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
 
@@ -945,7 +945,7 @@ tars::Int32 MKCacheImp::getAllMainKey(const DCache::GetAllKeysReq &req, DCache::
 
         if (it == g_HashMap.mHashEnd())
         {
-            TLOGERROR("MKCacheImp::getMKAllMainKey mHashByPos return end! index:" << index << endl);
+            TLOG_ERROR("MKCacheImp::getMKAllMainKey mHashByPos return end! index:" << index << endl);
             rsp.isEnd = true;
             return ET_SUCC;
         }
@@ -966,20 +966,20 @@ tars::Int32 MKCacheImp::getAllMainKey(const DCache::GetAllKeysReq &req, DCache::
             it++;
         }
 
-        TLOGDEBUG("MKCacheImp::getMKAllMainKey reach the end! " << index << "|" << count << endl);
+        TLOG_DEBUG("MKCacheImp::getMKAllMainKey reach the end! " << index << "|" << count << endl);
 
         rsp.isEnd = true;
 
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::getMKAllMainKey exception: " << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::getMKAllMainKey exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMKAllMainKey unkown exception" << endl);
+        TLOG_ERROR("MKCacheImp::getMKAllMainKey unkown exception" << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -992,11 +992,11 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
     const vector<DCache::MainKeyCondition> & vtKey = req.cond;
     vector<DCache::MainKeyValue> &vtData = rsp.data;
 
-    TLOGDEBUG("MKCacheImp::getMKVBatchEx recv : " << FormatLog::tostr(vtKey) << endl);
+    TLOG_DEBUG("MKCacheImp::getMKVBatchEx recv : " << FormatLog::tostr(vtKey) << endl);
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKCacheImp::getMKVBatchEx: moduleName error" << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatchEx: moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -1010,7 +1010,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
             const DCache::MainKeyCondition &mkCond = vtKey[i];
             if (!g_route_table.isMySelf(mkCond.mainKey))
             {
-                TLOGERROR("MKCacheImp::getMKVBatchEx: " << mkCond.mainKey << " is not in self area" << endl);
+                TLOG_ERROR("MKCacheImp::getMKVBatchEx: " << mkCond.mainKey << " is not in self area" << endl);
                 vtData.clear();
 
                 map<string, string>& context = current->getContext();
@@ -1029,7 +1029,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                     int ret = RouterHandle::getInstance()->getUpdateServant(vtMainKey, false, context[API_IDC], updateServant);
                     if (ret != 0)
                     {
-                        TLOGERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
+                        TLOG_ERROR(__FUNCTION__ << ":getUpdatedRoute error:" << ret << endl);
                     }
                     else
                     {
@@ -1048,7 +1048,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                 vector<string> vt = TC_Common::sepstr<string>(mkCond.limit.value, ":");
                 if (vt.size() != 2)
                 {
-                    TLOGERROR("MKCacheImp::getMKVBatchEx: limit value error" << endl);
+                    TLOG_ERROR("MKCacheImp::getMKVBatchEx: limit value error" << endl);
                     return ET_PARAM_LIMIT_VALUE_ERR;;
                 }
                 stLimit.iIndex = TC_Common::strto<size_t>(TC_Common::trim(vt[0]));
@@ -1082,13 +1082,13 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                 }
                 else if (iRet == -2)
                 {
-                    TLOGERROR("MKCacheImp::getMKVBatchEx: error, select data count exceed the max, mainKey = " << mkCond.mainKey << endl);
+                    TLOG_ERROR("MKCacheImp::getMKVBatchEx: error, select data count exceed the max, mainKey = " << mkCond.mainKey << endl);
                     vtData.clear();
                     return ET_DATA_TOO_MUCH;
                 }
                 else
                 {
-                    TLOGERROR("MKCacheImp::getMKVBatchEx: error, mainKey = " << mkCond.mainKey << endl);
+                    TLOG_ERROR("MKCacheImp::getMKVBatchEx: error, mainKey = " << mkCond.mainKey << endl);
                     vtData.clear();
                     return ET_SYS_ERR;
                 }
@@ -1102,14 +1102,14 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
     }
     catch (std::exception& ex)
     {
-        TLOGERROR("MKCacheImp::getMKVBatchEx exception: " << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatchEx exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::getMKVBatchEx unkown exception, " << endl);
+        TLOG_ERROR("MKCacheImp::getMKVBatchEx unkown exception, " << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         vtData.clear();
         return ET_SYS_ERR;
@@ -1136,7 +1136,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
             {
                 if (isCreate)
                 {
-                    TLOGDEBUG("MKCacheImp::getMKVBatchEx: async select db, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                    TLOG_DEBUG("MKCacheImp::getMKVBatchEx: async select db, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                     try
                     {
                         DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
@@ -1146,11 +1146,11 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                     }
                     catch (std::exception& ex)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatchEx exception: " << ex.what() << ", mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatchEx exception: " << ex.what() << ", mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                     }
                     catch (...)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatchEx unkown exception, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatchEx unkown exception, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                     }
                     g_app.ppReport(PPReport::SRP_EX, 1);
                     if (pParam->setEnd())
@@ -1162,7 +1162,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                 }
                 else
                 {
-                    TLOGDEBUG("MKCacheImp::getMKVBatchEx: set into cbparam, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                    TLOG_DEBUG("MKCacheImp::getMKVBatchEx: set into cbparam, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                 }
             }
             else
@@ -1175,7 +1175,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                 {
                     if (iRet == -2)
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatchEx: select second error, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatchEx: select second error, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                         if (pParam->setEnd())
                         {
                             MKVBatchExRsp rsp;
@@ -1184,7 +1184,7 @@ tars::Int32 MKCacheImp::getMKVBatchEx(const DCache::MKVBatchExReq &req, DCache::
                     }
                     else
                     {
-                        TLOGERROR("MKCacheImp::getMKVBatchEx: select second error, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
+                        TLOG_ERROR("MKCacheImp::getMKVBatchEx: select second error, mainKey = " << vtNeedDBAccessMainKey[i].mk << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         if (pParam->setEnd())
                         {
@@ -1234,21 +1234,21 @@ tars::Int32 MKCacheImp::getRangeList(const DCache::GetRangeListReq &req, DCache:
     tars::Int64 iStart = req.startIndex;
     tars::Int64 iEnd = req.endIndex;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << " : moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " : moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << " : " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " : " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
         g_app.gstat()->tryHit(_hitIndex);
@@ -1262,7 +1262,7 @@ tars::Int32 MKCacheImp::getRangeList(const DCache::GetRangeListReq &req, DCache:
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << " : " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " : " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1283,13 +1283,13 @@ tars::Int32 MKCacheImp::getRangeList(const DCache::GetRangeListReq &req, DCache:
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1302,21 +1302,21 @@ tars::Int32 MKCacheImp::getList(const DCache::GetListReq &req, DCache::GetListRs
     const std::string & field = req.field;
     tars::Int64 iPos = req.index;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
         g_app.gstat()->tryHit(_hitIndex);
@@ -1330,7 +1330,7 @@ tars::Int32 MKCacheImp::getList(const DCache::GetListReq &req, DCache::GetListRs
 
         if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1352,13 +1352,13 @@ tars::Int32 MKCacheImp::getList(const DCache::GetListReq &req, DCache::GetListRs
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1370,21 +1370,21 @@ tars::Int32 MKCacheImp::getSet(const DCache::GetSetReq &req, DCache::BatchEntry 
     const std::string & mainKey = req.mainKey;
     const std::string & field = req.field;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
         g_app.gstat()->tryHit(_hitIndex);
@@ -1415,7 +1415,7 @@ tars::Int32 MKCacheImp::getSet(const DCache::GetSetReq &req, DCache::BatchEntry 
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1439,7 +1439,7 @@ tars::Int32 MKCacheImp::getSet(const DCache::GetSetReq &req, DCache::BatchEntry 
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1450,7 +1450,7 @@ tars::Int32 MKCacheImp::getSet(const DCache::GetSetReq &req, DCache::BatchEntry 
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1464,13 +1464,13 @@ tars::Int32 MKCacheImp::getSet(const DCache::GetSetReq &req, DCache::BatchEntry 
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1483,21 +1483,21 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
     const std::string & mainKey = req.mainKey;
     const vector<DCache::Condition> & vtCond = req.cond;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ":" << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ":" << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -1507,13 +1507,13 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
         int iRetCode;
         if (!checkValueCondition(vtCond, vtValueCond, bunique, iRetCode))
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
         if (!bunique)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return ET_PARAM_MISSING;
         }
 
@@ -1538,7 +1538,7 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
         if (iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA)
         {
             iRet = g_HashMap.checkMainKey(mainKey);
-            TLOGDEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
+            TLOG_DEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
             if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY)
             {
                 return ET_NO_DATA;
@@ -1556,7 +1556,7 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getScoreZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getScoreZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1582,7 +1582,7 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getScoreZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getScoreZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1595,7 +1595,7 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1605,17 +1605,17 @@ tars::Int32 MKCacheImp::getZSetScore(const DCache::GetZsetScoreReq &req, tars::D
             return ET_NO_DATA;
         }
 
-        TLOGDEBUG("[MKCacheImp::" << __FUNCTION__ << "] mk:" << mainKey << " score:" << score << endl);
+        TLOG_DEBUG("[MKCacheImp::" << __FUNCTION__ << "] mk:" << mainKey << " score:" << score << endl);
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1629,21 +1629,21 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
     const vector<DCache::Condition> & vtCond = req.cond;
     bool bOrder = req.positiveOrder;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
 
     try
     {
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -1653,13 +1653,13 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
         int iRetCode;
         if (!checkValueCondition(vtCond, vtValueCond, bunique, iRetCode))
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
 
         if (!bunique)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return ET_PARAM_MISSING;
         }
 
@@ -1684,7 +1684,7 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
         if (iRet == TC_Multi_HashMap_Malloc::RT_NO_DATA)
         {
             iRet = g_HashMap.checkMainKey(mainKey);
-            TLOGDEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
+            TLOG_DEBUG("[MKCacheImp::" << __FUNCTION__ << "] checkMainKey ret :" << iRet << endl);
             if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY)
             {
                 return ET_NO_DATA;
@@ -1702,7 +1702,7 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getRankZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getRankZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1728,7 +1728,7 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getRankZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getRankZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1741,7 +1741,7 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1751,17 +1751,17 @@ tars::Int32 MKCacheImp::getZSetPos(const DCache::GetZsetPosReq &req, tars::Int64
             return ET_NO_DATA;
         }
 
-        TLOGDEBUG("[MKCacheImp::" << __FUNCTION__ << "] mk:" << mainKey << " pos:" << pos << endl);
+        TLOG_DEBUG("[MKCacheImp::" << __FUNCTION__ << "] mk:" << mainKey << " pos:" << pos << endl);
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1776,7 +1776,7 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
     int64_t iEnd = req.end;
     bool bUp = req.positiveOrder;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
     g_app.gstat()->tryHit(_hitIndex);
 
     try
@@ -1784,14 +1784,14 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -1826,7 +1826,7 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1853,7 +1853,7 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSet second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSet second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1864,7 +1864,7 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -1885,13 +1885,13 @@ tars::Int32 MKCacheImp::getZSetByPos(const DCache::GetZsetByPosReq &req, DCache:
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -1905,7 +1905,7 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
     double iMin = req.minScore;
     double iMax = req.maxScore;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << mainKey << endl);
     g_app.gstat()->tryHit(_hitIndex);
 
     try
@@ -1913,14 +1913,14 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
         if (req.moduleName != _moduleName)
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
             return ET_MODULE_NAME_INVALID;
         }
         //检查key是否是在自己服务范围内
         if (!g_route_table.isMySelf(mainKey))
         {
             //返回模块错误
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " is not in self area" << endl);
             return ET_KEY_AREA_ERR;
         }
 
@@ -1951,7 +1951,7 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSetByScore second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSetByScore second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1976,7 +1976,7 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
 
                     if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                     {
-                        TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSetByScore second error! " << mainKey << endl);
+                        TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] getZSetByScore second error! " << mainKey << endl);
                         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                         return ET_SYS_ERR;
                     }
@@ -1987,7 +1987,7 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
         }
         else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << mainKey << " failed, ret = " << iRet << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -2007,13 +2007,13 @@ tars::Int32 MKCacheImp::getZSetByScore(const DCache::GetZsetByScoreReq &req, DCa
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << ", mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception, mkey = " << mainKey << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2027,11 +2027,11 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
     const vector<Condition> &vtCond = req.cond;
     vector<MainKeyValue> &vtData = rsp.rspData;
 
-    TLOGDEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << vtMainKey.size() << "|" << TC_Common::tostr(vtMainKey.begin(), vtMainKey.end(), ";") << "|" << field << "|" << FormatLog::tostr(vtCond) << endl);
+    TLOG_DEBUG("MKCacheImp::" << __FUNCTION__ << " recv : " << vtMainKey.size() << "|" << TC_Common::tostr(vtMainKey.begin(), vtMainKey.end(), ";") << "|" << field << "|" << FormatLog::tostr(vtCond) << endl);
 
     if (req.moduleName != _moduleName)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": moduleName error" << endl);
         return ET_MODULE_NAME_INVALID;
     }
 
@@ -2061,7 +2061,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
         int iRetCode;
         if (!checkValueCondition(vtCond, vtValueCond, stLimit, isLimit, vtScoreCond, iRetCode))
         {
-            TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
+            TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": param error" << endl);
             return iRetCode;
         }
         size_t MainkeyCount = vtMainKey.size();
@@ -2070,7 +2070,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
         {
             if (!g_route_table.isMySelf(vtMainKey[i]))
             {
-                TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << vtMainKey[i] << " is not in self area" << endl);
+                TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << vtMainKey[i] << " is not in self area" << endl);
                 vtData.clear();
                 return ET_KEY_AREA_ERR;
             }
@@ -2127,7 +2127,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
 
                         if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                         {
-                            TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] selectZSetBatch second error! " << vtMainKey[i] << endl);
+                            TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] selectZSetBatch second error! " << vtMainKey[i] << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             vtData.push_back(keyResult);
                             keyResult.ret = ET_SYS_ERR;
@@ -2168,7 +2168,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
 
                         if (iRet == TC_Multi_HashMap_Malloc::RT_PART_DATA)
                         {
-                            TLOGERROR("[MKCacheImp::" << __FUNCTION__ << "] selectZSetBatch second error! " << vtMainKey[i] << endl);
+                            TLOG_ERROR("[MKCacheImp::" << __FUNCTION__ << "] selectZSetBatch second error! " << vtMainKey[i] << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             keyResult.ret = ET_SYS_ERR;
                             vtData.push_back(keyResult);
@@ -2185,7 +2185,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
             }
             else if (iRet != TC_Multi_HashMap_Malloc::RT_OK && iRet != TC_Multi_HashMap_Malloc::RT_ONLY_KEY && iRet != TC_Multi_HashMap_Malloc::RT_NO_DATA && iRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
             {
-                TLOGERROR("MKCacheImp::" << __FUNCTION__ << ": " << vtMainKey[i] << " failed, ret = " << iRet << endl);
+                TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << ": " << vtMainKey[i] << " failed, ret = " << iRet << endl);
                 g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                 keyResult.ret = ET_SYS_ERR;
                 vtData.push_back(keyResult);
@@ -2201,7 +2201,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
                     iJudgeCount++;
                     TarsDecode vDecode;
                     vDecode.setBuffer((*it)._value);
-                    TLOGDEBUG("value:" << it->_value << endl);
+                    TLOG_DEBUG("value:" << it->_value << endl);
                     if (judge(vDecode, vtValueCond))
                     {
                         if (judgeScore((*it)._score, vtScoreCond))
@@ -2239,7 +2239,7 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
                         iJudgeCount++;
                         TarsDecode vDecode;
                         vDecode.setBuffer((*it)._value);
-                        TLOGDEBUG("value:" << it->_value << endl);
+                        TLOG_DEBUG("value:" << it->_value << endl);
                         if (judge(vDecode, vtValueCond))
                         {
                             if (judgeScore((*it)._score, vtScoreCond))
@@ -2265,13 +2265,13 @@ tars::Int32 MKCacheImp::getZSetBatch(const DCache::GetZSetBatchReq &req, DCache:
     }
     catch (const std::exception &ex)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " exception: " << ex.what() << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
     catch (...)
     {
-        TLOGERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception" << endl);
+        TLOG_ERROR("MKCacheImp::" << __FUNCTION__ << " unkown exception" << endl);
         g_app.ppReport(PPReport::SRP_EX, 1);
         return ET_SYS_ERR;
     }
@@ -2313,7 +2313,7 @@ int MKCacheImp::procSelectUK(tars::TarsCurrentPtr current, const vector<string> 
                 && iCheckRet != TC_Multi_HashMap_Malloc::RT_NO_DATA
                 && iCheckRet != TC_Multi_HashMap_Malloc::RT_DATA_DEL)
         {
-            TLOGERROR("MKCacheImp::selectUKCache: checkMainKey error, ret = " << iCheckRet << ",mainKey = " << mk << endl);
+            TLOG_ERROR("MKCacheImp::selectUKCache: checkMainKey error, ret = " << iCheckRet << ",mainKey = " << mk << endl);
             return ET_SYS_ERR;
         }
         else if (iCheckRet == TC_Multi_HashMap_Malloc::RT_PART_DATA || iCheckRet == TC_Multi_HashMap_Malloc::RT_NO_DATA)
@@ -2346,7 +2346,7 @@ int MKCacheImp::procSelectUK(tars::TarsCurrentPtr current, const vector<string> 
                         }
                         if (iRet2 != 0)
                         {
-                            TLOGERROR("MKCacheImp::selectUKCache: second error, mainKey = " << mk << endl);
+                            TLOG_ERROR("MKCacheImp::selectUKCache: second error, mainKey = " << mk << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return ET_SYS_ERR;
                         }
@@ -2356,7 +2356,7 @@ int MKCacheImp::procSelectUK(tars::TarsCurrentPtr current, const vector<string> 
         }
         else
         {
-            TLOGERROR("MKCacheImp::selectUKCache: error, mainKey = " << mk << endl);
+            TLOG_ERROR("MKCacheImp::selectUKCache: error, mainKey = " << mk << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -2387,12 +2387,12 @@ int MKCacheImp::procSelectMK(tars::TarsCurrentPtr current, const vector<string> 
                         }
                         else if (iRet == -2)
                         {
-                            TLOGERROR("MKCacheImp::selectMKCache: error, select data count exceed the max, mainKey = " << mk << endl);
+                            TLOG_ERROR("MKCacheImp::selectMKCache: error, select data count exceed the max, mainKey = " << mk << endl);
                             return ET_DATA_TOO_MUCH;
                         }
                         else if (iRet2 != 0)
                         {
-                            TLOGERROR("MKCacheImp::selectMKCache: second error, mainKey = " << mk << endl);
+                            TLOG_ERROR("MKCacheImp::selectMKCache: second error, mainKey = " << mk << endl);
                             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
                             return ET_SYS_ERR;
                         }
@@ -2402,12 +2402,12 @@ int MKCacheImp::procSelectMK(tars::TarsCurrentPtr current, const vector<string> 
         }
         else if (iRet == -2)
         {
-            TLOGERROR("MKCacheImp::selectMKCache: error, select data count exceed the max, mainKey = " << mk << endl);
+            TLOG_ERROR("MKCacheImp::selectMKCache: error, select data count exceed the max, mainKey = " << mk << endl);
             return ET_DATA_TOO_MUCH;
         }
         else
         {
-            TLOGERROR("MKCacheImp::selectMKCache: error, mainKey = " << mk << endl);
+            TLOG_ERROR("MKCacheImp::selectMKCache: error, mainKey = " << mk << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return ET_SYS_ERR;
         }
@@ -2518,7 +2518,7 @@ int MKCacheImp::selectUKCache(tars::TarsCurrentPtr current, const vector<string>
     }
     else
     {
-        TLOGERROR("MKCacheImp::selectUKCache: g_HashMap.get(mk, uk, v) error, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::selectUKCache: g_HashMap.get(mk, uk, v) error, mainKey = " << mk << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return -1;
     }
@@ -2540,7 +2540,7 @@ int MKCacheImp::selectMKCache(tars::TarsCurrentPtr current, const vector<string>
         if (iDataCount > _mkeyMaxSelectCount)
         {
             FDLOG("MainKeyDataCount") << "[selectMKCache] mainKey=" << mk << " dataCount=" << iDataCount << endl;
-            TLOGERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, iDataCount) error, mainKey = " << mk << " iDataCount = " << iDataCount << endl);
+            TLOG_ERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, iDataCount) error, mainKey = " << mk << " iDataCount = " << iDataCount << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return -2;
         }
@@ -2561,7 +2561,7 @@ int MKCacheImp::selectMKCache(tars::TarsCurrentPtr current, const vector<string>
         iRet = g_HashMap.get(mk, vtValue, iCount, iStart);
     }
 
-    TLOGDEBUG("get value size = " << vtValue.size() << ", ret = " << iRet << endl);
+    TLOG_DEBUG("get value size = " << vtValue.size() << ", ret = " << iRet << endl);
 
     if (iRet == TC_Multi_HashMap_Malloc::RT_OK)
     {
@@ -2570,12 +2570,12 @@ int MKCacheImp::selectMKCache(tars::TarsCurrentPtr current, const vector<string>
         if (bGetMKCout)
         {
             iMKRecord = g_HashMap.count(mk);
-            TLOGDEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+            TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
         }
         else
         {
             iMKRecord = vtData.size();
-            TLOGDEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+            TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
         }
     }
     else if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY)
@@ -2609,12 +2609,12 @@ int MKCacheImp::selectMKCache(tars::TarsCurrentPtr current, const vector<string>
             if (bGetMKCout)
             {
                 iMKRecord = g_HashMap.count(mk);
-                TLOGDEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+                TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
             }
             else
             {
                 iMKRecord = vtData.size();
-                TLOGDEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+                TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtUKCond.size()=" << vtUKCond.size() << "|vtValueCond.size()=" << vtValueCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
             }
         }
     }
@@ -2626,7 +2626,7 @@ int MKCacheImp::selectMKCache(tars::TarsCurrentPtr current, const vector<string>
     }
     else
     {
-        TLOGERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, vtValue) error, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, vtValue) error, mainKey = " << mk << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return -1;
     }
@@ -2648,7 +2648,7 @@ int MKCacheImp::selectMKCache(const vector<string> &vtField, const string &mk, c
         if (iDataCount > _mkeyMaxSelectCount)
         {
             FDLOG("MainKeyDataCount") << "[selectMKCache] mainKey=" << mk << " dataCount=" << iDataCount << endl;
-            TLOGERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, iDataCount) error, mainKey = " << mk << " iDataCount = " << iDataCount << endl);
+            TLOG_ERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, iDataCount) error, mainKey = " << mk << " iDataCount = " << iDataCount << endl);
             g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
             return -2;
         }
@@ -2669,7 +2669,7 @@ int MKCacheImp::selectMKCache(const vector<string> &vtField, const string &mk, c
         iRet = g_HashMap.get(mk, vtValue, iCount, iStart);
     }
 
-    TLOGDEBUG("get value size = " << vtValue.size() << endl);
+    TLOG_DEBUG("get value size = " << vtValue.size() << endl);
 
     if (iRet == TC_Multi_HashMap_Malloc::RT_OK)
     {
@@ -2678,12 +2678,12 @@ int MKCacheImp::selectMKCache(const vector<string> &vtField, const string &mk, c
         if (bGetMKCout)
         {
             iMKRecord = g_HashMap.count(mk);
-            TLOGDEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+            TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
         }
         else
         {
             iMKRecord = vtData.size();
-            TLOGDEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+            TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
         }
     }
     else if (iRet == TC_Multi_HashMap_Malloc::RT_ONLY_KEY)
@@ -2717,12 +2717,12 @@ int MKCacheImp::selectMKCache(const vector<string> &vtField, const string &mk, c
             if (bGetMKCout)
             {
                 iMKRecord = g_HashMap.count(mk);
-                TLOGDEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+                TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << vtData.size() << " result|g_HashMap.count(mk)=" << iMKRecord << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
             }
             else
             {
                 iMKRecord = vtData.size();
-                TLOGDEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
+                TLOG_DEBUG("MKCacheImp::selectMKCache. Get " << iMKRecord << " result|g_HashMap.count(mk)=" << g_HashMap.count(mk) << "|mk=" << mk << "|vtCond.size()=" << vtCond.size() << "|stLimit.iCount=" << stLimit.iCount << endl);
             }
         }
     }
@@ -2734,7 +2734,7 @@ int MKCacheImp::selectMKCache(const vector<string> &vtField, const string &mk, c
     }
     else
     {
-        TLOGERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, vtValue) error, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::selectMKCache: g_HashMap.get(mk, vtValue) error, mainKey = " << mk << endl);
         g_app.ppReport(PPReport::SRP_CACHE_ERR, 1);
         return -1;
     }
@@ -2766,14 +2766,14 @@ int MKCacheImp::asyncSelect(tars::TarsCurrentPtr current, const vector<string> &
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncSelect: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncSelect: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncSelect: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncSelect: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -2781,13 +2781,13 @@ int MKCacheImp::asyncSelect(tars::TarsCurrentPtr current, const vector<string> &
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncSelect: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncSelect: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncSelect: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncSelect: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;
@@ -2810,14 +2810,14 @@ int MKCacheImp::asyncGetSet(tars::TarsCurrentPtr current, const vector<string> &
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncGetSet: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetSet: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::SET_TYPE);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncGetSet: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetSet: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -2825,13 +2825,13 @@ int MKCacheImp::asyncGetSet(tars::TarsCurrentPtr current, const vector<string> &
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetSet: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetSet: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;
@@ -2854,14 +2854,14 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -2869,13 +2869,13 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;
@@ -2899,14 +2899,14 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -2914,13 +2914,13 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;
@@ -2946,14 +2946,14 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSet: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -2961,13 +2961,13 @@ int MKCacheImp::asyncGetZSet(tars::TarsCurrentPtr current, const string &mk, con
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSet: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;
@@ -2992,14 +2992,14 @@ int MKCacheImp::asyncGetZSetByScore(tars::TarsCurrentPtr current, const string &
             current->setResponse(false);
             if (isCreate)
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSetByScore: async select db, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSetByScore: async select db, mainKey = " << mk << endl);
                 DbAccessPrxCallbackPtr cb = new MKDbAccessCallback(pCBParam, _binlogFile, _recordBinLog, _recordKeyBinLog, _saveOnlyKey, _insertAtHead, _updateInOrder, _orderItem, _orderByDesc, _mkeyMaxSelectCount, TC_Multi_HashMap_Malloc::MainKey::ZSET_TYPE);
                 //异步调用DBAccess
                 asyncDbSelect(mk, cb);
             }
             else
             {
-                TLOGDEBUG("MKCacheImp::asyncGetZSetByScore: set into cbparam, mainKey = " << mk << endl);
+                TLOG_DEBUG("MKCacheImp::asyncGetZSetByScore: set into cbparam, mainKey = " << mk << endl);
             }
             return 0;
         }
@@ -3007,13 +3007,13 @@ int MKCacheImp::asyncGetZSetByScore(tars::TarsCurrentPtr current, const string &
     catch (std::exception& ex)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSetByScore: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSetByScore: async select db exception, mainKey = " << mk << "," << ex.what() << endl);
         throw;
     }
     catch (...)
     {
         g_cbQueue.erase(mk);
-        TLOGERROR("MKCacheImp::asyncGetZSetByScore: async select db unkown exception, mainKey = " << mk << endl);
+        TLOG_ERROR("MKCacheImp::asyncGetZSetByScore: async select db unkown exception, mainKey = " << mk << endl);
         throw;
     }
     return 1;

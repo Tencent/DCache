@@ -287,7 +287,7 @@ namespace DCache
             map<int, GroupInfo>::const_iterator it = lrInfTmp->groupMap.find(itRouter->first);
             if (it == lrInfTmp->groupMap.end())
             {
-                TLOGERROR("[UnpackTable::getAllIdcServer] can not find group id:" << itRouter->first << endl);
+                TLOG_ERROR("[UnpackTable::getAllIdcServer] can not find group id:" << itRouter->first << endl);
                 return -1;
             }
             map<string, vector<string> >::const_iterator it_idc = it->second.idcList.find(sIdc);
@@ -338,7 +338,7 @@ namespace DCache
 
         if (servers.size() == 0)
         {
-            TLOGERROR("[UnpackTable::getAllIdcServer] can not find groups!" << endl);
+            TLOG_ERROR("[UnpackTable::getAllIdcServer] can not find groups!" << endl);
             return -1;
         }
 

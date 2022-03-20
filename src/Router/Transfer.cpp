@@ -36,7 +36,7 @@ void Transfer::init(std::shared_ptr<DbHandle> dbHandle)
 
 void Transfer::reloadConf()
 {
-    TLOGDEBUG("Transfer reload config ..." << endl);
+    TLOG_DEBUG("Transfer reload config ..." << endl);
     init(_dbHandle);
 }
 
@@ -212,7 +212,7 @@ int Transfer::notifyTransDestServer(const TransferInfo &transferInfo)
         ret = e_ModuleName_Not_Found;
         break;
     }
-    TLOGDEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
+    TLOG_DEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
 
     string addr;
     // 获取迁移目的服务器的RouterClent对象名
@@ -291,7 +291,7 @@ int Transfer::notifyTransSrcServer(const TransferInfo &transferInfo)
         break;
     }
 
-    TLOGDEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
+    TLOG_DEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
 
     string addr;
     // 获取迁移源服务器的RouterClent对象名
@@ -480,7 +480,7 @@ int Transfer::modifyRouterAfterTrans(TransferInfo *transInfoComplete)
             DAY_ERROR << "Transfer::modifyMemRecordAfterTrans deleteTransSrcServer fail: "
                       << transInfoComplete->fromPageNo << ", " << transInfoComplete->toPageNo
                       << endl;
-            TLOGERROR("[Transfer::modifyMemRecordAfterTrans]" << endl);
+            TLOG_ERROR("[Transfer::modifyMemRecordAfterTrans]" << endl);
             sleep(_retryTranInterval);
         }
         else
@@ -1540,7 +1540,7 @@ int Transfer::doTransfer(const TransferInfo &transferInfoIn, string &info)
             rc = reloadRouter();
             if (rc != e_Succ)
             {
-                TLOGDEBUG("reloadRouter fail:other transfers is running" << endl);
+                TLOG_DEBUG("reloadRouter fail:other transfers is running" << endl);
             }  //为了防止多模块同时迁移 导致的迁移失败 取消检查
         }
     }
@@ -1619,7 +1619,7 @@ int Transfer::deleteTransSrcServer(const TransferInfo &transferInfo)
         ret = e_ModuleName_Not_Found;
         break;
     }
-    TLOGDEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
+    TLOG_DEBUG("version: " << version << ", size: " << transferingInfoList.size() << endl);
 
     string addr;
     // 获取迁移源服务器的RouterClent对象名
@@ -1835,7 +1835,7 @@ void TransferDispatcher::dispatcherTask(int maxThreadNum)
                 --_idleThreadNum;
                 ++_transferingTasks[it->first];
                 --remaningThreadNum;
-                TLOGDEBUG("Transfer group name : " << it->first << " | processing thread num: "
+                TLOG_DEBUG("Transfer group name : " << it->first << " | processing thread num: "
                                                    << _transferingTasks[it->first]
                                                    << " | idle thread num : " << _idleThreadNum
                                                    << '\n');
@@ -1881,17 +1881,17 @@ void TransferDispatcher::clearTasks()
 
 void TransferDispatcher::terminate()
 {
-    TLOGDEBUG("waitForAllDone..." << endl);
+    TLOG_DEBUG("waitForAllDone..." << endl);
     //停止线程
     _tpool.stop();
     bool b = _tpool.waitForAllDone(3000);  // 先等待三秒
-    TLOGDEBUG("waitForAllDone..." << b << ":" << _tpool.getJobNum() << endl);
+    TLOG_DEBUG("waitForAllDone..." << b << ":" << _tpool.getJobNum() << endl);
 
     if (!b)  // 没停止则再永久等待
     {
-        TLOGDEBUG("waitForAllDone again, but forever..." << endl);
+        TLOG_DEBUG("waitForAllDone again, but forever..." << endl);
         b = _tpool.waitForAllDone(-1);
-        TLOGDEBUG("waitForAllDone again..." << b << ":" << _tpool.getJobNum() << endl);
+        TLOG_DEBUG("waitForAllDone again..." << b << ":" << _tpool.getJobNum() << endl);
     }
 }
 

@@ -30,7 +30,7 @@ void CacheInfoManager::reload()
     {
         TC_Mysql::MysqlData res = _mysqlRelation.queryRecord(sSql);
         
-        TLOGDEBUG("CacheInfoManager::reload sql:" << sSql << "|res.size:" << res.size() << endl);
+        TLOG_DEBUG("CacheInfoManager::reload sql:" << sSql << "|res.size:" << res.size() << endl);
 
         int iUpdateIndex = _moduleInfoIndex == 1 ? 0 : 1;
         _moduleInfos[iUpdateIndex].clear();
@@ -53,11 +53,11 @@ void CacheInfoManager::reload()
     }
     catch(TC_Mysql_Exception & ex)
     {
-        TLOGERROR("CacheInfoManager::reload exception:" << ex.what() << endl);
+        TLOG_ERROR("CacheInfoManager::reload exception:" << ex.what() << endl);
     }
     catch(...)
     {
-        TLOGERROR("CacheInfoManager::reload unknown exception." << endl);
+        TLOG_ERROR("CacheInfoManager::reload unknown exception." << endl);
     }
 }
 
