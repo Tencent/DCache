@@ -18,7 +18,7 @@ cloud:
   protocols: []
   assets: 
     - docs
-    - docs_en
+    - docs-en
 app: DCache
 server: DCacheOptServer
 template: tars.cpp
