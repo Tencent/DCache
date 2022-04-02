@@ -1,0 +1,27 @@
+name: build-master
+
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    container: tarscloud/base-compiler
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          registry: docker.tarsyun.com
+          username: ${{ secrets.name }}
+          password: ${{ secrets.pass }}
+      - name: make
+        run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
+      - name: build docker
+        run: |
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config-values.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt-values.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property-values.yaml latest true
