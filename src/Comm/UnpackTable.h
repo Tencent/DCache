@@ -122,7 +122,7 @@ namespace DCache
             /*获取当前页正在迁移的目的服务器ID*/
             inline uint32_t getTransIndex() const;
 
-            uint32_t value;	// 用于该页路由信息
+            uint32_t value = 0;	// 用于该页路由信息
         };
 #pragma pack()
 
@@ -131,7 +131,7 @@ namespace DCache
             LocalRouterInfo(size_t Num)
             {
                 entry = new Entry[Num];
-                // memset(entry, 0, sizeof(Entry) * Num);
+//                memset(entry, 0, sizeof(Entry) * Num);
             }
             ~LocalRouterInfo() { delete[] entry; }
 
