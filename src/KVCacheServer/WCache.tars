@@ -11,7 +11,7 @@
 * either express or implied. See the License for the specific language governing permissions
 * and limitations under the License.
 */
-#include "../TarsComm/CacheShare.tars"
+#include "../TarsComm/ProxyShare.tars"
 module DCache
 {
 interface WCache
