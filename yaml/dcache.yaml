@@ -1,0 +1,20 @@
+product:
+  group: dcache
+  name: distributed-cache-system
+  logo: logo/logo.png
+  version: latest
+  readme: README-EN.md
+  readme_cn: README.md
+  description: DCache is a distributed cache based on tars.
+  description_cn: DCache是一套基于tars的分布式缓存
+  changelist: Changelist.md
+  collaborators:
+    - ruanshudong@qq.com
+  repository: https://github.com/Tencent/DCache.git
+  assets:
+    - docs
+    - docs-en
+  servers:
+    - dcache/DCacheOptServer
+    - dcache/PropertyServer
+    - dcache/ConfigServer
