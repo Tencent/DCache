@@ -300,7 +300,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             for (size_t i = 0; i < cacheData.size(); ++i)
             {
                 //调用tarsnode下线服务
-                Tool::UninstallCacheServer(mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, cacheData[i]["server_name"], _cacheBakPath);
+                Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, cacheData[i]["server_name"], _cacheBakPath);
                 iPercent += iUnit;
                 if (i == (cacheData.size() - 1))
                 {
@@ -327,7 +327,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             }
 
             //调用tarsnode下线服务
-            Tool::UninstallCacheServer(mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, uninstallInfo.serverName, _cacheBakPath);
+            Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, uninstallInfo.serverName, _cacheBakPath);
 
             _queueManager->setUninstallRecord(request.requestId, 100, UNINSTALL_FINISH);
             reloadRouterConfByModuleFromDB(moduleName, routerObj);

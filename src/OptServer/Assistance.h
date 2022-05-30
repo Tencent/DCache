@@ -42,7 +42,7 @@ class Tool
 {
 public:
 
-    static int getNodeObj(TC_Mysql &mysqlTarsDb, const string & sIp, string & sNodeObj);
+//    static int getNodeObj(TC_Mysql &mysqlTarsDb, const string & sIp, string & sNodeObj);
 
     static void parseServerName(const string& sFullServerName, string &application, string &servername);
 
@@ -65,9 +65,9 @@ public:
     //删除dbaccess配置信息
     static int cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessName);
 
-    static void UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode=true);
+    static void UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode=true);
 
-    static int UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError);
+    static int UninstallTarsServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError);
 
 };
 

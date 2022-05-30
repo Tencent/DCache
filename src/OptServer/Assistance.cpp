@@ -36,38 +36,6 @@ void Assistance::getIPAndPort(const string& endPoint, string& ip, string& port)
     port = endPoint.substr(endPoint.find("-p",0)+3);
 }
 
-int Tool::getNodeObj(TC_Mysql &mysqlTarsDb, const string & sIp, string & sNodeObj)
-{
-    time_t now = time(NULL);
-
-    try
-    {
-        string sQuerySql = "select node_obj, UNIX_TIMESTAMP(last_heartbeat) as time from t_node_info where node_name='" + mysqlTarsDb.escapeString(sIp) + "'";
-        TC_Mysql::MysqlData nodeData;
-        nodeData = mysqlTarsDb.queryRecord(sQuerySql);
-        if (nodeData.size() == 1)
-        {
-            if ((TC_Common::strto<int>(nodeData[0]["time"]) + 60*5) > now)
-            {
-                sNodeObj = nodeData[0]["node_obj"];
-                return 0;
-            }
-            else
-            {
-                TLOG_ERROR(FUN_LOG << "node's last_heartbeat is old:" << nodeData[0]["time"] << ", now is:"<< now << "|node name:" << mysqlTarsDb.escapeString(sIp) << endl);
-                return -1;
-            }
-        }
-
-    }
-    catch (exception &ex)
-    {
-        TLOG_ERROR(FUN_LOG << "query from t_node_info catch exception:" << ex.what() << endl);
-    }
-
-    return -1;
-}
-
 void Tool::parseServerName(const string & sFullServerName, string & application, string & servername)
 {
     string::size_type pos = sFullServerName.find_first_of(".");
@@ -252,7 +220,7 @@ int Tool::cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessNam
     return 0;
 }
 
-void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode)
+void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode)
 {
     try
     {
@@ -289,17 +257,17 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
                 }
 
                 //备份共享内存
-                string sNodeObj("");
-                if (-1 == getNodeObj(mysqlTarsDb, cacheData[0]["ip"], sNodeObj))
-                {
-                    TLOG_ERROR(FUN_LOG << "failed to get node obj|cache server name:" + sFullCacheServer + "|ip:" + cacheData[0]["ip"] << endl);
-                }
-                else
-                {
-                    NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
+//                string sNodeObj("");
+//                if (-1 == getNodeObj(mysqlTarsDb, cacheData[0]["ip"], sNodeObj))
+//                {
+//                    TLOG_ERROR(FUN_LOG << "failed to get node obj|cache server name:" + sFullCacheServer + "|ip:" + cacheData[0]["ip"] << endl);
+//                }
+//                else
+//                {
+//                    NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
                     try
                     {
-                        int iRet = nodePrx->delCache(sFullCacheServer, sCacheBakPath, sKey, sError);
+                        int iRet = adminPrx->delCache(cacheData[0]["ip"], sFullCacheServer, sCacheBakPath, sKey, sError);
                         if (iRet == -1)
                         {
                             throw runtime_error(sError);
@@ -314,7 +282,7 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
                             throw runtime_error(e.what());
                         }
                     }
-                }
+//                }
             }
 
             sQuerySql = "select * from t_config_table where server_name='" + sFullCacheServer + "' and level = 2";
@@ -333,7 +301,7 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
 
             delRelation4CacheServer(mysqlRelationDb,sFullCacheServer);
 
-            UninstallTarsServer(mysqlTarsDb, sFullCacheServer, cacheData[0]["ip"], sError);
+            UninstallTarsServer(adminPrx, mysqlTarsDb, sFullCacheServer, cacheData[0]["ip"], sError);
 
         }
         else
@@ -348,7 +316,7 @@ void Tool::UninstallCacheServer(TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, 
     }
 }
 
-int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError)
+int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError)
 {
     try
     {
@@ -373,14 +341,14 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
         //删路径
         try
         {
-            string sNodeObj("");
-            if (-1 == getNodeObj(mysqlTarsDb, sIp, sNodeObj))
-            {
-                sError = "failed to get node obj|server name:" + sTarsServerName + "|ip:" + sIp;
-                TLOG_ERROR(FUN_LOG << sError << endl);
-            }
-            else
-            {
+//            string sNodeObj("");
+//            if (-1 == getNodeObj(mysqlTarsDb, sIp, sNodeObj))
+//            {
+//                sError = "failed to get node obj|server name:" + sTarsServerName + "|ip:" + sIp;
+//                TLOG_ERROR(FUN_LOG << sError << endl);
+//            }
+//            else
+//            {
                 TC_Config tcConf;
                 tcConf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
 
@@ -389,12 +357,12 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
                 string sSql = "update t_server_conf set registry_timestamp='" + TC_Common::tm2str(TNOW) + "' where application='" + mysqlTarsDb.escapeString(sApplication) + "' and server_name='" + mysqlTarsDb.escapeString(sServerName) + "'";
                 mysqlTarsDb.execute(sSql);
 
-                NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
-                nodePrx->tars_timeout(unstallTimeOut * 1000);
+//                NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
+//                nodePrx->tars_timeout(unstallTimeOut * 1000);
                 int iRet = 0;
                 try
                 {
-                    iRet = nodePrx->destroyServer(sApplication, sServerName, sError);
+                    iRet = adminPrx->destroyServer(sApplication, sServerName, sIp, sError);
                 }
                 catch(exception &ex)
                 {
@@ -423,7 +391,7 @@ int Tool::UninstallTarsServer(TC_Mysql &mysqlTarsDb, const string &sTarsServerNa
                 {
                     return -1;
                 }
-            }
+//            }
 
             //删除tars服务本身的记录
             string sWhere = "where application='" + sApplication + "' and server_name='" + sServerName + "' and node_name='" + sIp + "'";
