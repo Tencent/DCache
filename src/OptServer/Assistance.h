@@ -46,7 +46,7 @@ public:
 
     static void parseServerName(const string& sFullServerName, string &application, string &servername);
 
-    static bool isInactive(TC_Mysql &mysqlTarsDb, const string &application, const string &servername, const string &host, string &sError);
+    static bool isInactive(AdminRegPrx &adminPrx, const string &application, const string &servername, const string &host, string &sError);
 
     static void delRouteInfo4CacheServer(TC_Mysql &mysqlRouterDb, const string &CacheServer);
 
@@ -65,9 +65,9 @@ public:
     //删除dbaccess配置信息
     static int cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessName);
 
-    static void UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode=true);
+    static void UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode=true);
 
-    static int UninstallTarsServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError);
+    static int UninstallTarsServer(AdminRegPrx &adminPrx, const string &sTarsServerName, const  string &sIp, std::string &sError);
 
 };
 

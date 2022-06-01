@@ -403,7 +403,7 @@ private:
 
     TC_Config _tcConf;
 
-    TC_Mysql _mysqlTarsDb;
+//    TC_Mysql _mysqlTarsDb;
 
     CommunicatorPtr _communicator;
     AdminRegPrx     _adminproxy;

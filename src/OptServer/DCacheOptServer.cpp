@@ -28,10 +28,10 @@ void DCacheOptServer::initialize()
 
     TC_Config conf;
     conf.parseFile(sConf);
-
-    map<string, string> tarsDBInfo = conf.getDomainMap("/Main/DB/tars");
-    TC_DBConf tarsDbConf;
-    tarsDbConf.loadFromMap(tarsDBInfo);
+//
+//    map<string, string> tarsDBInfo = conf.getDomainMap("/Main/DB/tars");
+//    TC_DBConf tarsDbConf;
+//    tarsDbConf.loadFromMap(tarsDBInfo);
 
     map<string, string> relationDBInfo = conf.getDomainMap("/Main/DB/relation");
     TC_DBConf relationDbConf;
@@ -47,7 +47,7 @@ void DCacheOptServer::initialize()
     // 初始化 uninstall 线程
     int uninstallThreadCount = TC_Common::strto<int>(conf.get("/Main/Uninstall<ThreadCount>", "2"));
     _uninstallRequestQueueManager.start(uninstallThreadCount);
-    _uninstallRequestQueueManager.setTarsDbConf(tarsDbConf);
+//    _uninstallRequestQueueManager.setTarsDbConf(tarsDbConf);
     _uninstallRequestQueueManager.setRelationDbMysql(relationDbConf);
     _uninstallRequestQueueManager.setCacheBackupPath(conf.get("/Main/Uninstall<BakPath>", "/usr/local/app"));
 

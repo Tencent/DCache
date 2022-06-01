@@ -75,7 +75,7 @@ public:
     void start(int iThreadNum);
 
     //设置db配置
-    void setTarsDbConf(TC_DBConf &dbConf);
+//    void setTarsDbConf(TC_DBConf &dbConf);
 
     void setRelationDbMysql(TC_DBConf &dbConf);
 
@@ -146,7 +146,7 @@ public:
 
     void terminate();
 
-    void setTarsDbMysql(TC_DBConf &dbConf);
+//    void setTarsDbMysql(TC_DBConf &dbConf);
 
     void setRelationDbMysql(TC_DBConf &dbConf);
 
@@ -166,7 +166,7 @@ private:
 
     bool _shutDown;
 
-    TC_Mysql _mysqlTarsDb;
+//    TC_Mysql _mysqlTarsDb;
 
     TC_Mysql _mysqlRelationDb;
 

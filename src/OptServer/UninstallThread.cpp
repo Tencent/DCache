@@ -32,14 +32,14 @@ void UninstallRequestQueueManager::start(int iThreadNum)
     }
 }
 
-void UninstallRequestQueueManager::setTarsDbConf(TC_DBConf &dbConf)
-{
-    _dbConf = dbConf;
-    for (size_t i = 0; i < _uninstallRunners.size(); ++i)
-    {
-        _uninstallRunners[i]->setTarsDbMysql(_dbConf);
-    }
-}
+//void UninstallRequestQueueManager::setTarsDbConf(TC_DBConf &dbConf)
+//{
+//    _dbConf = dbConf;
+//    for (size_t i = 0; i < _uninstallRunners.size(); ++i)
+//    {
+//        _uninstallRunners[i]->setTarsDbMysql(_dbConf);
+//    }
+//}
 
 void UninstallRequestQueueManager::setRelationDbMysql(TC_DBConf &dbConf)
 {
@@ -225,11 +225,11 @@ void UninstallThread::terminate()
     _shutDown = true;
 }
 
-void UninstallThread::setTarsDbMysql(TC_DBConf &dbConf)
-{
-    TLOG_DEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
-    _mysqlTarsDb.init(dbConf);
-}
+//void UninstallThread::setTarsDbMysql(TC_DBConf &dbConf)
+//{
+//    TLOG_DEBUG(FUN_LOG << "db host:" <<  dbConf._host << "|db user:" << dbConf._user << "|db password:"  << dbConf._password << endl);
+//    _mysqlTarsDb.init(dbConf);
+//}
 
 void UninstallThread::setRelationDbMysql(TC_DBConf &dbConf)
 {
@@ -300,7 +300,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             for (size_t i = 0; i < cacheData.size(); ++i)
             {
                 //调用tarsnode下线服务
-                Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, cacheData[i]["server_name"], _cacheBakPath);
+                Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlRelationDb, cacheData[i]["server_name"], _cacheBakPath);
                 iPercent += iUnit;
                 if (i == (cacheData.size() - 1))
                 {
@@ -327,7 +327,7 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             }
 
             //调用tarsnode下线服务
-            Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlTarsDb, _mysqlRelationDb, uninstallInfo.serverName, _cacheBakPath);
+            Tool::UninstallCacheServer(_adminproxy, mysqlRouterDb, _mysqlRelationDb, uninstallInfo.serverName, _cacheBakPath);
 
             _queueManager->setUninstallRecord(request.requestId, 100, UNINSTALL_FINISH);
             reloadRouterConfByModuleFromDB(moduleName, routerObj);

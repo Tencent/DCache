@@ -49,38 +49,49 @@ void Tool::parseServerName(const string & sFullServerName, string & application,
     servername  = sFullServerName.substr(pos + 1);
 }
 
-bool Tool::isInactive(TC_Mysql &mysqlTarsDb, const string & application, const string & servername, const string & host, string & sError)
+bool Tool::isInactive(AdminRegPrx &adminPrx, const string & application, const string & servername, const string & host, string & sError)
 {
-    //检查服务状态是否完全inactive
-    string sQuerySql = "select setting_state, present_state from t_server_conf where application='" + application + "' and server_name='" + servername + "' and node_name='" + host + "'";
-    TC_Mysql::MysqlData serverData;
-    serverData = mysqlTarsDb.queryRecord(sQuerySql);
-    int iRecordCount = serverData.size();
-    if (iRecordCount ==1)
-    {
-        if (serverData[0]["present_state"] != "inactive")
-        {
-            sError = "server's state is not inactive|app name:" + application + "|server name:" + servername + "|ip:" + host + "|setting_state:" + serverData[0]["setting_state"] + "|present_state:" + serverData[0]["present_state"];
-            TLOG_ERROR(FUN_LOG << sError << endl);
-            return false;
-        }
-    }
-    else
-    {
-        if (iRecordCount == 0)
-        {
-            sError = "server is not existed|app name:" + application + "|server name:" + servername + "|ip:" + host + "|sql:" + sQuerySql;
-        }
-        else
-        {
-            sError = "query server result count:" + TC_Common::tostr(serverData.size()) + " more than 1|app name:" + application + "|server name:" + servername + "|ip:" + host + "|sql:" + sQuerySql;
-        }
+    ServerStateDesc state;
 
-        TLOG_ERROR(FUN_LOG << sError << endl);
-        return false;
+    int ret = adminPrx->getServerState(application, servername, host, state, sError);
+
+    if(ret == 0)
+    {
+        return state.presentStateInNode == "inactive";
     }
 
-    return true;
+    return false;
+
+    // //检查服务状态是否完全inactive
+    // string sQuerySql = "select setting_state, present_state from t_server_conf where application='" + application + "' and server_name='" + servername + "' and node_name='" + host + "'";
+    // TC_Mysql::MysqlData serverData;
+    // serverData = mysqlTarsDb.queryRecord(sQuerySql);
+    // int iRecordCount = serverData.size();
+    // if (iRecordCount ==1)
+    // {
+    //     if (serverData[0]["present_state"] != "inactive")
+    //     {
+    //         sError = "server's state is not inactive|app name:" + application + "|server name:" + servername + "|ip:" + host + "|setting_state:" + serverData[0]["setting_state"] + "|present_state:" + serverData[0]["present_state"];
+    //         TLOG_ERROR(FUN_LOG << sError << endl);
+    //         return false;
+    //     }
+    // }
+    // else
+    // {
+    //     if (iRecordCount == 0)
+    //     {
+    //         sError = "server is not existed|app name:" + application + "|server name:" + servername + "|ip:" + host + "|sql:" + sQuerySql;
+    //     }
+    //     else
+    //     {
+    //         sError = "query server result count:" + TC_Common::tostr(serverData.size()) + " more than 1|app name:" + application + "|server name:" + servername + "|ip:" + host + "|sql:" + sQuerySql;
+    //     }
+
+    //     TLOG_ERROR(FUN_LOG << sError << endl);
+    //     return false;
+    // }
+
+    // return true;
 }
 
 void Tool::delRouteInfo4CacheServer(TC_Mysql &mysqlRouterDb, const string & CacheServer)
@@ -220,7 +231,7 @@ int Tool::cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessNam
     return 0;
 }
 
-void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlTarsDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode)
+void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, TC_Mysql &mysqlRelationDb, const string &sFullCacheServer, const string &sCacheBakPath, bool checkNode)
 {
     try
     {
@@ -234,7 +245,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
 
             parseServerName(sFullCacheServer, sApplication, sServerName);
 
-            if (!isInactive(mysqlTarsDb, sApplication, sServerName, cacheData[0]["ip"], sError))
+            if (!isInactive(adminPrx, sApplication, sServerName, cacheData[0]["ip"], sError))
             {
                 throw runtime_error(sError);
             }
@@ -301,7 +312,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
 
             delRelation4CacheServer(mysqlRelationDb,sFullCacheServer);
 
-            UninstallTarsServer(adminPrx, mysqlTarsDb, sFullCacheServer, cacheData[0]["ip"], sError);
+            UninstallTarsServer(adminPrx, sFullCacheServer, cacheData[0]["ip"], sError);
 
         }
         else
@@ -316,7 +327,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
     }
 }
 
-int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlTarsDb, const string &sTarsServerName, const  string &sIp, std::string &sError)
+int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, const string &sTarsServerName, const  string &sIp, std::string &sError)
 {
     try
     {
@@ -331,86 +342,84 @@ int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlTarsDb, cons
         string sServerName;
         parseServerName(sTarsServerName, sApplication, sServerName);
 
-        //检查服务状态是否完全inactive
-        if (!isInactive(mysqlTarsDb, sApplication, sServerName, sIp, sError))
-        {
-            return -1;
-        }
+        // //检查服务状态是否完全inactive
+        // if (!isInactive(mysqlTarsDb, sApplication, sServerName, sIp, sError))
+        // {
+        //     return -1;
+        // }
 
         //注意:只要删除db_tars信息成功就返回0，以下始终返回0
         //删路径
         try
         {
-//            string sNodeObj("");
-//            if (-1 == getNodeObj(mysqlTarsDb, sIp, sNodeObj))
-//            {
-//                sError = "failed to get node obj|server name:" + sTarsServerName + "|ip:" + sIp;
-//                TLOG_ERROR(FUN_LOG << sError << endl);
-//            }
-//            else
-//            {
+
                 TC_Config tcConf;
                 tcConf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
 
                 int unstallTimeOut = TC_Common::strto<int>(tcConf.get("/Main/Uninstall<Timeout>", "10"));
 
-                string sSql = "update t_server_conf set registry_timestamp='" + TC_Common::tm2str(TNOW) + "' where application='" + mysqlTarsDb.escapeString(sApplication) + "' and server_name='" + mysqlTarsDb.escapeString(sServerName) + "'";
-                mysqlTarsDb.execute(sSql);
+                int iRet = adminPrx->tars_set_timeout(unstallTimeOut*1000)->uninstallServer(sApplication, sServerName, sIp, sError);
 
-//                NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
-//                nodePrx->tars_timeout(unstallTimeOut * 1000);
-                int iRet = 0;
-                try
+                if(iRet != 0)
                 {
-                    iRet = adminPrx->destroyServer(sApplication, sServerName, sIp, sError);
-                }
-                catch(exception &ex)
-                {
-                    //如果异常值不是 -10，就返回错误，否则也可以继续下去
-                    if (iRet != -10)
-                    {
-                        sError = string("destroy server catch exception:") + ex.what();
-                        TLOG_ERROR(FUN_LOG << sError << endl);
-                        return -1;
-                    }
-                    else
-                        iRet = 0;
+                    TLOG_ERROR(FUN_LOG << sError << endl);
+                    return 0;
                 }
 
-                if ((iRet == 0) || (iRet == -1) || (iRet == -2))
-                {
-                    if (iRet == -1)
-                    {
-                        if (sError.find("not exist") == string::npos)
-                        {
-                            return -1;
-                        }
-                    }
-                }
-                else
-                {
-                    return -1;
-                }
-//            }
+            //     string sSql = "update t_server_conf set registry_timestamp='" + TC_Common::tm2str(TNOW) + "' where application='" + mysqlTarsDb.escapeString(sApplication) + "' and server_name='" + mysqlTarsDb.escapeString(sServerName) + "'";
+            //     mysqlTarsDb.execute(sSql);
 
-            //删除tars服务本身的记录
-            string sWhere = "where application='" + sApplication + "' and server_name='" + sServerName + "' and node_name='" + sIp + "'";
-            mysqlTarsDb.deleteRecord("t_adapter_conf", sWhere);
-            mysqlTarsDb.deleteRecord("t_server_conf", sWhere);
+            //     int iRet = 0;
+            //     try
+            //     {
+            //         iRet = adminPrx->destroyServer(sApplication, sServerName, sIp, sError);
+            //     }
+            //     catch(exception &ex)
+            //     {
+            //         //如果异常值不是 -10，就返回错误，否则也可以继续下去
+            //         if (iRet != -10)
+            //         {
+            //             sError = string("destroy server catch exception:") + ex.what();
+            //             TLOG_ERROR(FUN_LOG << sError << endl);
+            //             return -1;
+            //         }
+            //         else
+            //             iRet = 0;
+            //     }
 
-            //删除节点配置
-            sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and host='"+ sIp + "' and level=3";
-            mysqlTarsDb.deleteRecord("t_config_files", sWhere);
+            //     if ((iRet == 0) || (iRet == -1) || (iRet == -2))
+            //     {
+            //         if (iRet == -1)
+            //         {
+            //             if (sError.find("not exist") == string::npos)
+            //             {
+            //                 return -1;
+            //             }
+            //         }
+            //     }
+            //     else
+            //     {
+            //         return -1;
+            //     }
 
-            string sql = "select * from t_server_conf where application='" + sApplication + "' and server_name='" + sServerName + "'";
-            TC_Mysql::MysqlData data = mysqlTarsDb.queryRecord(sql);
-            if (data.size() == 0)
-            {
-                sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and level=2";
-                mysqlTarsDb.deleteRecord("t_config_files", sWhere);
-            }
+            // //删除tars服务本身的记录
+            // string sWhere = "where application='" + sApplication + "' and server_name='" + sServerName + "' and node_name='" + sIp + "'";
+            // mysqlTarsDb.deleteRecord("t_adapter_conf", sWhere);
+            // mysqlTarsDb.deleteRecord("t_server_conf", sWhere);
 
-            TLOG_DEBUG(FUN_LOG << "success to destroy server remotely|server name:" << sTarsServerName << endl);
+            // //删除节点配置
+            // sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and host='"+ sIp + "' and level=3";
+            // mysqlTarsDb.deleteRecord("t_config_files", sWhere);
+
+            // string sql = "select * from t_server_conf where application='" + sApplication + "' and server_name='" + sServerName + "'";
+            // TC_Mysql::MysqlData data = mysqlTarsDb.queryRecord(sql);
+            // if (data.size() == 0)
+            // {
+            //     sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and level=2";
+            //     mysqlTarsDb.deleteRecord("t_config_files", sWhere);
+            // }
+
+            // TLOG_DEBUG(FUN_LOG << "success to destroy server remotely|server name:" << sTarsServerName << endl);
             return 0;
         }
         catch(exception &ex)
