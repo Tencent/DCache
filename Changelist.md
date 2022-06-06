@@ -2,7 +2,7 @@
 
 ### en
 
-- Add: remove db_tars dependency
+- Add: remove db_tars dependency, 依赖 TarsFramework 版本(>=v3.0.8)
 - Add log & use adminPrx not use NodePrx
 
 ### en
