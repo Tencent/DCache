@@ -47,14 +47,6 @@ config:
           # admin registry obj
           AdminRegObj = tars.tarsAdminRegistry.AdminRegObj
           <DB>
-              <tars>
-                  charset = utf8mb4
-                  dbname  = db_tars
-                  dbhost  = tars_host
-                  dbport  = tars_port
-                  dbuser  = tars_user
-                  dbpass  = tars_pass
-              </tars>
               <relation>
                   charset = utf8mb4
                   dbname  = db_dcache_relation

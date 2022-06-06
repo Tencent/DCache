@@ -55,10 +55,10 @@ void DCacheOptImp::initialize()
     _tcConf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
 
     //tars db: save router,proxy,cache server info, include: server conf, adapter conf
-    map<string, string> tarsConnInfo = _tcConf.getDomainMap("/Main/DB/tars");
-    TC_DBConf tarsDbConf;
-    tarsDbConf.loadFromMap(tarsConnInfo);
-    _mysqlTarsDb.init(tarsDbConf);
+//    map<string, string> tarsConnInfo = _tcConf.getDomainMap("/Main/DB/tars");
+//    TC_DBConf tarsDbConf;
+//    tarsDbConf.loadFromMap(tarsConnInfo);
+//    _mysqlTarsDb.init(tarsDbConf);
 
     //relation db: save app-router-proxy-cache relation info
     _relationDBInfo = _tcConf.getDomainMap("/Main/DB/relation");
@@ -4355,35 +4355,52 @@ int DCacheOptImp::insertCache2TarsDb(const TC_DBConf &routerDbInfo, const vector
 
 int DCacheOptImp::insertTarsConfigFilesTable(const string &sFullServerName, const string &sConfName, const string &sHost, const string &sConfig, const int level, int &id, bool bReplace, string & errmsg)
 {
-    string sSql;
+//    string sSql;
     try
     {
-        map<string, pair<TC_Mysql::FT, string> > m;
+		int ret = _adminproxy->insertConfigFile(sFullServerName, sConfName, sConfig, sHost, level, bReplace);
 
-        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sFullServerName);
-        m["host"]           = make_pair(TC_Mysql::DB_STR, sHost);
-        m["filename"]       = make_pair(TC_Mysql::DB_STR, sConfName);
-        m["config"]         = make_pair(TC_Mysql::DB_STR, sConfig);
-        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "system");
-        m["level"]          = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(level));
-        m["config_flag"]    = make_pair(TC_Mysql::DB_INT, "0");
-
-        if(bReplace)
-            _mysqlTarsDb.replaceRecord("t_config_files", m);
-        else
-            _mysqlTarsDb.insertRecord("t_config_files", m);
-
-        sSql= "select id from t_config_files where server_name = '" + sFullServerName + "' and filename = '" + sConfName + "' and host = '" + sHost + "' and level = " + TC_Common::tostr(level);
-        TC_Mysql::MysqlData data = _mysqlTarsDb.queryRecord(sSql);
-        if (data.size() != 1)
-        {
-            errmsg = string("get id from t_config_files error, serverName = ") + sFullServerName;
+		if(ret != 0)
+		{
+            errmsg = string("insert config file error, serverName = ") + sFullServerName;
             TLOG_ERROR(FUN_LOG << errmsg << endl);
             throw DCacheOptException(errmsg);
-        }
+		}
 
-        id = TC_Common::strto<int>(data[0]["id"]);
+		ret = _adminproxy->getConfigFileId(sFullServerName, sConfName, sHost, level, id);
+		if(ret != 0)
+		{
+			errmsg = string("get config file error, serverName = ") + sFullServerName;
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
+//
+//        map<string, pair<TC_Mysql::FT, string> > m;
+//
+//        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sFullServerName);
+//        m["host"]           = make_pair(TC_Mysql::DB_STR, sHost);
+//        m["filename"]       = make_pair(TC_Mysql::DB_STR, sConfName);
+//        m["config"]         = make_pair(TC_Mysql::DB_STR, sConfig);
+//        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+//        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "system");
+//        m["level"]          = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(level));
+//        m["config_flag"]    = make_pair(TC_Mysql::DB_INT, "0");
+//
+//        if(bReplace)
+//            _mysqlTarsDb.replaceRecord("t_config_files", m);
+//        else
+//            _mysqlTarsDb.insertRecord("t_config_files", m);
+//
+//        sSql= "select id from t_config_files where server_name = '" + sFullServerName + "' and filename = '" + sConfName + "' and host = '" + sHost + "' and level = " + TC_Common::tostr(level);
+//        TC_Mysql::MysqlData data = _mysqlTarsDb.queryRecord(sSql);
+//        if (data.size() != 1)
+//        {
+//            errmsg = string("get id from t_config_files error, serverName = ") + sFullServerName;
+//            TLOG_ERROR(FUN_LOG << errmsg << endl);
+//            throw DCacheOptException(errmsg);
+//        }
+
+//        id = TC_Common::strto<int>(data[0]["id"]);
     }
     catch(const std::exception &ex)
     {
@@ -4399,18 +4416,27 @@ int DCacheOptImp::insertTarsHistoryConfigFilesTable(const int iConfigId, const s
 {
     try
     {
-        map<string, pair<TC_Mysql::FT, string> > m;
-        m["configid"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(iConfigId));
-        m["reason"]         = make_pair(TC_Mysql::DB_STR, "新建立配置文件");
-        m["reason_select"]  = make_pair(TC_Mysql::DB_STR, "");
-        m["content"]        = make_pair(TC_Mysql::DB_STR, sConfig);
-        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "system");
+		int ret = _adminproxy->insertHistoryConfigFile(iConfigId, "", sConfig, bReplace);
 
-        if(bReplace)
-            _mysqlTarsDb.replaceRecord("t_config_history_files", m);
-        else
-            _mysqlTarsDb.insertRecord("t_config_history_files", m);
+		if(ret != 0)
+		{
+			errmsg = string("insert history config file error");
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
+
+//        map<string, pair<TC_Mysql::FT, string> > m;
+//        m["configid"]       = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(iConfigId));
+//        m["reason"]         = make_pair(TC_Mysql::DB_STR, "新建立配置文件");
+//        m["reason_select"]  = make_pair(TC_Mysql::DB_STR, "");
+//        m["content"]        = make_pair(TC_Mysql::DB_STR, sConfig);
+//        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+//        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "system");
+//
+//        if(bReplace)
+//            _mysqlTarsDb.replaceRecord("t_config_history_files", m);
+//        else
+//            _mysqlTarsDb.insertRecord("t_config_history_files", m);
     }
     catch (const std::exception &ex)
     {
@@ -4426,46 +4452,63 @@ int DCacheOptImp::insertTarsServerTableWithIdcGroup(const string &sApp, const st
 {
     try
     {
-        map<string, pair<TC_Mysql::FT, string> > m;
-        m["application"]    = make_pair(TC_Mysql::DB_STR, sApp);
-        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sServerName.substr(7));//去掉前缀DCache.
-        m["node_name"]      = make_pair(TC_Mysql::DB_STR, sIp);
-        m["exe_path"]       = make_pair(TC_Mysql::DB_STR, sExePath);
-        m["template_name"]  = make_pair(TC_Mysql::DB_STR, sTemplateName);
-        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
-        m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
-        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
+		ServerConf conf;
+		conf.application = sApp;
+		conf.serverName = sServerName;
+		conf.nodeName = sIp;
+		conf.exePath = sExePath;
+		conf.profile = sTemplateName;
+		conf.serverType = "tars_cpp";
 
-        // 这里默认开启IDC分组
-        m["enable_group"] = make_pair(TC_Mysql::DB_STR,(enableGroup)?"Y":"N");//是否启用IDC分组
+		int ret = _adminproxy->insertServerConf(conf, bReplace);
 
-        if (stProxyAddr.idcArea == "sz")
-        {
-            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "sz");
-        }
-        else if (stProxyAddr.idcArea == "tj")
-        {
-            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "tj");
-        }
-        else if (stProxyAddr.idcArea == "sh")
-        {
-            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "sh");
-        }
-        else if (stProxyAddr.idcArea == "cd")
-        {
-            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "cd");
-        }
-        else
-        {
-            //启用IDC分组改为No
-            m["enable_group"] = make_pair(TC_Mysql::DB_STR, "N");
-        }
+		if(ret != 0)
+		{
+			errmsg = string("insert server conf error, serverName = ") + sApp + "." + sServerName;
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
 
-        if(bReplace)
-            _mysqlTarsDb.replaceRecord("t_server_conf", m);
-        else
-            _mysqlTarsDb.insertRecord("t_server_conf", m);
+//        map<string, pair<TC_Mysql::FT, string> > m;
+//        m["application"]    = make_pair(TC_Mysql::DB_STR, sApp);
+//        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sServerName.substr(7));//去掉前缀DCache.
+//        m["node_name"]      = make_pair(TC_Mysql::DB_STR, sIp);
+//        m["exe_path"]       = make_pair(TC_Mysql::DB_STR, sExePath);
+//        m["template_name"]  = make_pair(TC_Mysql::DB_STR, sTemplateName);
+//        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+//        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
+//        m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
+//        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
+//
+//        // 这里默认开启IDC分组
+//        m["enable_group"] = make_pair(TC_Mysql::DB_STR,(enableGroup)?"Y":"N");//是否启用IDC分组
+//
+//        if (stProxyAddr.idcArea == "sz")
+//        {
+//            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "sz");
+//        }
+//        else if (stProxyAddr.idcArea == "tj")
+//        {
+//            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "tj");
+//        }
+//        else if (stProxyAddr.idcArea == "sh")
+//        {
+//            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "sh");
+//        }
+//        else if (stProxyAddr.idcArea == "cd")
+//        {
+//            m["ip_group_name"] = make_pair(TC_Mysql::DB_STR, "cd");
+//        }
+//        else
+//        {
+//            //启用IDC分组改为No
+//            m["enable_group"] = make_pair(TC_Mysql::DB_STR, "N");
+//        }
+//
+//        if(bReplace)
+//            _mysqlTarsDb.replaceRecord("t_server_conf", m);
+//        else
+//            _mysqlTarsDb.insertRecord("t_server_conf", m);
     }
     catch(const std::exception &ex)
     {
@@ -4481,22 +4524,39 @@ int DCacheOptImp::insertTarsServerTable(const string &sApp, const string &sServe
 {
     try
     {
-        map<string, pair<TC_Mysql::FT, string> > m;
-        m["application"]    = make_pair(TC_Mysql::DB_STR, sApp);
-        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sServerName.substr(7));
-        m["node_name"]      = make_pair(TC_Mysql::DB_STR, sIp);
-        m["exe_path"]       = make_pair(TC_Mysql::DB_STR, sExePath);
-        m["template_name"]  = make_pair(TC_Mysql::DB_STR, sTemplateName);
-        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
-        m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
-        m["enable_group"]   = make_pair(TC_Mysql::DB_STR, (enableGroup)?"Y":"N");//是否启用IDC分组
-        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
+		ServerConf conf;
+		conf.application = sApp;
+		conf.serverName = sServerName.substr(7);
+		conf.nodeName = sIp;
+		conf.exePath = sExePath;
+		conf.profile = sTemplateName;
+		conf.serverType = "tars_cpp";
 
-        if (bReplace)
-            _mysqlTarsDb.replaceRecord("t_server_conf", m);
-        else
-            _mysqlTarsDb.insertRecord("t_server_conf", m);
+		int ret = _adminproxy->insertServerConf(conf, bReplace);
+
+		if(ret != 0)
+		{
+			errmsg = string("insert server conf error, serverName = ") + sApp + "." + sServerName;
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
+//
+//        map<string, pair<TC_Mysql::FT, string> > m;
+//        m["application"]    = make_pair(TC_Mysql::DB_STR, sApp);
+//        m["server_name"]    = make_pair(TC_Mysql::DB_STR, sServerName.substr(7));
+//        m["node_name"]      = make_pair(TC_Mysql::DB_STR, sIp);
+//        m["exe_path"]       = make_pair(TC_Mysql::DB_STR, sExePath);
+//        m["template_name"]  = make_pair(TC_Mysql::DB_STR, sTemplateName);
+//        m["posttime"]       = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+//        m["lastuser"]       = make_pair(TC_Mysql::DB_STR, "sys");
+//        m["tars_version"]   = make_pair(TC_Mysql::DB_STR, sTarsVersion);
+//        m["enable_group"]   = make_pair(TC_Mysql::DB_STR, (enableGroup)?"Y":"N");//是否启用IDC分组
+//        m["server_type"]    = make_pair(TC_Mysql::DB_STR, "tars_cpp");
+//
+//        if (bReplace)
+//            _mysqlTarsDb.replaceRecord("t_server_conf", m);
+//        else
+//            _mysqlTarsDb.insertRecord("t_server_conf", m);
 
         return 0;
     }
@@ -4514,25 +4574,44 @@ int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerNa
 {
     try
     {
-        map<string, pair<TC_Mysql::FT, string> > m;
-        m["application"]        = make_pair(TC_Mysql::DB_STR, sApp);
-        m["server_name"]        = make_pair(TC_Mysql::DB_STR, sServerName);
-        m["node_name"]          = make_pair(TC_Mysql::DB_STR, sIp);
-        m["adapter_name"]       = make_pair(TC_Mysql::DB_STR, sServantName + "Adapter");
-        m["thread_num"]         = make_pair(TC_Mysql::DB_INT, sThreadNum);
-        m["endpoint"]           = make_pair(TC_Mysql::DB_STR, sEndpoint);
-        m["max_connections"]    = make_pair(TC_Mysql::DB_INT, "10240");
-        m["servant"]            = make_pair(TC_Mysql::DB_STR, sServantName);
-        m["queuecap"]           = make_pair(TC_Mysql::DB_INT, "100000");
-        m["queuetimeout"]       = make_pair(TC_Mysql::DB_INT, "60000");
-        m["posttime"]           = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
-        m["lastuser"]           = make_pair(TC_Mysql::DB_STR, "sys");
-        m["protocol"]           = make_pair(TC_Mysql::DB_STR, "tars");
+		AdapterConf conf;
+		conf.protocol = "tars";
+		conf.queuetimeout = 60000;
+		conf.queuecap = 100000;
+		conf.servant = sServantName;
+		conf.maxConnections = 10240;
+		conf.endpoint = sEndpoint;
+		conf.threadNum = TC_Common::strto<int>(sThreadNum);
+		conf.adapterName = sServantName + "Adapter";
 
-        if (bReplace)
-            _mysqlTarsDb.replaceRecord("t_adapter_conf", m);
-        else
-            _mysqlTarsDb.insertRecord("t_adapter_conf", m);
+		int ret = _adminproxy->insertAdapterConf(sApp, sServerName, sIp, conf, bReplace);
+
+		if(ret != 0)
+		{
+			errmsg = string("insert server conf error, serverName = ") + sApp + "." + sServerName;
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
+//
+//        map<string, pair<TC_Mysql::FT, string> > m;
+//        m["application"]        = make_pair(TC_Mysql::DB_STR, sApp);
+//        m["server_name"]        = make_pair(TC_Mysql::DB_STR, sServerName);
+//        m["node_name"]          = make_pair(TC_Mysql::DB_STR, sIp);
+//        m["adapter_name"]       = make_pair(TC_Mysql::DB_STR, sServantName + "Adapter");
+//        m["thread_num"]         = make_pair(TC_Mysql::DB_INT, sThreadNum);
+//        m["endpoint"]           = make_pair(TC_Mysql::DB_STR, sEndpoint);
+//        m["max_connections"]    = make_pair(TC_Mysql::DB_INT, "10240");
+//        m["servant"]            = make_pair(TC_Mysql::DB_STR, sServantName);
+//        m["queuecap"]           = make_pair(TC_Mysql::DB_INT, "100000");
+//        m["queuetimeout"]       = make_pair(TC_Mysql::DB_INT, "60000");
+//        m["posttime"]           = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
+//        m["lastuser"]           = make_pair(TC_Mysql::DB_STR, "sys");
+//        m["protocol"]           = make_pair(TC_Mysql::DB_STR, "tars");
+//
+//        if (bReplace)
+//            _mysqlTarsDb.replaceRecord("t_adapter_conf", m);
+//        else
+//            _mysqlTarsDb.insertRecord("t_adapter_conf", m);
 
         return 0;
     }
@@ -4548,8 +4627,33 @@ int DCacheOptImp::insertServantTable(const string &sApp, const string &sServerNa
 
 bool DCacheOptImp::hasServer(const string&sApp, const string &sServerName)
 {
-    string sSql = "select id from t_server_conf where application='" + sApp + "' and server_name='" + sServerName + "'";
-    return _mysqlTarsDb.existRecord(sSql);
+	string errmsg;
+	try
+	{
+		bool has;
+
+		int ret = _adminproxy->hasServer(sApp, sServerName, has);
+
+		if(ret != 0)
+		{
+			errmsg = string("has server error, serverName = ") + sApp + "." + sServerName;
+			TLOG_ERROR(FUN_LOG << errmsg << endl);
+			throw DCacheOptException(errmsg);
+		}
+
+		return has;
+	}
+	catch(const std::exception &ex)
+	{
+		errmsg = string("insert ") + sApp + "." + sServerName + " config catch exception:" + ex.what();
+		TLOG_ERROR(FUN_LOG << errmsg << endl);
+		throw DCacheOptException(errmsg);
+	}
+
+	return false;
+//
+//    string sSql = "select id from t_server_conf where application='" + sApp + "' and server_name='" + sServerName + "'";
+//    return _mysqlTarsDb.existRecord(sSql);
 }
 
 int DCacheOptImp::selectPort(TC_Mysql &tcMysql, const string &sServerName, const string &sIp, string &sBinLogPort, string &sCachePort, string &sRouterPort,string &sBackUpPort,string &sWCachePort,string &sControlAckPort, std::string &errmsg)

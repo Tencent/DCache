@@ -19,6 +19,7 @@ include_directories(/usr/local/tars/cpp/thirdparty/include)
 link_directories(/usr/local/tars/cpp/thirdparty/lib)
 link_libraries(pthread)
 link_libraries(dl)
+link_libraries(iconv)
 
 
 add_subdirectory(src)

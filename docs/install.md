@@ -1,18 +1,17 @@
-# 安装DCache
+# 安装 DCache
 
-> * [依赖环境](#1)
-> * [准备工作](#2)
-> * [服务部署](#3)
-> * [创建一个DCache应用](#4)
->   * [部署和发布Proxy和Router服务](#4.1)
->   * [上线一个KVCache模块](#4.2)
->   * [上线一个MKVCache模块](#4.3)
->   * [Cache配置管理](#4.4)
-
+> - [依赖环境](#1)
+> - [准备工作](#2)
+> - [服务部署](#3)
+> - [创建一个 DCache 应用](#4)
+>   - [部署和发布 Proxy 和 Router 服务](#4.1)
+>   - [上线一个 KVCache 模块](#4.2)
+>   - [上线一个 MKVCache 模块](#4.3)
+>   - [Cache 配置管理](#4.4)
 
 ## <a id = "1"></a> 1. 依赖环境
 
-DCache(>=2.1.1)是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本>=v2.4.6）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
+DCache(>=2.3.0)是基于[Tars](https://github.com/TarsCloud/TarsFramework)框架（版本>=v3.0.8）, (https://github.com/TarsCloud/TarsCpp)框架（版本>=v3.0.10）开发，所以编译之前请先安装Tars开发环境和管理平台，安装步骤请参考[Tars的install文档](https://github.com/TarsCloud/Tars/blob/master/Install.zh.md)。安装完Tars管理平台后，在浏览器中访问管理平台主页，如下图：
 
 ![Tars管理平台主页](images/tars_mainPage.png)
 
@@ -26,11 +25,11 @@ DCache(>=2.1.1)是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本
 
 ### 2.2 创建模板
 
-在Tars的Web平台创建DCache.Cache模板，后续部署DCache模块时会用到该模板, 如果已经存在, 则忽略这步骤
+在 Tars 的 Web 平台创建 DCache.Cache 模板，后续部署 DCache 模块时会用到该模板, 如果已经存在, 则忽略这步骤
 
 ![创建模板](images/tars_add_tmplate.png)
 
-新增模板DCache.Cache，父模板选择tars.default，模板内容填入：
+新增模板 DCache.Cache，父模板选择 tars.default，模板内容填入：
 
 ```xml
 <tars>
@@ -44,44 +43,43 @@ DCache(>=2.1.1)是基于[Tars](https://github.com/TarsCloud/Tars)框架（版本
 
 ## <a id = "3"></a> 3. 服务部署
 
-DCache(>=2.1.1) 支持脚本一站式部署服务!
+DCache(>=2.3.0) 支持脚本一站式部署服务!
 
-进入build目录(必须在build下执行)
+进入 build 目录(必须在 build 下执行)
+
 ```
 cd build
-../deploy/install.sh TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE WEB_HOST WEB_TOKEN NODE_IP
+../deploy/install.sh DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE WEB_HOST WEB_TOKEN NODE_IP
 ```
 
 注意:
-- TARS_MYSQL_IP: tars数据库的ip
-- TARS_MYSQL_PORT: tars数据库的port
-- TARS_MYSQL_USER: tars数据库的user
-- TARS_MYSQL_PASSWORD: tars数据库的密码
-- DCACHE_MYSQL_IP: dcache数据库的ip
-- DCACHE_MYSQL_PORT: dcache数据库的port
-- DCACHE_MYSQL_USER: dcache数据库的user
-- DCACHE_MYSQL_PASSWORD: dcache数据库的密码
+
+- DCACHE_MYSQL_IP: dcache 数据库的 ip
+- DCACHE_MYSQL_PORT: dcache 数据库的 port
+- DCACHE_MYSQL_USER: dcache 数据库的 user
+- DCACHE_MYSQL_PASSWORD: dcache 数据库的密码
 - CREATE: 是否重新建表，`true` 表示重新创建 DCache 表，`false` 表示不创建
-- WEB_HOST: TARS web平台地址
-- WEB_TOKEN: TARS web平台token(需要进入web平台, 用户中心上, 创建一个Token)
-- NODE_IP: 公共服务部署节点IP, 部署完成后, 你可以在web平台扩容到多台节点机上
+- WEB_HOST: TARS web 平台地址
+- WEB_TOKEN: TARS web 平台 token(需要进入 web 平台, 用户中心上, 创建一个 Token)
+- NODE_IP: 公共服务部署节点 IP, 部署完成后, 你可以在 web 平台扩容到多台节点机上
 
-执行install.sh脚本后, DCache所有基础环境就准备完毕了:
-- Router、Cache、Proxy等发布包已经上传
-- DCacheOptServer/PropertyServer/ConfigServer的配置和服务包已经上传
+执行 install.sh 脚本后, DCache 所有基础环境就准备完毕了:
 
-下一步就可以创建DCache的模块了.
+- Router、Cache、Proxy 等发布包已经上传
+- DCacheOptServer/PropertyServer/ConfigServer 的配置和服务包已经上传
 
-## <a id = "4"></a> 4. 创建DCache应用
+下一步就可以创建 DCache 的模块了.
 
-> 本节描述如何创建一个DCache应用，如何上传发布包，如何上线一个模块，并对模块进行配置。
+## <a id = "4"></a> 4. 创建 DCache 应用
+
+> 本节描述如何创建一个 DCache 应用，如何上传发布包，如何上线一个模块，并对模块进行配置。
 >
 > 名词解释
 >
-> * 模块：类似于mysql中table的概念，使用者创建一个模块来存储数据。模块分为KVCache和MKVCache两种，如果要存储key-value数据则创建KVCache模块，如果要使用k-k-row，list，set，zset则创建MKVCache模块。
-> * 应用：应用是多个模块的集合，应用下所有模块共享Proxy和Router服务，类似于mysql中db的概念。
+> - 模块：类似于 mysql 中 table 的概念，使用者创建一个模块来存储数据。模块分为 KVCache 和 MKVCache 两种，如果要存储 key-value 数据则创建 KVCache 模块，如果要使用 k-k-row，list，set，zset 则创建 MKVCache 模块。
+> - 应用：应用是多个模块的集合，应用下所有模块共享 Proxy 和 Router 服务，类似于 mysql 中 db 的概念。
 
-### <a id = "4.1"></a> 4.1 部署和发布Proxy和Router服务
+### <a id = "4.1"></a> 4.1 部署和发布 Proxy 和 Router 服务
 
 ![安装DCache应用](images/install_dcache_app.png)
 
@@ -89,7 +87,7 @@ cd build
 
 ![创建proxy和router服务](images/create_proxy&router.png)
 
-在输入框填写相关信息，其余保持不变，点击“创建router、proxy服务”，得到下图：
+在输入框填写相关信息，其余保持不变，点击“创建 router、proxy 服务”，得到下图：
 
 ![确认信息](images/install_and_release.png)
 
@@ -97,13 +95,13 @@ cd build
 
 ![成功安装proxy和router](images/install_proxy&router_succ.png)
 
-**注意DBAccess服务部署也在界面中完成**
+**注意 DBAccess 服务部署也在界面中完成**
 
-### <a id = "4.2"></a> 4.2 上线一个KVCache模块
+### <a id = "4.2"></a> 4.2 上线一个 KVCache 模块
 
 ![创建KVCache模块](images/create_KV_module.png)
 
-按照上图箭头依次点击，“应用”选择在[部署和发布Proxy和Router服务](#5.2)创建的应用名称，“cache类型”选择KVCache，所填信息确认无误后，点击“下一步”进入“模块配置”步骤，如下图：
+按照上图箭头依次点击，“应用”选择在[部署和发布 Proxy 和 Router 服务](#5.2)创建的应用名称，“cache 类型”选择 KVCache，所填信息确认无误后，点击“下一步”进入“模块配置”步骤，如下图：
 
 ![模块配置](images/KV_module_conf.png)
 
@@ -111,9 +109,9 @@ cd build
 
 ![服务配置](images/KV_service_conf.png)
 
-**注意：** <font color=red>共享内存key必须是唯一的，不能在服务部署机器上已存在，否则会造成服务拉起失败，可使用**ipcs**命令确认。</font>  
+**注意：** <font color=red>共享内存 key 必须是唯一的，不能在服务部署机器上已存在，否则会造成服务拉起失败，可使用**ipcs**命令确认。</font>
 
-Cache服务的模板默认会选择DCache.Cache，如果模板DCache.Cache不存在，可创建该模板或者选择其他可用的模板，模板中必须配置property，这样才能查看服务的特性监控数据。
+Cache 服务的模板默认会选择 DCache.Cache，如果模板 DCache.Cache 不存在，可创建该模板或者选择其他可用的模板，模板中必须配置 property，这样才能查看服务的特性监控数据。
 
 ```xml
 <tars>
@@ -129,11 +127,11 @@ Cache服务的模板默认会选择DCache.Cache，如果模板DCache.Cache不存
 
 ![安装成功](images/install_kv_succ.png)
 
-### <a id = "4.3"></a> 4.3 上线一个MKVCache模块
+### <a id = "4.3"></a> 4.3 上线一个 MKVCache 模块
 
-步骤和[部署和发布KVCache](#5.3)类似，参考即可。
+步骤和[部署和发布 KVCache](#5.3)类似，参考即可。
 
-### <a id = "4.4"></a> 4.4 Cache配置管理
+### <a id = "4.4"></a> 4.4 Cache 配置管理
 
 ![Cache配置管理](images/cache_config.png)
 
@@ -144,4 +142,4 @@ Cache服务的模板默认会选择DCache.Cache，如果模板DCache.Cache不存
 ![模块配置管理](images/add_conf_for_module.png)
 
 按照上图箭头依次点击，可在该页面上修改和添加配置。该页面的配置管理分两种类型：针对模块所有节点的配置管理和针对模块特定节点的配置管理。如果节点配置和模块配置有重叠的配置项，那么节点配置将覆盖模块配置。
-**注意：** <font color=red>修改配置后，需要重启服务才能生效。</font>  
+**注意：** <font color=red>修改配置后，需要重启服务才能生效。</font>

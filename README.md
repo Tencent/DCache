@@ -42,7 +42,6 @@ src/PropertyServer |监控信息上报服务
 src/Proxy          |DCache代理服务
 src/Router         |DCache路由管理服务
 src/TarsComm       |Tars数据结构定义
-src/thirdParty     |第三方依赖
 
 * ```docs```：文档。
 
