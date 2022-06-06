@@ -19,6 +19,7 @@ macro(gen_dcache_group TARGET)
     FILE(APPEND ${TARS_TAR} "EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -P ${RUN_TAR_COMMAND_FILE})\n")
 endmacro()
 
+set(APP "DCache")
 add_subdirectory(Comm)
 add_subdirectory(ConfigServer)
 #add_subdirectory(DbAccess)
