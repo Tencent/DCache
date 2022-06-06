@@ -1,3 +1,15 @@
+## v2.3.0 2022.06.06
+
+### en
+
+- Add: remove db_tars dependency
+- Add log & use adminPrx not use NodePrx
+
+### en
+
+- Add: 去掉直接依赖 db_tars, 通过调用 tarsAdmin 接口实现
+- Add: 使用 adminPrx 不再直接访问 nodePrx
+
 ## v2.2.1 2022.04.02
 
 ### en
