@@ -40,29 +40,33 @@ function LOG_INFO()
 	echo -e "\033[32m$msg \033[0m"  	
 }
 
-if [ $# -lt 12 ]; then
-    echo "$0 TARS_MYSQL_IP TARS_MYSQL_PORT TARS_MYSQL_USER TARS_MYSQL_PASSWORD DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN NODE_IP";
+if [ $# -lt 8 ]; then
+    echo "$0 DCACHE_MYSQL_IP DCACHE_MYSQL_PORT DCACHE_MYSQL_USER DCACHE_MYSQL_PASSWORD CREATE(true/false) WEB_HOST WEB_TOKEN NODE_IP";
     exit 1
 fi
 
-TARS_MYSQL_IP=$1
-TARS_MYSQL_PORT=$2
-TARS_MYSQL_USER=$3
-TARS_MYSQL_PASSWORD=$4
-DCACHE_MYSQL_IP=$5
-DCACHE_MYSQL_PORT=$6
-DCACHE_MYSQL_USER=$7
-DCACHE_MYSQL_PASSWORD=$8
-CREATE=$9
-WEB_HOST=${10}
-WEB_TOKEN=${11}
-NODE_IP=${12}
+DCACHE_MYSQL_IP=$1
+DCACHE_MYSQL_PORT=$2
+DCACHE_MYSQL_USER=$3
+DCACHE_MYSQL_PASSWORD=$4
+CREATE=$5
+WEB_HOST=${6}
+WEB_TOKEN=${7}
+NODE_IP=${8}
 
 if [ "$CREATE" != "true" ]; then
 	CREATE="false"
 fi
 
 WORKDIR=$(cd $(dirname $0); pwd)
+
+OS=`uname`
+
+if [[ "$OS" =~ "Darwin" ]]; then
+    OS=1
+else
+    OS=2
+fi
 
 LOG_INFO "====================================================================";
 LOG_INFO "===**********************dcache-install**************************===";
@@ -71,10 +75,6 @@ LOG_INFO "====================================================================";
 #输出配置信息
 LOG_DEBUG "===>print config info >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>";
 LOG_DEBUG "PARAMS:                  "$*
-LOG_DEBUG "TARS_MYSQL_IP:           "$TARS_MYSQL_IP 
-LOG_DEBUG "TARS_MYSQL_PORT:         "$TARS_MYSQL_PORT
-LOG_DEBUG "TARS_MYSQL_USER:         "$TARS_MYSQL_USER
-LOG_DEBUG "TARS_MYSQL_PASSWORD:     "$TARS_MYSQL_PASSWORD
 LOG_DEBUG "DCACHE_MYSQL_IP:         "$DCACHE_MYSQL_IP
 LOG_DEBUG "DCACHE_MYSQL_PORT:       "$DCACHE_MYSQL_PORT
 LOG_DEBUG "DCACHE_MYSQL_USER:       "${DCACHE_MYSQL_USER}
@@ -84,6 +84,7 @@ LOG_DEBUG "WEB_HOST:                "${WEB_HOST}
 LOG_DEBUG "WEB_TOKEN:               "${WEB_TOKEN}
 LOG_DEBUG "WORKDIR:                 "${WORKDIR}
 LOG_DEBUG "NODE_IP:                 "${NODE_IP}
+LOG_DEBUG "OS:                      "${OS}
 LOG_DEBUG "===<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< print config info finish.\n";
 
 cmake .. -DTARS_WEB_HOST=${WEB_HOST} -DTARS_TOKEN=${WEB_TOKEN}
@@ -100,22 +101,28 @@ function exec_dcache()
     return $ret
 }
 
+sed_paramter=""
+if [ "$OS" == 1 ]; then
+    sed_paramter="\"\""
+fi
+
+
 function build_server_adapter()
 {
     LOG_INFO "===>install DCacheOptServer:";
-    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/DCacheOptServer.json
+    sed -i ${sed_paramter} "s/host_ip/$NODE_IP/g" assets_tmp/DCacheOptServer.json
     curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/DCacheOptServer.json
     echo
     LOG_DEBUG
 
     LOG_INFO "===>install DCacheConfigServer:";
-    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/ConfigServer.json
+    sed -i ${sed_paramter} "s/host_ip/$NODE_IP/g" assets_tmp/ConfigServer.json
     curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/ConfigServer.json
     echo
     LOG_DEBUG
 
     LOG_INFO "===>install PropertyServer:";
-    sed -i "s/host_ip/$NODE_IP/g" assets_tmp/PropertyServer.json
+    sed -i ${sed_paramter} "s/host_ip/$NODE_IP/g" assets_tmp/PropertyServer.json
     curl -s -X POST -H "Content-Type: application/json" ${WEB_HOST}/api/deploy_server?ticket=${WEB_TOKEN} -d@assets_tmp/PropertyServer.json
     echo
     LOG_DEBUG
@@ -123,15 +130,10 @@ function build_server_adapter()
 
 function update_conf()
 {
-    sed -i "s/dcache_host/$DCACHE_MYSQL_IP/g" $1
-    sed -i "s/dcache_user/$DCACHE_MYSQL_USER/g" $1
-    sed -i "s/dcache_port/$DCACHE_MYSQL_PORT/g" $1
-    sed -i "s/dcache_pass/$DCACHE_MYSQL_PASSWORD/g" $1
-
-    sed -i "s/tars_host/$TARS_MYSQL_IP/g" $1
-    sed -i "s/tars_user/$TARS_MYSQL_USER/g" $1
-    sed -i "s/tars_port/$TARS_MYSQL_PORT/g" $1
-    sed -i "s/tars_pass/$TARS_MYSQL_PASSWORD/g" $1
+    sed -i ${sed_paramter} "s/dcache_host/$DCACHE_MYSQL_IP/g" $1
+    sed -i ${sed_paramter} "s/dcache_user/$DCACHE_MYSQL_USER/g" $1
+    sed -i ${sed_paramter} "s/dcache_port/$DCACHE_MYSQL_PORT/g" $1
+    sed -i ${sed_paramter} "s/dcache_pass/$DCACHE_MYSQL_PASSWORD/g" $1
 }
 
 function build_server_conf()
