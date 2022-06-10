@@ -1,3 +1,17 @@
+# v2.3.1 2022.06.10
+
+### en
+
+- Fix: install tars proxy server bug
+- Update: install.sh remove tars dependency
+- Add: support mac
+
+### en
+
+- Fix: 安装 proxy server 时服务名称错误的 bug
+- Update: install.sh 去掉了 db_tars 的参数依赖
+- Add: 支持 mac 上的编译和安装
+
 ## v2.3.0 2022.06.06
 
 ### en
