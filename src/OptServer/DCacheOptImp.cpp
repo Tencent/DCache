@@ -4454,7 +4454,7 @@ int DCacheOptImp::insertTarsServerTableWithIdcGroup(const string &sApp, const st
     {
 		ServerConf conf;
 		conf.application = sApp;
-		conf.serverName = sServerName;
+		conf.serverName = sServerName.substr(7);
 		conf.nodeName = sIp;
 		conf.exePath = sExePath;
 		conf.profile = sTemplateName;
