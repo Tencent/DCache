@@ -18,13 +18,18 @@ jobs:
           registry: docker.tarsyun.com
           username: ${{ secrets.name }}
           password: ${{ secrets.pass }}
-      # - name: make
-      #   run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
-      # - name: build docker
-      #   run: |
-      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config-values.yaml latest true
-      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt-values.yaml latest true
-      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property-values.yaml latest true
+      - name: make
+        run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
+      - name: build docker
+        run: |
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ProxyServer yaml/proxy.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/RouterServer yaml/router.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/KVCacheServer yaml/kvcache.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/MKVCacheServer yaml/mkvcache.yaml latest true
+          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/CombinDbAccessServer yaml/dbaccess.yaml latest true
       # - name: build dcache web docker
       #   run: |
       #     cd web/src; npm install; cd ../..

@@ -20,3 +20,9 @@ cloud:
     - dcache/DCacheOptServer
     - dcache/PropertyServer
     - dcache/ConfigServer
+  uploads:
+    - dcache/ProxyServer
+    - dcache/RouterServer
+    - dcache/KVCacheServer
+    - dcache/MKVCacheServer
+    - dcache/CombinDbAccessServer
