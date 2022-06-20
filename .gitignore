@@ -1,3 +1,8 @@
 .vscode
 .o
 .a
+cmake-build-debug/
+build/
+node_modules/
+log/
+.idea/
