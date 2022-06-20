@@ -18,7 +18,7 @@ foreach(TEST_CPP ${TEST_CPPS})
 
     add_executable(test-${TEST_NAME} ${TEST_CPP})
 
-    target_link_libraries(test-${TEST_NAME} mysqlclient gtest gmock tarsservant libKVCacheServer cache_comm tarsutil ${ZLIB_LIBRARIES})
+    target_link_libraries(test-${TEST_NAME} mysqlclient gtest gmock tarsservant libKVCacheServer cache_comm tarsutil ssl crypto nghttp2 ${ZLIB_LIBRARIES})
 
     add_dependencies(test-${TEST_NAME} libKVCacheServer cache_comm TarsComm ProxyServer RouterServer KVCacheServer MKVCacheServer)
 
