@@ -18,17 +18,17 @@ jobs:
           registry: docker.tarsyun.com
           username: ${{ secrets.name }}
           password: ${{ secrets.pass }}
-      - name: make
-        run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
-      - name: build docker
-        run: |
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config-values.yaml latest true
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt-values.yaml latest true
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property-values.yaml latest true
-      - name: build dcache web docker
-        run: |
-          cd web/src; npm install; cd ../..
-          exec-build-cloud.sh tarscloud/tars.nodejsbase nodejs web yaml/web.yaml latest true          
+      # - name: make
+      #   run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
+      # - name: build docker
+      #   run: |
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config-values.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt-values.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property-values.yaml latest true
+      # - name: build dcache web docker
+      #   run: |
+      #     cd web/src; npm install; cd ../..
+      #     exec-build-cloud.sh tarscloud/tars.nodejsbase nodejs web yaml/web.yaml latest true          
       - name: build dcache system
         run: |
           exec-build-cloud-product.sh yaml/dcache.yaml latest

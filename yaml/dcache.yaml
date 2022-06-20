@@ -1,6 +1,7 @@
-product:
+cloud:
   group: dcache
-  name: distributed-cache-system
+  name: dcache-system
+  type: product
   logo: logo/logo.png
   version: latest
   readme: README-EN.md
