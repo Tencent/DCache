@@ -19,8 +19,10 @@ include_directories(/usr/local/tars/cpp/thirdparty/include)
 link_directories(/usr/local/tars/cpp/thirdparty/lib)
 link_libraries(pthread)
 link_libraries(dl)
-link_libraries(iconv)
 
+if(APPLE)
+link_libraries(iconv)
+endif()
 
 add_subdirectory(src)
 add_subdirectory(test)
