@@ -17,13 +17,13 @@ cloud:
     - docs
     - docs-en
   servers:
-    - dcache/DCacheOptServer
-    - dcache/PropertyServer
-    - dcache/ConfigServer
-    - dcache/DCacheWebServer
+    - DCache/DCacheOptServer
+    - DCache/PropertyServer
+    - DCache/ConfigServer
+    - DCache/DCacheWebServer
   uploads:
-    - dcache/ProxyServer
-    - dcache/RouterServer
-    - dcache/KVCacheServer
-    - dcache/MKVCacheServer
-    - dcache/CombinDbAccessServer
+    - DCache/ProxyServer
+    - DCache/RouterServer
+    - DCache/KVCacheServer
+    - DCache/MKVCacheServer
+    - DCache/CombinDbAccessServer
