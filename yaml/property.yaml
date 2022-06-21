@@ -39,7 +39,7 @@ hostIPC: false
 hostPorts: []
 repo:
   id:
-  image: tarscloud/dcache.propertyserver
+  image: docker.tarsyun.com/tarscloud/dcache.propertyserver
   secret: cloud-market-secret
 config:
   - name: PropertyServer.conf

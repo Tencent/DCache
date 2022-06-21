@@ -39,7 +39,7 @@ hostIPC: false
 hostPorts: []
 repo:
   id:
-  image: tarscloud/dcache.configserver
+  image: docker.tarsyun.com/tarscloud/dcache.configserver
   secret: cloud-market-secret
 config:
   - name: ConfigServer.conf

@@ -39,7 +39,7 @@ hostIPC: false
 hostPorts: []
 repo:
   id:
-  image: tarscloud/dcache.dcacheoptserver
+  image: docker.tarsyun.com/tarscloud/dcache.dcacheoptserver
   secret: cloud-market-secret
 config:
   - name: DCacheOptServer.conf
