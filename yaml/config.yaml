@@ -16,6 +16,7 @@ cloud:
   readme: README-EN.md
   readme_cn: README.md
   protocols: []
+  independent: false
   assets: 
     - docs
     - docs-en

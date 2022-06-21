@@ -15,6 +15,7 @@ cloud:
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
+  independent: false
   protocols: []
   assets: 
     - docs
