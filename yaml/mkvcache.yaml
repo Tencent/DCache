@@ -2,7 +2,7 @@
 cloud:
   group: DCache 
   name: KVCacheServer
-  logo: logo/DCache-MKVCache.png
+  logo: logo/DCache-MKCache.png
   version: latest
   changelist: Changelist.md
   lang: cpp
