@@ -64,7 +64,8 @@ import releasePackage from '@/dcache/releasePackage/index';
 import proxyList from '@/dcache/releasePackage/proxyList';
 import accessList from '@/dcache/releasePackage/accessList';
 import routerList from '@/dcache/releasePackage/routerList';
-import cacheList from '@/dcache/releasePackage/cacheList';
+import kvcacheList from '@/dcache/releasePackage/kvcacheList';
+import mkvcacheList from '@/dcache/releasePackage/mkvcacheList';
 
 // cache 配置中心
 import CacheConfig from '@/dcache/cacheConfig/config'
@@ -206,8 +207,12 @@ export default new Router({
           component: routerList,
         },
         {
-          path: 'cacheList',
-          component: cacheList,
+          path: 'kvcacheList',
+          component: kvcacheList,
+        },
+        {
+          path: 'mkvcacheList',
+          component: mkvcacheList,
         },
       ],
     },

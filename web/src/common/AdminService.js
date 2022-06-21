@@ -159,9 +159,9 @@ AdminService.getServerTree = async () => {
     }
 };
 
-AdminService.getPatchPackage = async (application, serverName, packageType) => {
+AdminService.getPatchPackage = async (application, serverName) => {
 
-    let ret = await adminRegPrx.getPatchPackage(application, serverName, packageType, 1);
+    let ret = await adminRegPrx.getPatchPackage(application, serverName, 0, 1);
 
     // console.log("getPatchPackage:", ret);
 

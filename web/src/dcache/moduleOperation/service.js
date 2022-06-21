@@ -95,7 +95,7 @@ service.releaseServer = async function ({
       appName: 'DCache',
       serverName: item.server_name,
       nodeName: item.server_ip,
-      groupName: 'DCacheServerGroup',
+      groupName: cache_version==1?"KVCacheServer": "MKVCacheServeer",
       version: item.patch_version,
       user: 'adminUser',
       md5: '',

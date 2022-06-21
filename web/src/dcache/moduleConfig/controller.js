@@ -298,7 +298,7 @@ const ModuleConfigController = {
 
       mkCache = mkCache && JSON.parse(mkCache);
       // 先获取发布包id
-      const defaultCachePackage = await AdminService.getPatchPackage("DCache", "DCacheServerGroup", moduleInfo.cache_version);
+      const defaultCachePackage = await AdminService.getPatchPackage("DCache", moduleInfo.cache_version==1?"KVCacheServer": "MKVCacheServeer"); 
       //   where: {
       //     package_type: moduleInfo.cache_version,
       //     server: 'DCache.DCacheServerGroup',
@@ -389,7 +389,7 @@ const ModuleConfigController = {
           appName: 'DCache',
           serverName: item.server_name,
           nodeName: item.server_ip,
-          groupName: 'DCacheServerGroup',
+          groupName: moduleInfo.cache_version==1?"KVCacheServer": "MKVCacheServeer",
           version: defaultCachePackage.id.toString(),
           user: ctx.uid,
           md5: '',

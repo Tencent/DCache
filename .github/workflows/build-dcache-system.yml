@@ -30,10 +30,10 @@ jobs:
           exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/KVCacheServer yaml/kvcache.yaml latest true
           exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/MKVCacheServer yaml/mkvcache.yaml latest true
           exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/CombinDbAccessServer yaml/dbaccess.yaml latest true
-      # - name: build dcache web docker
-      #   run: |
-      #     cd web/src; npm install; cd ../..
-      #     exec-build-cloud.sh tarscloud/tars.nodejsbase nodejs web yaml/web.yaml latest true          
+      - name: build dcache web docker
+        run: |
+          cd web/src; npm install; cd ../..
+          exec-build-cloud.sh tarscloud/tars.nodejsbase nodejs web yaml/web.yaml latest true          
       - name: build dcache system
         run: |
           exec-build-cloud-product.sh yaml/dcache.yaml latest

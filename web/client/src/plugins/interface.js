@@ -497,65 +497,6 @@ export function queryProperptyData({
     })
 }
 
-// /**
-//  * 获取发布包
-//  * @param application
-//  * @param moduleName
-//  * @param currPage
-//  * @param pageSize
-//  * @param cacheVersion     package_type  的类型，  1是dcache 一期， 2是 dcache 2期
-//  */
-// export function serverPatchList({
-//     application = 'DCache',
-//     moduleName = 'DCacheServerGroup',
-//     currPage = 1,
-//     pageSize = 5,
-//     cacheVersion
-// }) {
-//     return Axios({
-//         method: 'get',
-//         url: '/server_patch_list',
-//         params: {
-//             application,
-//             module_name: moduleName,
-//             curr_page: currPage,
-//             page_size: pageSize,
-//             package_type: cacheVersion
-//         }
-//     })
-// }
-
-// export function addTask({
-//     serial = false,
-//     elegant = false,
-//     eachnum = 1,
-//     items = [{
-//         server_id: '',
-//         command: 'patch_tars',
-//         parameters: {
-//             patch_id: 0,
-//             bak_flag: '',
-//             group_name: ''
-//         }
-//     }]
-// }) {
-//     //console.log("addTask===>", serial, elegant, eachnum);
-//     return Axios({
-
-//         method: 'post',
-//         url: '/add_task',
-//         data: {
-//             serial,
-//             elegant,
-//             eachnum,
-//             items,
-//         },
-//         headers: {
-//             'Content-Type': 'application/json'
-//         }
-//     })
-// }
-
 /**
  * 获取模块信息
  * @param moduleId

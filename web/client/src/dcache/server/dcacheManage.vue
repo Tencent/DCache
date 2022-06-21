@@ -1594,8 +1594,10 @@ export default {
             group_name = "RouterServer";
           } else if (serverType === "proxy") {
             group_name = "ProxyServer";
-          } else if (serverType === "dcache") {
-            group_name = "DCacheServerGroup";
+          } else if (serverType === "kvcache") {
+            group_name = "KVCacheServer";
+          } else if (serverType === "mkvcache") {
+            group_name = "MKVCacheServer";
           }
           server_conf.forEach((item) => {
             addTaskOption.items.push({

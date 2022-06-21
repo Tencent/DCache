@@ -3,15 +3,15 @@
     <let-table :data="configList" :empty-msg="$t('common.nodata')">
       <let-table-column :title="$t('cache.config.remark')" prop="remark"></let-table-column>
       <let-table-column :title="$t('cache.config.path')" prop="path"></let-table-column>
-      <let-table-column :title="$t('cache.config.item')" prop="item"></let-table-column>
-      <let-table-column :title="$t('cache.config.value')" prop="config_value"></let-table-column>
+      <let-table-column :title="$t('cache.config.item')" prop="item" width="150px"></let-table-column>
+      <let-table-column :title="$t('cache.config.value')" prop="config_value"  width="150px"></let-table-column>
       <let-table-column :title="$t('cache.config.modify_value')" prop="config_value">
         <template slot-scope="{row}">
           <let-input size="small" v-model="row.modify_value"></let-input>
         </template>
       </let-table-column>
       <let-table-column :title="$t('operate.operates')">
-        <template slot-scope="{row}">
+        <template slot-scope="{row}" width="150px">
           <let-table-operation @click="saveConfig(row)">{{$t('operate.save')}}</let-table-operation>
           <let-table-operation @click="deleteConfig(row)" class="danger">{{$t('operate.delete')}}</let-table-operation>
         </template>

@@ -1,7 +1,7 @@
 cloud:
   group: dcache 
   name: dcachewebserver
-  logo: logo/logo.png
+  logo: logo/DCache.png
   version: latest
   changelist: Changelist.md
   lang: nodejs

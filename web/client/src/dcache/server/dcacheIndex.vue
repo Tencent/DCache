@@ -277,12 +277,14 @@ export default {
     selectTree(nodeKey, nodeInfo) {
       if (nodeInfo.children && nodeInfo.children.length) {
       } else {
+
         // 正常的服务展示, tars 的就是正常的，只有dcache、router、proxy才有serverType
         let { serverType } = nodeInfo;
         !serverType ? (serverType = "tars") : "";
         this.serverType = serverType;
       }
 
+      
       this.selectBTabs(nodeKey, nodeInfo);
       this.checkCurrBTabs();
     },

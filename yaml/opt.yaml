@@ -2,7 +2,7 @@
 cloud:
   group: DCache 
   name: DCacheOptServer
-  logo: logo/logo.png
+  logo: logo/DCache-Opt.png
   version: latest
   changelist: Changelist.md
   lang: cpp

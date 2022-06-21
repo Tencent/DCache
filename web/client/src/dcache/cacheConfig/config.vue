@@ -11,7 +11,7 @@
       <let-table-column :title="$t('cache.config.item')" prop="item"></let-table-column>
       <let-table-column :title="$t('cache.config.reload')" prop="reload"></let-table-column>
       <let-table-column :title="$t('cache.config.period')" prop="period"></let-table-column>
-      <let-table-column :title="$t('operate.operates')">
+      <let-table-column :title="$t('operate.operates')" >
         <template slot-scope="{row}">
           <let-table-operation @click="editConfig(row)">{{$t('operate.update')}}</let-table-operation>
           <let-table-operation @click="deleteConfig(row)" class="danger">{{$t('operate.delete')}}</let-table-operation>

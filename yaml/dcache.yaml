@@ -2,7 +2,7 @@ cloud:
   group: dcache
   name: dcache-system
   type: product
-  logo: logo/logo.png
+  logo: logo/DCache.png
   version: latest
   readme: README-EN.md
   readme_cn: README.md
@@ -20,6 +20,7 @@ cloud:
     - dcache/DCacheOptServer
     - dcache/PropertyServer
     - dcache/ConfigServer
+    - dcache/DCacheWebServer
   uploads:
     - dcache/ProxyServer
     - dcache/RouterServer

@@ -2,7 +2,7 @@
 cloud:
   group: DCache 
   name: ConfigServer
-  logo: logo/logo.png
+  logo: logo/DCache-Config.png
   version: latest
   changelist: Changelist.md
   lang: cpp

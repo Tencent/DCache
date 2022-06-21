@@ -27,6 +27,7 @@
         "false": "否",
         "yes": "是",
         "no": "否",
+        "status": "状态",
         "cancel": "取消",
         "submit": "确定",
         "error": "错误",
@@ -353,13 +354,15 @@
         "servant": "Servant管理",
         "status": "状态",
         "default": "默认",
-        "more": "更多命令"
+        "more": "更多命令",
+        "goback": "返回"
     },
     "releasePackage": {
         "proxyList": "Proxy服务列表",
         "routerList": "Router服务列表",
         "accessList": "DbAccess服务列表",
-        "cacheList": "Cache服务列表",
+        "kvcacheList": "KVCache服务列表",
+        "mkvcacheList": "MKVCache服务列表",
         "uploadPackage": "上传发布包",
         "uploadPackageTips": "发布包需要以服务名称开头",
         "moduleName": "模块名",

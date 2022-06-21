@@ -41,7 +41,7 @@
         <let-table-column :title="$t('releasePackage.cacheType')">
           <template slot-scope="scope">
             <span>{{
-              scope.row.package_type === 1 ? "KVcache" : "MKVcache"
+              scope.row.package_type === 1 ? "KVCache" : "MKVCache"
             }}</span>
           </template>
         </let-table-column>
@@ -85,8 +85,7 @@
   </section>
 </template>
 <script>
-import { serverPatchList } from "@/plugins/interface.js";
-import tarsReleaseProgress from "./../components/tarsReleaseProgress.vue";
+import tarsReleaseProgress from "../components/tarsReleaseProgress.vue";
 import Mixin from "./mixin.js";
 
 export default {
@@ -117,7 +116,7 @@ export default {
       show: false,
       publishId: null, //发布包id
       publishModal: {
-        moduleName: "DCacheServerGroup",
+        moduleName: "",
         application: "DCache",
         totalPatchPage: 0,
         pageSize: 5,
@@ -133,6 +132,8 @@ export default {
       this.releaseIng = false;
       this.publishId = null;
       this.getVersionList();
+
+      // console.log(this.checkedServers);
     },
     patchChangePage(page) {
       this.publishModal.currPage = page;
@@ -140,7 +141,7 @@ export default {
     },
     async serverPatchList({
       application = "DCache",
-      moduleName = "DCacheServerGroup",
+      moduleName = "",
       currPage = 1,
       pageSize = 5,
       cacheVersion,
@@ -155,9 +156,9 @@ export default {
     },
     async getVersionList() {
       const { cacheVersion, publishModal } = this;
-      const { moduleName, application, currPage, pageSize } = publishModal;
+      const { application, currPage, pageSize } = publishModal;
       let { count, rows } = await this.serverPatchList({
-        moduleName,
+        moduleName: this.cacheVersion==1?"KVCacheServer":"MKVCacheServer",
         application,
         currPage,
         pageSize,
@@ -200,7 +201,7 @@ export default {
             patch_id: publishId,
             bak_flag: item.bak_flag,
             update_text: "batch publish cache servers",
-            group_name: "DCacheServerGroup",
+            group_name: item.cache_version==1?"KVCacheServer":"MKVCacheServer",
           },
         });
       });

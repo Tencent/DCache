@@ -337,7 +337,8 @@
         "proxyList": "Proxy Service List",
         "accessList": "DbAccess Service List",
         "routerList": "Router Service List",
-        "cacheList": "Cache Service List",
+        "kvcacheList": "KVCache Service List",
+        "mkvcacheList": "MKCache Service List",
         "uploadPackage": "Upload publish package",
         "uploadPackageTips": "The release package does not match the service name",
         "moduleName": "moduleName",
@@ -368,7 +369,8 @@
         "servant": "Servant Manage",
         "status": "status",
         "default": "Default",
-        "more": "more"
+        "more": "more",
+        "goback": "Back"
     },
     "apply": {
         "title": "Application",

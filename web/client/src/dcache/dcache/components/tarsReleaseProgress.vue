@@ -73,7 +73,7 @@ export default {
   },
   methods: {
     async getTarsReleaseProgress(releaseId) {
-      return await this.$ajax.getJSON("/server/api/task", {
+      return await this.$tars.getJSON("/server/api/task", {
         task_no: releaseId,
       });
     },

@@ -217,7 +217,7 @@ struct ReleaseInfo
     0 require string appName;       //服务应用名
     1 require string serverName;    //服务名
     2 require string nodeName;      //服务IP地址
-    3 require string groupName;     //服务组名 cache发布填“DCacheServerGroup”，proxy填“ProxyServer”，router填“RouterServer”
+    3 require string groupName;     //服务组名 cache发布填“KVCCacheServer/MKVCacheServer”，proxy填“ProxyServer”，router填“RouterServer”
     4 require string version;       //发布版本号
     5 require string user;          //发布用户
     6 require string md5;           //发布包的md5

@@ -2,7 +2,7 @@
 cloud:
   group: DCache 
   name: PropertyServer
-  logo: logo/logo.png
+  logo: logo/DCache-Property.png
   version: latest
   changelist: Changelist.md
   lang: cpp

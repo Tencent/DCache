@@ -34,12 +34,12 @@
         :title="$t('releasePackage.moduleName')"
         prop="server"
       ></let-table-column>
-      <let-table-column :title="$t('releasePackage.cacheType')">
+      <!-- <let-table-column :title="$t('releasePackage.cacheType')">
         <template slot-scope="scope">
           <span v-if="scope.row.package_type == 1">KVCache</span>
           <span v-else-if="scope.row.package_type == 2">MKVCache</span>
         </template>
-      </let-table-column>
+      </let-table-column> -->
       <let-table-column
         :title="$t('serverList.servant.comment')"
         prop="comment"
@@ -79,12 +79,12 @@
             uploadModal.model.module_name
           }}
         </let-form-item>
-        <let-form-item :label="$t('releasePackage.cacheType')">
+        <!-- <let-form-item :label="$t('releasePackage.cacheType')">
           <let-select v-model="uploadModal.model.package_type" size="small">
             <let-option value="1">KVCache</let-option>
             <let-option value="2">MKVCache</let-option>
           </let-select>
-        </let-form-item>
+        </let-form-item> -->
         <let-form-item :label="$t('pub.dlg.releasePkg')" itemWidth="400px">
           <let-uploader
             :placeholder="$t('pub.dlg.defaultValue')"
@@ -120,8 +120,8 @@ export default {
         show: false,
         model: {
           application: "DCache",
-          module_name: "DCacheServerGroup",
-          package_type: "1",
+          module_name: "MKVCacheServer",
+          // package_type: "1",
           file: {},
           comment: "",
         },
@@ -147,7 +147,7 @@ export default {
         formdata.append("application", this.uploadModal.model.application);
         formdata.append("module_name", this.uploadModal.model.module_name);
         formdata.append("task_id", new Date().getTime());
-        formdata.append("package_type", this.uploadModal.model.package_type);
+        // formdata.append("package_type", this.uploadModal.model.package_type);
         formdata.append("suse", this.uploadModal.model.file);
         formdata.append("comment", this.uploadModal.model.comment);
         this.$tars
@@ -169,7 +169,7 @@ export default {
       this.$tars
         .getJSON("/server/api/server_patch_list", {
           application: "DCache",
-          module_name: "DCacheServerGroup",
+          module_name: "MKVCacheServer",
         })
         .then((data) => {
           this.packages = data;
@@ -199,11 +199,11 @@ export default {
         });
     },
     setDefault(row) {
-      let { id, package_type } = row;
+      let { id} = row;
       this.$tars
         .postJSON("/server/api/set_patch_package_default", {
           id,
-          package_type,
+          // package_type,
           application: this.uploadModal.model.application,
           module_name: this.uploadModal.model.module_name,
         })

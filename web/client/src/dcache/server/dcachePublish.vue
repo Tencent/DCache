@@ -204,11 +204,11 @@
               ></let-table-column>
               <let-table-column
                 :title="$t('releasePackage.cacheType')"
-                v-if="serverType === 'dcache'"
+                v-if="serverType === 'kvcache' || serverType === 'mkvcache'  "
               >
                 <template slot-scope="scope">
                   <span>{{
-                    scope.row.package_type == 1 ? "KVCache" : "MKVCache"
+                    serverType == 1 ? "KVCache" : "MKVCache"
                   }}</span>
                 </template>
               </let-table-column>
@@ -426,7 +426,7 @@ export default {
         totalPatchPage: 0,
         patchPageSize: 10,
         patchPage: 1,
-        packageType: 0,
+        // packageType: 0,
       },
       finishModal: {
         show: false,
@@ -526,30 +526,33 @@ export default {
       let module_name = first.server_name;
       let patchPage = 1;
       let patchPageSize = 5;
-      let packageType = 0;
+      // let packageType = 0;
       if (serverType == "router") {
         module_name = "RouterServer";
       } else if (serverType == "proxy") {
         module_name = "ProxyServer";
       } else if (serverType == "dbaccess") {
         module_name = "CombinDbAccessServer";
-      } else if (serverType == "dcache") {
-        module_name = "DCacheServerGroup";
-
-        packageType = first.exe_path == "KVCacheServer" ? 1 : 2;
+      } else if (serverType == "kvcache") {
+        module_name = "KVCacheServer";
+        // packageType = first.exe_path == "KVCacheServer" ? 1 : 2;
+      }else if (serverType == "mkvcache") {
+        module_name = "MKVCacheServer";
+        // packageType = first.exe_path == "KVCacheServer" ? 1 : 2;
       }
+
       this.publishModal.module_name = module_name;
       this.publishModal.application = first.application;
       this.publishModal.patchPage = patchPage;
       this.publishModal.patchPageSize = patchPageSize;
-      this.publishModal.packageType = packageType;
+      // this.publishModal.packageType = packageType;
 
       this.getPatchList(
         first.application,
         module_name,
         patchPage,
         patchPageSize,
-        packageType
+        // packageType
       ).then((data) => {
         this.publishModal.model.patchList = data.rows;
         this.publishModal.totalPatchPage = Math.ceil(
@@ -565,14 +568,14 @@ export default {
         application,
         patchPage,
         patchPageSize,
-        packageType,
+        // packageType,
       } = this.publishModal;
       this.getPatchList(
         application,
         module_name,
         patchPage,
         patchPageSize,
-        packageType
+        // packageType
       ).then((data) => {
         this.publishModal.model.patchList = data.rows;
         this.publishModal.totalPatchPage = Math.ceil(
@@ -580,13 +583,13 @@ export default {
         );
       });
     },
-    getPatchList(application, serverName, currPage, pageSize, packageType) {
+    getPatchList(application, serverName, currPage, pageSize) {
       return this.$tars.getJSON("/server/api/server_patch_list", {
         application,
         module_name: serverName,
         curr_page: currPage,
         page_size: pageSize,
-        package_type: packageType,
+        // package_type: packageType,
       });
     },
     closePublishModal() {
@@ -614,8 +617,10 @@ export default {
           group_name = "ProxyServer";
         } else if (serverType == "dbaccess") {
           group_name = "CombinDbAccessServer";
-        } else if (serverType == "dcache") {
-          group_name = "DCacheServerGroup";
+        } else if (serverType == "kvcache") {
+          group_name = "KVCacheServer";
+        } else if (serverType == "mkvcache") {
+          group_name = "MKVCacheServer";
         }
         this.$refs.publishStatus.savePublishServer(
           this.publishModal,

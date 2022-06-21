@@ -20,7 +20,6 @@ const fs = require('fs-extra');
 let conf = {
     webConf: {
         port: 16535, //服务启动端口
-        defaultLanguage: 'cn', //cn 或 en ，用户默认的语言环境
         alter: true, //变更db结构
     },
     dbConf: {
@@ -53,7 +52,7 @@ if (process.env.NODE_ENV == "local") {
     };
 
     conf.webConf.host = '0.0.0.0';
-    conf.webConf.port = 29104;
+    conf.webConf.port = 16535;
     conf.webConf.alter = true;
 
 } else if (process.env.NODE_ENV == "remote") {

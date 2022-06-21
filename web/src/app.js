@@ -69,13 +69,13 @@ const appInitialize = () => {
 const registerPlugin = async () => {
 
 	logger.info("registerPlugin");
+	const AdminService = require("./common/AdminService");
 
 	if (process.env.TARS_CONFIG) {
 
 		let config = new Configure();
 		config.parseFile(process.env.TARS_CONFIG);
 
-		const AdminService = require("./common/AdminService");
 
 		try {
 			const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", config.get("tars.application.server.app") + "." + config.get("tars.application.server.server") + ".WebObj", 1, webConf.path);
@@ -91,7 +91,7 @@ const registerPlugin = async () => {
 	} else {
 
 		try {
-			const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", "Base.DCacheWeb.WebObj", 1, webConf.path);
+			const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", "DCache.DCacheWebServer.WebObj", 1, webConf.path);
 
 			console.log(rst);
 		} catch (e) {
@@ -113,6 +113,11 @@ const initialize = async () => {
 		});
 
 		Object.assign(webConf, conf);
+
+	} else {
+		const client = require("@tars/rpc/protal.js").client;
+
+		client.setProperty("locator", "tars.tarsregistry.QueryObj@tcp -h 192.168.3.2 -p 17890");
 
 	}
 

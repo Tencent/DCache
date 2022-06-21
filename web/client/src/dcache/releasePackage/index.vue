@@ -4,7 +4,8 @@
       <let-tab-pane :tab="$t('releasePackage.proxyList')" tabkey="/releasePackage/proxyList"></let-tab-pane>
       <let-tab-pane :tab="$t('releasePackage.accessList')" tabkey="/releasePackage/accessList"></let-tab-pane>
       <let-tab-pane :tab="$t('releasePackage.routerList')" tabkey="/releasePackage/routerList"></let-tab-pane>
-      <let-tab-pane :tab="$t('releasePackage.cacheList')" tabkey="/releasePackage/cacheList"></let-tab-pane>
+      <let-tab-pane :tab="$t('releasePackage.kvcacheList')" tabkey="/releasePackage/kvcacheList"></let-tab-pane>
+      <let-tab-pane :tab="$t('releasePackage.mkvcacheList')" tabkey="/releasePackage/mkvcacheList"></let-tab-pane>
     </let-tabs>
     <router-view class="page_operation_children"></router-view>
   </div>

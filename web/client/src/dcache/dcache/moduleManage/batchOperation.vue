@@ -97,7 +97,7 @@ export default {
       releaseId: null,
       show: false,
       publishModal: {
-        moduleName: "DCacheServerGroup",
+        moduleName: "",
         application: "DCache",
         totalPatchPage: 0,
         pageSize: 5,

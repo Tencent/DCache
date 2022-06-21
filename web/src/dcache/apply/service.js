@@ -117,6 +117,8 @@ ApplyService.buildCacheList = async () => {
       };
 
       if (value.cacheServer && value.cacheServer.length > 0) {
+        // console.log(value);
+
         value.cacheServer.forEach(server => {
           cacheNodeFloder.children.push({
             name: server,
@@ -125,7 +127,7 @@ ApplyService.buildCacheList = async () => {
             is_parent: false,
             open: false,
             children: [],
-            serverType: 'dcache',
+            serverType: value.cacheNode.indexOf(value.moduleName + "KVCacheServer") != -1?"kvcache": "mkvcache", //'dcache',
           })
         })
       }
