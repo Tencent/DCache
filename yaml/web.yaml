@@ -18,7 +18,7 @@ cloud:
     - docs-en
   independent: false
   deploy: yaml/web.yaml
-app: dcache
+app: Dcache
 server: DCacheWebServer
 template: tars.nodejs
 profile: ''
