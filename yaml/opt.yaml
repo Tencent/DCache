@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: DCacheOptServer
   logo: logo/DCache-Opt.png
   version: latest
@@ -8,8 +7,7 @@ cloud:
   lang: cpp
   description: >-
     DCache is a distributed cache based on tars. DCache opt server is mainly provided to tarsweb to complete the management of distributed cache
-  description_cn:
-    DCache是一套基于tars的分布式缓存, DCacheOptServer主要提供给tarsweb, 完成分布式缓存相关的管理.
+  description_cn: DCache是一套基于tars的分布式缓存, DCacheOptServer主要提供给tarsweb, 完成分布式缓存相关的管理.
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
@@ -17,13 +15,13 @@ cloud:
   readme_cn: README.md
   independent: false
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: DCacheOptServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: DCacheOptObj
     port: 11771
@@ -49,12 +47,12 @@ config:
           AdminRegObj = tars.tarsAdminRegistry.AdminRegObj
           <DB>
               <relation>
-                  charset = utf8mb4
-                  dbname  = db_dcache_relation
-                  dbhost  = dcache_host
-                  dbport  = dcache_port
-                  dbuser  = dcache_user
-                  dbpass  = dcache_pass
+                dbhost= 127.0.0.1
+                dbuser= root
+                dbpass= 
+                dbname= db_dcache_relation
+                charset=utf8mb4
+                dbport= 3306
               </relation>
           </DB>
           <Release>

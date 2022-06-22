@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: PropertyServer
   logo: logo/DCache-Property.png
   version: latest
@@ -8,8 +7,7 @@ cloud:
   lang: cpp
   description: >-
     DCache is a distributed cache based on tars. DCache opt server is mainly provided to tarsweb to complete the management of distributed cache
-  description_cn:
-    DCache是一套基于tars的分布式缓存, DCacheOptServer主要提供给tarsweb, 完成分布式缓存相关的管理.
+  description_cn: DCache是一套基于tars的分布式缓存, DCacheOptServer主要提供给tarsweb, 完成分布式缓存相关的管理.
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
@@ -17,13 +15,13 @@ cloud:
   readme_cn: README.md
   independent: false
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: PropertyServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: PropertyObj
     port: 11773
@@ -52,21 +50,21 @@ config:
             AppName=dcache_idc5min_147
             #特性监控数据库信息
             <property>
-                dbhost=dcache_host
-                dbname=db_dcache_property
-                dbuser=dcache_user
-                dbpass=dcache_pass
-                dbport=dcache_port
+                dbhost= 127.0.0.1
+                dbuser= root
+                dbpass= 
+                dbname= db_dcache_property
                 charset=utf8mb4
+                dbport= 3306
             </property>
             #db_dcache_relation的数据库信息
             <relation>
+                dbhost= 127.0.0.1
+                dbuser= root
+                dbpass= 
+                dbname= db_dcache_relation
                 charset=utf8mb4
-                dbname=db_dcache_relation
-                dbhost=dcache_host
-                dbpass=dcache_pass
-                dbport=dcache_port
-                dbuser=dcache_user
+                dbport= 3306
             </relation>
         </DB>
         <HashMap>

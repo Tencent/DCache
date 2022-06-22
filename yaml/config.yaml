@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: ConfigServer
   logo: logo/DCache-Config.png
   version: latest
@@ -8,8 +7,7 @@ cloud:
   lang: cpp
   description: >-
     DCache is a distributed cache based on tars. Configserver mainly provides an interface to the cache module to facilitate the cache module to obtain relevant configuration
-  description_cn:
-    DCache是一套基于tars的分布式缓存, ConfigServer主要给Cache模块提供接口, 以方便Cache模块获取相关的配置
+  description_cn: DCache是一套基于tars的分布式缓存, ConfigServer主要给Cache模块提供接口, 以方便Cache模块获取相关的配置
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
@@ -17,13 +15,13 @@ cloud:
   readme_cn: README.md
   protocols: []
   independent: false
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: ConfigServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: ConfigObj
     port: 11772
@@ -46,11 +44,11 @@ config:
     content: |
       <Main>
           <DB>
-              dbhost= dcache_host
-              dbpass= dcache_pass
-              dbuser= dcache_user
+              dbhost= 127.0.0.1
+              dbuser= root
+              dbpass= 
               dbname= db_dcache_relation
               charset=utf8mb4
-              dbport= dcache_port
+              dbport= 3306
           </DB>
       </Main>
