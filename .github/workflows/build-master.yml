@@ -1,6 +1,5 @@
 name: build-master
 
-
 on:
   push:
     branches:
@@ -8,7 +7,6 @@ on:
 
 jobs:
   build:
-    container: tarscloud/base-compiler
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -18,10 +16,88 @@ jobs:
           registry: docker.tarsyun.com
           username: ${{ secrets.name }}
           password: ${{ secrets.pass }}
-      - name: make
-        run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
-      - name: build docker
+      - name: Create Build
         run: |
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config-values.yaml latest true
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt-values.yaml latest true
-          exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property-values.yaml latest true
+          docker run --rm --privileged tonistiigi/binfmt:latest --install all
+          docker buildx create --name k8s-framework-builder --use
+          docker buildx inspect --bootstrap --builder k8s-framework-builder
+      - name: Buildx Config
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/config.yaml latest Dockerfile.config"
+      - name: Create Config Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx Opt
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/opt.yaml latest Dockerfile.opt"
+      - name: Create Opt Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx property
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/property.yaml latest Dockerfile.property"
+      - name: Create property Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx kvcache
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/kvcache.yaml latest Dockerfile.kvcache"
+      - name: Create kvcache Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx proxy
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/proxy.yaml latest Dockerfile.proxy"
+      - name: Create proxy Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx mkvcache
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/mkvcache.yaml latest Dockerfile.mkvcache"
+      - name: Create mkvcache Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx dbaccess
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/dbaccess.yaml latest Dockerfile.dbaccess"
+      - name: Create dbaccess Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx router
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/router.yaml latest Dockerfile.router"
+      - name: Create router Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx Web
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/web.yaml latest Dockerfile.nodejs"
+      - name: Create web Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx Product
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile-product.sh yaml/dcache.yaml latest"
+      - name: Create web Docker
+        run: |
+          ./docker-buildx-cloud-product.sh
+
+      # - name: make
+      #   run: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
+      # - name: build docker
+      #   run: |
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ConfigServer yaml/config.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/DCacheOptServer yaml/opt.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/PropertyServer yaml/property.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/ProxyServer yaml/proxy.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/RouterServer yaml/router.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/KVCacheServer yaml/kvcache.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/MKVCacheServer yaml/mkvcache.yaml latest true
+      #     exec-build-cloud.sh tarscloud/tars.cppbase cpp build/bin/CombinDbAccessServer yaml/dbaccess.yaml latest true
+      # - name: build dcache web docker
+      #   run: |
+      #     cd web/src; npm install; cd ../..
+      #     exec-build-cloud.sh tarscloud/tars.nodejsbase nodejs web yaml/web.yaml latest true
+      # - name: build dcache system
+      #   run: |
+      #     exec-build-cloud-product.sh yaml/dcache.yaml latest
