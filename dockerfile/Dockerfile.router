@@ -1,0 +1,10 @@
+ARG TARGETARCH
+
+FROM all:$TARGETARCH as First
+
+FROM tarscloud/tars.cppbase
+
+ENV ServerType=cpp
+
+RUN mkdir -p /usr/local/server/bin/
+COPY --from=First /data/build/bin/RouterServer /usr/local/server/bin/
