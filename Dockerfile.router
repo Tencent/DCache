@@ -1,5 +1,7 @@
 FROM tarscloud/base-compiler as First
 
+RUN mkdir -p /data
+COPY . /data
 RUN cd /data \
     && mkdir -p build   \
     && cd build    \
