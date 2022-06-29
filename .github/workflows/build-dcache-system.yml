@@ -27,6 +27,8 @@ jobs:
       - name: Buildx arm64
         run: |
           docker buildx build . -t all:arm64 -f dockerfile/Dockerfile --platform linux/arm64 -o type=docker
+      - name: BuildX images
+        run: docker images
       - name: Buildx Config
         run: |
           docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/config.yaml latest dockerfile/Dockerfile.config"
