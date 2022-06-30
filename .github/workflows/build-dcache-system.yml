@@ -21,12 +21,9 @@ jobs:
           docker run --rm --privileged tonistiigi/binfmt:latest --install all
           docker buildx create --name k8s-framework-builder --use
           docker buildx inspect --bootstrap --builder k8s-framework-builder
-      - name: Buildx amd64
+      - name: Buildx
         run: |
-          docker buildx build . -t all:amd64 -f dockerfile/Dockerfile --platform linux/amd64 -o type=docker
-      - name: Buildx arm64
-        run: |
-          docker buildx build . -t all:arm64 -f dockerfile/Dockerfile --platform linux/arm64 -o type=docker
+          docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64
       - name: BuildX images
         run: docker images
       - name: Buildx Config
