@@ -23,7 +23,7 @@ jobs:
           docker buildx inspect --bootstrap --builder k8s-framework-builder
       - name: Buildx
         run: |
-          docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64
+          docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64 --push
       - name: BuildX images
         run: docker images
       - name: Buildx Config
