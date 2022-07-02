@@ -16,14 +16,26 @@ jobs:
           registry: docker.tarsyun.com
           username: ${{ secrets.name }}
           password: ${{ secrets.pass }}
-      - name: Create Build
-        run: |
-          docker run --rm --privileged tonistiigi/binfmt:latest --install all
-          docker buildx create --name k8s-framework-builder --use
-          docker buildx inspect --bootstrap --builder k8s-framework-builder
-      - name: Buildx
-        run: |
-          docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64 --push
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: "{{defaultContext}}:dockerfile"
+          push: true
+          tags: docker.tarsyun.com/tarscloud/dcache-compiler
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+      # - name: Create Build
+      #   run: |
+      #     docker run --rm --privileged tonistiigi/binfmt:latest --install all
+      #     docker buildx create --name k8s-framework-builder --use
+      #     docker buildx inspect --bootstrap --builder k8s-framework-builder
+      # - name: Buildx
+      #   run: |
+      #     docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64 --push
       - name: BuildX images
         run: docker images
       - name: Buildx Config
