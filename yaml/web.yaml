@@ -1,0 +1,63 @@
+cloud:
+  group: dcache
+  name: dcachewebserver
+  logo: logo/DCache.png
+  version: latest
+  changelist: Changelist.md
+  lang: nodejs
+  description: The web management of DCache
+  description_cn: DCache的web管理平台
+  collaborators:
+    - ruanshudong@qq.com
+    - shevqko@qq.com
+  repository: https://github.com/Tencent/DCache.git
+  readme: README-EN.md
+  readme_cn: README.md
+  assets:
+    - docs
+    - docs-en
+  independent: false
+  deploy: yaml/web.yaml
+app: DCache
+server: DCacheWebServer
+template: tars.nodejs
+profile: ""
+servants:
+  - name: WebObj
+    port: 15200
+    isTars: false
+    isTcp: true
+    thread: 2
+    capacity: 100000
+    connection: 10000
+    timeout: 30000
+replicas: 1
+hostNetwork: false
+hostIPC: false
+hostPorts: []
+repo:
+  id: null
+  image: docker.tarsyun.com/dcache/dcachewebserver:latest
+  secret: cloud-market-secret
+config:
+  - name: config.json
+    content: |
+      {
+          "webConf": {
+              "port": 10500,
+              "alter": true
+          },
+          "dbConf": {
+              "host": "127.0.0.1",
+              "port": "3306",
+              "user": "tarsAdmin",
+              "password": "Tars@2019",
+              "charset": "utf8",
+              "pool": {
+                  "max": 10,
+                  "min": 0,
+                  "idle": 10000
+              }
+          },
+          "path": "/plugins/dcache"
+      }

@@ -1,0 +1,83 @@
+
+cloud:
+  group: DCache 
+  name: KVCacheServer
+  logo: logo/DCache-MKCache.png
+  version: latest
+  changelist: Changelist.md
+  lang: cpp
+  description: >-
+    mkey+ukey-value cache
+  description_cn:
+    mkey+ukey-value模式cache
+  collaborators:
+    - ruanshudong@qq.com
+  repository: https://github.com/Tencent/DCache.git
+  readme: README-EN.md
+  readme_cn: README.md
+  independent: false
+  protocols: []
+  assets: 
+    - docs
+    - docs-en
+app: DCache
+server: MKVCacheServer
+template: tars.cpp
+profile: ''
+servants:
+  - name: RouterClientObj
+    port: 16700
+    isTars: true
+    isTcp: true
+    thread: 1
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+  - name: BackUpObj
+    port: 16701
+    isTars: true
+    isTcp: true
+    thread: 1
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+  - name: CacheObj
+    port: 16702
+    isTars: true
+    isTcp: true
+    thread: 5
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+  - name: WCacheObj
+    port: 16703
+    isTars: true
+    isTcp: true
+    thread: 5
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+  - name: BinLogObj
+    port: 16704
+    isTars: true
+    isTcp: true
+    thread: 2
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+  - name: ControlAckObj
+    port: 16705
+    isTars: true
+    isTcp: true
+    thread: 1
+    capacity: 100000
+    connection: 100000
+    timeout: 60000
+replicas: 1
+hostNetwork: false
+hostIPC: false
+hostPorts: []
+repo:
+  id:
+  image: docker.tarsyun.com/dcache/mkvcacheserver:latest
+  secret: cloud-market-secret

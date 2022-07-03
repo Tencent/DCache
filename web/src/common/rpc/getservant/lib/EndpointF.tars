@@ -1,0 +1,21 @@
+
+module tars
+{
+    /**
+     * 端口信息
+     */
+    struct EndpointF
+    {
+        0 require string host;
+        1 require int port;
+        2 require int timeout;
+        3 require int istcp;
+        5 optional int groupworkid;
+        6 optional int grouprealid;
+        7 optional string setId;
+        9 optional int bakFlag;
+    };
+    key[EndpointF, host, port, timeout, istcp];
+};
+
+

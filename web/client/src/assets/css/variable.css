@@ -1,0 +1,24 @@
+:root {
+  /*reset*/
+  --color-base: #565B66;
+  --font-base: Lato, PingFangSC-Regular, HelveticaNeue-Light, 'Helvetica Neue Light', 'Microsoft YaHei', sans-serif;
+
+  --placeholder: #ccc;
+  --scrollbars-size: 6px;
+  --scrollbars-bg: #ccc;
+  --scrollbar-thumb-bg: #999;
+  --scrollbar-thumb-border-radius: 3px;
+  /*reset end*/
+
+  --main-width: 1440px;
+
+  --border-color: #EBECEE;
+  --gap-small: 24px;
+  --gap-normal: 32px;
+  --gap-big: 40px;
+
+  --active-color: #49CC8F;
+  --off-color: #E0543F;
+}
+
+
