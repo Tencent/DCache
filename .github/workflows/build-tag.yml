@@ -1,0 +1,95 @@
+name: build-master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.docker_hub_name }}
+          password: ${{ secrets.docker_hub_pass }}
+      - name: Login to TarsCloud Docker
+        uses: docker/login-action@v1
+        with:
+          registry: docker.tarsyun.com
+          username: ${{ secrets.name }}
+          password: ${{ secrets.pass }}
+      - name: Create Build
+        run: |
+          docker run --rm --privileged tonistiigi/binfmt:${{ steps.get_version.outputs.VERSION }} --install all
+          docker buildx create --name k8s-framework-builder --use
+          docker buildx inspect --bootstrap --builder k8s-framework-builder
+      - name: Buildx
+        run: |
+          docker buildx build . -t tarscloud/dcache-compiler -f dockerfile/Dockerfile --platform linux/amd64,linux/arm64 --push
+      - name: BuildX images
+        run: docker images
+      - name: Buildx Config
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/config.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.config"
+      - name: Create Config Docker
+        run: |
+          cat ./docker-buildx-cloud.sh
+          cat dockerfile/Dockerfile.config.new
+          ./docker-buildx-cloud.sh
+      - name: Buildx Opt
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/opt.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.opt"
+      - name: Create Opt Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx property
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/property.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.property"
+      - name: Create property Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx kvcache
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/kvcache.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.kvcache"
+      - name: Create kvcache Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx proxy
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/proxy.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.proxy"
+      - name: Create proxy Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx mkvcache
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/mkvcache.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.mkvcache"
+      - name: Create mkvcache Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx dbaccess
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/dbaccess.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.dbaccess"
+      - name: Create dbaccess Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx router
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/router.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.router"
+      - name: Create router Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx Web
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/web.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.nodejs"
+      - name: Create web Docker
+        run: |
+          ./docker-buildx-cloud.sh
+      - name: Buildx Product
+        run: |
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile-product.sh yaml/dcache.yaml ${{ steps.get_version.outputs.VERSION }}"
+      - name: Create web Docker
+        run: |
+          ./docker-buildx-cloud-product.sh

@@ -1,0 +1,119 @@
+@import "./variable.css";
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+/*
+**页面基础样式设置，类似body, a, margin的初始化设置
+*/
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, p, a, blockquote, th, textarea, th, td {
+  margin: 0;
+  outline: none;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: 14px;
+}
+
+ol, ul, li {
+  list-style: none outside none;
+}
+
+table {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+p, th, td {
+  word-break: break-all;
+}
+
+fieldset, img {
+  border: 0 none;
+}
+
+input::-moz-focus-inner {
+  border: none;
+  padding: 0;
+}
+
+a {
+  outline: none;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  img {
+    border: none;
+  }
+}
+
+img {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+textarea {
+  outline: none;
+  resize: none;
+}
+
+input, button {
+  border: none;
+  outline: none;
+}
+
+input::-ms-clear {
+  display: none;
+}
+
+label {
+  cursor: pointer;
+}
+
+i, em, cite {
+  font-style: normal;
+}
+
+::placeholder {
+  color: var(--placeholder);
+  font-weight: 400;
+}
+
+:-ms-input-placeholder {
+  /* IE10–11 */
+  color: var(--placeholder) !important;
+  font-weight: 400 !important;
+}
+
+::-webkit-scrollbar {
+  background: var(--scrollbars-bg);
+  border-radius: 0;
+  height: var(--scrollbars-size);
+  position: absolute;
+  width: var(--scrollbars-size);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg);
+  border-radius: var(--scrollbar-thumb-border-radius);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  color: var(--color-base);
+  font-family: var(--font-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-font-smoothing: antialiased;
+  text-align: left;
+}

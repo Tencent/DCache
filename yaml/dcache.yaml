@@ -1,10 +1,12 @@
-product:
+cloud:
   group: dcache
-  name: distributed-cache-system
-  logo: logo/logo.png
+  name: dcache-system
+  type: product
+  logo: logo/DCache.png
   version: latest
   readme: README-EN.md
   readme_cn: README.md
+  env: native
   description: DCache is a distributed cache based on tars.
   description_cn: DCache是一套基于tars的分布式缓存
   changelist: Changelist.md
@@ -15,6 +17,13 @@ product:
     - docs
     - docs-en
   servers:
-    - dcache/DCacheOptServer
-    - dcache/PropertyServer
-    - dcache/ConfigServer
+    - DCache/DCacheOptServer
+    - DCache/PropertyServer
+    - DCache/ConfigServer
+    - DCache/DCacheWebServer
+  uploads:
+    - DCache/ProxyServer
+    - DCache/RouterServer
+    - DCache/KVCacheServer
+    - DCache/MKVCacheServer
+    - DCache/CombinDbAccessServer

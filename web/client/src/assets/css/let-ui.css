@@ -1,0 +1,82 @@
+.let-form {
+  &__inline {
+    .let-form-item {
+      padding-left: 0 !important;
+      margin-right: 32px;
+      vertical-align: bottom;
+    }
+
+    .let-label__position_top {
+      padding-right: 0;
+      width: 100%;
+    }
+  }
+
+  .let-input {
+    width: 100%;
+  }
+}
+
+.let_modal {
+  position: fixed !important;
+}
+
+.let-loading {
+  .loading-inner {
+    background: rgba(0,0,0, 0.9);
+    padding: 13px;
+  }
+}
+
+.let-input_small {
+  input {
+    font-size: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+.let-select_small {
+  .let-select__selection {
+    padding-left: 8px;
+  }
+
+  .let-select__text_single {
+    margin-left: 0;
+  }
+
+  .let-select__option {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+.let-select_disabled .let-icon-clear {
+    z-index: -1;
+    pointer-events: none;
+}
+.let-radio + .let-radio {
+  margin-left: 12px;
+}
+
+.let-date-picker {
+  width: 100%;
+}
+
+
+.let-table {
+    th,
+    td {
+    &:last-child.right {
+      padding-right: 15px;
+    }
+  }
+
+  tr th .sortContainer {
+    position: relative;
+
+    .let-icon-caret-down {
+      left: 0;
+    }
+  }
+}
