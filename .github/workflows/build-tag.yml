@@ -1,9 +1,9 @@
-name: build-master
+name: build-tag
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - v*
 
 jobs:
   build:
