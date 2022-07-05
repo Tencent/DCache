@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.pass }}
       - name: Create Build
         run: |
-          docker run --rm --privileged tonistiigi/binfmt:${{ steps.get_version.outputs.VERSION }} --install all
+          docker run --rm --privileged tonistiigi/binfmt:latest --install all
           docker buildx create --name k8s-framework-builder --use
           docker buildx inspect --bootstrap --builder k8s-framework-builder
       - name: Buildx
