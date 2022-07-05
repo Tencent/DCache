@@ -21,6 +21,9 @@ jobs:
           registry: docker.tarsyun.com
           username: ${{ secrets.name }}
           password: ${{ secrets.pass }}
+      - name: Get version
+        id: get_version
+        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/}"
       - name: Create Build
         run: |
           docker run --rm --privileged tonistiigi/binfmt:latest --install all
