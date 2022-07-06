@@ -13,6 +13,7 @@ cloud:
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
+  container: tars.nodejsbase
   assets:
     - docs
     - docs-en

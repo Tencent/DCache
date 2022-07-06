@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: KVCacheServer
   logo: logo/DCache-MKCache.png
   version: latest
@@ -8,22 +7,22 @@ cloud:
   lang: cpp
   description: >-
     mkey+ukey-value cache
-  description_cn:
-    mkey+ukey-value模式cache
+  description_cn: mkey+ukey-value模式cache
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
+  container: tars.cppbase
   independent: false
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: MKVCacheServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: RouterClientObj
     port: 16700

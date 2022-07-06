@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: KVCacheServer
   logo: logo/DCache-KVCache.png
   version: latest
@@ -8,22 +7,22 @@ cloud:
   lang: cpp
   description: >-
     key-value cache
-  description_cn:
-    key-value模式cache
+  description_cn: key-value模式cache
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
   independent: false
+  container: tars.cppbase
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: KVCacheServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: RouterClientObj
     port: 15700

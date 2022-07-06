@@ -15,6 +15,7 @@ cloud:
   readme_cn: README.md
   protocols: []
   independent: false
+  container: tars.cppbase
   assets:
     - docs
     - docs-en

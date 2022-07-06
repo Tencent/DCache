@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: ProxyServer
   logo: logo/DCache-Proxy.png
   version: latest
@@ -8,22 +7,22 @@ cloud:
   lang: cpp
   description: >-
     Proxy of DCache
-  description_cn:
-    DCache的服务入口, 请求直接访问ProxyServer
+  description_cn: DCache的服务入口, 请求直接访问ProxyServer
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
+  container: tars.cppbase
   independent: false
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: ProxyServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: ProxyObj
     port: 12773

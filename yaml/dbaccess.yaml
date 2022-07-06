@@ -1,6 +1,5 @@
-
 cloud:
-  group: DCache 
+  group: DCache
   name: CombinDbAccessServer
   logo: logo/DCache-DbAccess.png
   version: latest
@@ -8,22 +7,22 @@ cloud:
   lang: cpp
   description: >-
     Database operation service of DCache.
-  description_cn:
-    DCache的数据库操作服务.
+  description_cn: DCache的数据库操作服务.
   collaborators:
     - ruanshudong@qq.com
   repository: https://github.com/Tencent/DCache.git
   readme: README-EN.md
   readme_cn: README.md
   independent: false
+  container: tars.cppbase
   protocols: []
-  assets: 
+  assets:
     - docs
     - docs-en
 app: DCache
 server: CombinDbAccessServer
 template: tars.cpp
-profile: ''
+profile: ""
 servants:
   - name: DbAccessObj
     port: 13773
