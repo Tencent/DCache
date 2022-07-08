@@ -86,7 +86,7 @@ jobs:
           ./docker-buildx-cloud.sh
       - name: Buildx Web
         run: |
-          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh cpp yaml/web.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.nodejs"
+          docker run -v `pwd`:/data --entrypoint "" tarscloud/base-deploy sh -c "cd /data && /usr/bin/create-buildx-dockerfile.sh nodejs yaml/web.yaml ${{ steps.get_version.outputs.VERSION }} dockerfile/Dockerfile.nodejs"
       - name: Create web Docker
         run: |
           ./docker-buildx-cloud.sh
