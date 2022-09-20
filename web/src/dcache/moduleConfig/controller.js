@@ -298,7 +298,7 @@ const ModuleConfigController = {
 
       mkCache = mkCache && JSON.parse(mkCache);
       // 先获取发布包id
-      const defaultCachePackage = await AdminService.getPatchPackage("DCache", moduleInfo.cache_version==1?"KVCacheServer": "MKVCacheServeer"); 
+      const defaultCachePackage = await AdminService.getPatchPackage("DCache", moduleInfo.cache_version==1?"KVCacheServer": "MKVCacheServer");
       //   where: {
       //     package_type: moduleInfo.cache_version,
       //     server: 'DCache.DCacheServerGroup',
