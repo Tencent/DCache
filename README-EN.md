@@ -16,7 +16,7 @@ There are many teams int Tencent that use DCache, and the total number of daily 
 
 > * Linux
 
-## Supported programming languages
+## Develop languages
 
 > * C++
 
