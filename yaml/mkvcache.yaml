@@ -1,6 +1,6 @@
 cloud:
   group: DCache
-  name: KVCacheServer
+  name: MKVCacheServer
   logo: logo/DCache-MKCache.png
   version: latest
   changelist: Changelist.md
@@ -21,7 +21,7 @@ cloud:
     - docs-en
 app: DCache
 server: MKVCacheServer
-template: tars.cpp
+template: DCache.Cache
 profile: ""
 servants:
   - name: RouterClientObj

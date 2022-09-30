@@ -21,7 +21,7 @@ cloud:
     - docs-en
 app: DCache
 server: KVCacheServer
-template: tars.cpp
+template: DCache.Cache
 profile: ""
 servants:
   - name: RouterClientObj

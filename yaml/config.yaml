@@ -21,7 +21,7 @@ cloud:
     - docs-en
 app: DCache
 server: ConfigServer
-template: tars.cpp
+template: DCache.Cache
 profile: ""
 servants:
   - name: ConfigObj
