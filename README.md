@@ -1,3 +1,5 @@
+## 背景
+
 DCache是一个基于[TARS](https://github.com/TarsCloud/Tars)框架开发的分布式NoSQL存储系统，数据采用内存存储，支持连接后端DB实现数据持久化。DCache采用集群模式，具有高扩展、高可用的特点。
 
 DCache在腾讯内部有大量业务使用，日访问总量超万亿次。
@@ -20,7 +22,7 @@ DCache具有以下特点
 
 ## 快速上手
 
-详见[DCache安装文档](docs/install.md)
+DCache的安装建议通过TarsWeb的服务市场安装.
 
 ## 文档
 
@@ -44,6 +46,17 @@ src/Router         |DCache路由管理服务
 src/TarsComm       |Tars数据结构定义
 
 * ```docs```：文档。
+
+## 数据库说明
+
+DCache框架依赖mysql数据库, 当DCache安装以后, 它自动会创建以下数据库
+- db_cache_web: DCache的web依赖
+- db_dcache_relation: DCacheOptServer/ConfigServer/PropertyServer/DCacheWebServer依赖, 注意DCacheWebServer只是会创建它, 并不是直接使用它
+- db_dcache_property: DCache统计数据库, PropertyServer依赖
+
+需要在安装过程中正确设置配置文件中的数据库的地址.
+
+实际每套创建的每套Cache, 如果设置了数据落地, 那么也依赖mysql, 这个在DCache管理平台上可以设置, 安装时正确配置即可.
 
 ## 参与贡献
 

@@ -53,6 +53,20 @@ config:
               "port": "3306",
               "user": "tarsAdmin",
               "password": "Tars@2019",
+              "database": "db_cache_web",
+              "charset": "utf8",
+              "pool": {
+                  "max": 10,
+                  "min": 0,
+                  "idle": 10000
+              }
+          },
+          "relationDb": {
+              "host": "127.0.0.1",
+              "port": "3306",
+              "user": "tarsAdmin",
+              "database": "db_dcache_relation",
+              "password": "Tars@2019",
               "charset": "utf8",
               "pool": {
                   "max": 10,

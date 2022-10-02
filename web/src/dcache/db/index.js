@@ -29,111 +29,125 @@ const logger = require('../../logger');
 
 const Db = {};
 
-const databases = ['db_cache_web'];
+const databases = ['db_cache_web', 'db_dcache_relation'];
 
-databases.forEach((database) => {
-  const {
-    host,
-    port,
-    user,
-    password,
-    charset,
-    pool,
-  } = webConf.dbConf;
+databases.forEach((db) => {
 
-  // 初始化sequelize
-  const sequelize = new Sequelize(database, user, password, {
-    host,
-    port,
-    dialect: 'mysql',
-    dialectOptions: {
-      charset,
-    },
-    logging(sqlText) {
-      // logger.sql(sqlText);
-    },
-    pool: {
-      max: pool.max || 10,
-      min: pool.min || 0,
-      idle: pool.idle || 10000,
-    },
-    timezone: (() => {
-      let offset = 0 - new Date().getTimezoneOffset();
-      return (offset >= 0 ? '+' : '-') + (Math.abs(parseInt(offset / 60)) + '').padStart(2, '0') + ':' + (offset % 60 + '').padStart(2, '0');
-    })() //获取当前时区并做转换
-  });
+    let databaseConf;
 
-  // 测试是否连接成功
-  (async function () {
-    try {
-      await sequelize.authenticate();
-    } catch (err) {
-      /* Ignore */ }
-  }());
-
-  const tableObj = {};
-  const dbModelsPath = `${__dirname}/${database}_models`;
-  const dbModels = fs.readdirSync(dbModelsPath);
-  dbModels.forEach(async (dbModel) => {
-    const tableName = dbModel.replace(/\.js$/g, '');
-    try {
-      tableObj[_.camelCase(tableName)] = sequelize.import(`${dbModelsPath}/${tableName}`);
-      // sync 无表创建表， alter 新增字段
-      // tableObj[_.camelCase(tableName)].sync();
-      if (webConf.webConf.alter) {
-        await tableObj[_.camelCase(tableName)].sync({
-          alter: true
-        });
-      }
-
-      // logger.info('sync ' + database + '.' + tableName + ' succ');
-
-    } catch (e) {
-      logger.info('sync ' + database + '.' + tableName + ' error:', e);
+    if (db == "db_cache_web") {
+        databaseConf = webConf.dbConf;
+    } else {
+        databaseConf = webConf.relationDb;
     }
-  });
+    if (!databaseConf) {
+        return;
+    }
 
-  Db[database] = tableObj;
-  Db[database].sequelize = sequelize;
-  sequelize.sync();
+    const {
+        host,
+        port,
+        user,
+        database = db,
+        password,
+        charset,
+        pool,
+    } = databaseConf;
+
+    // 初始化sequelize
+    const sequelize = new Sequelize(database, user, password, {
+        host,
+        port,
+        dialect: 'mysql',
+        dialectOptions: {
+            charset,
+        },
+        logging(sqlText) {
+            // logger.sql(sqlText);
+        },
+        pool: {
+            max: pool.max || 10,
+            min: pool.min || 0,
+            idle: pool.idle || 10000,
+        },
+        timezone: (() => {
+            let offset = 0 - new Date().getTimezoneOffset();
+            return (offset >= 0 ? '+' : '-') + (Math.abs(parseInt(offset / 60)) + '').padStart(2, '0') + ':' + (offset % 60 + '').padStart(2, '0');
+        })() //获取当前时区并做转换
+    });
+
+    // 测试是否连接成功
+    (async function () {
+        try {
+            await sequelize.authenticate();
+        } catch (err) {
+            /* Ignore */
+        }
+    }());
+
+    const tableObj = {};
+    const dbModelsPath = `${__dirname}/${database}_models`;
+    const dbModels = fs.readdirSync(dbModelsPath);
+    dbModels.forEach(async (dbModel) => {
+        const tableName = dbModel.replace(/\.js$/g, '');
+        try {
+            tableObj[_.camelCase(tableName)] = sequelize.import(`${dbModelsPath}/${tableName}`);
+            // sync 无表创建表， alter 新增字段
+            // tableObj[_.camelCase(tableName)].sync();
+            if (webConf.webConf.alter) {
+                await tableObj[_.camelCase(tableName)].sync({
+                    alter: true
+                });
+            }
+
+            // logger.info('sync ' + database + '.' + tableName + ' succ');
+
+        } catch (e) {
+            logger.info('sync ' + database + '.' + tableName + ' error:', e);
+        }
+    });
+
+    Db[database] = tableObj;
+    Db[database].sequelize = sequelize;
+    sequelize.sync();
 });
 
 const {
-  tApplyAppBase
+    tApplyAppBase
 } = Db.db_cache_web;
 const {
-  tApplyAppRouterConf
+    tApplyAppRouterConf
 } = Db.db_cache_web;
 const {
-  tApplyAppProxyConf
+    tApplyAppProxyConf
 } = Db.db_cache_web;
 tApplyAppBase.hasOne(tApplyAppRouterConf, {
-  foreignKey: 'apply_id',
-  as: 'Router',
+    foreignKey: 'apply_id',
+    as: 'Router',
 });
 tApplyAppBase.hasMany(tApplyAppProxyConf, {
-  foreignKey: 'apply_id',
-  as: 'Proxy',
+    foreignKey: 'apply_id',
+    as: 'Proxy',
 });
 
 const {
-  tApplyCacheModuleBase
+    tApplyCacheModuleBase
 } = Db.db_cache_web;
 const {
-  tApplyCacheModuleConf
+    tApplyCacheModuleConf
 } = Db.db_cache_web;
 const {
-  tApplyCacheServerConf
+    tApplyCacheServerConf
 } = Db.db_cache_web;
 
 tApplyCacheModuleConf.belongsTo(tApplyAppBase, {
-  foreignKey: 'apply_id',
-  as: 'AppBase',
+    foreignKey: 'apply_id',
+    as: 'AppBase',
 });
 
 tApplyCacheModuleConf.belongsTo(tApplyCacheModuleBase, {
-  foreignKey: 'module_id',
-  as: 'ModuleBase',
+    foreignKey: 'module_id',
+    as: 'ModuleBase',
 });
 
 
