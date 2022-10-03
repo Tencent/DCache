@@ -26,7 +26,7 @@ const logger = require('./logger');
 let webConf = require('./config/webConf');
 
 const {
-	Serve
+    Serve
 } = require("static-koa-router");
 const KoaRouter = require("koa-router");
 
@@ -38,124 +38,124 @@ app.proxy = true;
 onerror(app);
 
 const appInitialize = () => {
-	app.use(bodyparser());
+    app.use(bodyparser());
 
-	//国际化多语言中间件
-	app.use(localeMidware);
+    //国际化多语言中间件
+    app.use(localeMidware);
 
-	const {
-		pageRouter,
-		localeApiRouter,
-		dcacheApiRouter,
-	} = require('./midware');
+    const {
+        pageRouter,
+        localeApiRouter,
+        dcacheApiRouter,
+    } = require('./midware');
 
-	app.use(pageRouter.routes(), pageRouter.allowedMethods({
-		throw: true
-	}));
-	app.use(localeApiRouter.routes(), localeApiRouter.allowedMethods({
-		throw: true
-	}));
-	app.use(dcacheApiRouter.routes()).use(dcacheApiRouter.allowedMethods());
-	//注意这里路由前缀一样的, 接口处理以后不要next, 否则匹配到静态路由了
-	const staticRouter = new KoaRouter({
-		prefix: webConf.path
-	});
+    app.use(pageRouter.routes(), pageRouter.allowedMethods({
+        throw: true
+    }));
+    app.use(localeApiRouter.routes(), localeApiRouter.allowedMethods({
+        throw: true
+    }));
+    app.use(dcacheApiRouter.routes()).use(dcacheApiRouter.allowedMethods());
+    //注意这里路由前缀一样的, 接口处理以后不要next, 否则匹配到静态路由了
+    const staticRouter = new KoaRouter({
+        prefix: webConf.path
+    });
 
-	Serve(path.join(__dirname, '../client/dist'), staticRouter);
+    Serve(path.join(__dirname, '../client/dist'), staticRouter);
 
-	app.use(staticRouter.routes());
+    app.use(staticRouter.routes());
 
 }
 const registerPlugin = async () => {
 
-	logger.info("registerPlugin");
-	const AdminService = require("./common/AdminService");
+    logger.info("registerPlugin");
+    const AdminService = require("./common/AdminService");
 
-	if (process.env.TARS_CONFIG) {
+    if (process.env.TARS_CONFIG) {
 
-		let config = new Configure();
-		config.parseFile(process.env.TARS_CONFIG);
-
-
-		try {
-			const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", config.get("tars.application.server.app") + "." + config.get("tars.application.server.server") + ".WebObj", 1, webConf.path);
-
-			console.log(rst);
-		} catch (e) {
-			console.log(e.message);
-		}
-
-		webConf.dcacheObj = config.get("tars.application.server.app") + ".DCacheOptServer.DCachOptObj";
+        let config = new Configure();
+        config.parseFile(process.env.TARS_CONFIG);
 
 
-	} else {
+        try {
+            const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", config.get("tars.application.server.app") + "." + config.get("tars.application.server.server") + ".WebObj", 1, webConf.path);
 
-		try {
-			const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", "DCache.DCacheWebServer.WebObj", 1, webConf.path);
+            console.log(rst);
+        } catch (e) {
+            console.log(e.message);
+        }
 
-			console.log(rst);
-		} catch (e) {
-			console.log("error:", e.message);
-		}
+        webConf.dcacheObj = config.get("tars.application.server.app") + ".DCacheOptServer.DCachOptObj";
 
-		webConf.dcacheObj = "DCache.DCacheOptServer.DCachOptObj";
 
-	}
+    } else {
+
+        try {
+            const rst = await AdminService.registerPlugin("缓存管理平台", "DCacheWeb", "DCache.DCacheWebServer.WebObj", 1, webConf.path);
+
+            console.log(rst);
+        } catch (e) {
+            console.log("error:", e.message);
+        }
+
+        webConf.dcacheObj = "DCache.DCacheOptServer.DCachOptObj";
+
+    }
 }
 
 const initialize = async () => {
 
-	if (process.env.TARS_CONFIG) {
-		const tarsConfig = new TarsConfig();
+    if (process.env.TARS_CONFIG) {
+        const tarsConfig = new TarsConfig();
 
-		let conf = await tarsConfig.loadConfig(`config.json`, {
-			format: tarsConfig.FORMAT.JSON
-		});
+        let conf = await tarsConfig.loadConfig(`config.json`, {
+            format: tarsConfig.FORMAT.JSON
+        });
 
-		Object.assign(webConf, conf);
+        Object.assign(webConf, conf);
 
-	} else {
-		const client = require("@tars/rpc/protal.js").client;
+    } else {
+        const client = require("@tars/rpc/protal.js").client;
 
-		client.setProperty("locator", "tars.tarsregistry.QueryObj@tcp -h 192.168.3.2 -p 17890");
+        client.setProperty("locator", "tars.tarsregistry.QueryObj@tcp -h 192.168.3.2 -p 17890");
 
-	}
+    }
 
-	await registerPlugin();
+    await registerPlugin();
 
-	console.log(webConf);
+    console.log(webConf);
 
-	const hostname = process.env.HTTP_IP || "0.0.0.0";
-	const port = process.env.HTTP_PORT || webConf.webConf.port;
+    const hostname = process.env.HTTP_IP || "0.0.0.0";
+    const port = process.env.HTTP_PORT || webConf.webConf.port;
 
-	let server = http.createServer(app.callback());
-	server.listen(port, hostname, function () {
+    let server = http.createServer(app.callback());
+    server.listen(port, hostname, function () {
 
-		appInitialize();
+        appInitialize();
 
-		console.log(`Server has been started successfully, hostname:${hostname}, port: ${port}`);
+        console.log(`Server has been started successfully, hostname:${hostname}, port: ${port}`);
 
-	});
-	server.on('error',
-		// 服务错误回调
-		(error) => {
-			if (error.syscall !== 'listen') {
-				throw error;
-			}
+    });
+    server.on('error',
+        // 服务错误回调
+        (error) => {
+            if (error.syscall !== 'listen') {
+                throw error;
+            }
 
-			switch (error.code) {
-				case 'EACCES':
-					console.log('requires elevated privileges');
-					process.exit(1);
-					break;
-				case 'EADDRINUSE':
-					console.log(port + ' is already in use');
-					process.exit(1);
-					break;
-				default:
-					throw error;
-			}
-		});
+            switch (error.code) {
+                case 'EACCES':
+                    console.log('requires elevated privileges');
+                    process.exit(1);
+                    break;
+                case 'EADDRINUSE':
+                    console.log(port + ' is already in use');
+                    process.exit(1);
+                    break;
+                default:
+                    throw error;
+            }
+        });
 }
 
 initialize();

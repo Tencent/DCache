@@ -28,7 +28,7 @@ servants:
     port: 15200
     isTars: false
     isTcp: true
-    thread: 2
+    thread: 1
     capacity: 100000
     connection: 10000
     timeout: 30000

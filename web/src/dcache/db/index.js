@@ -13,9 +13,9 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-const path = require('path');
+// const path = require('path');
 
-const cwd = process.cwd();
+// const cwd = process.cwd();
 
 const Sequelize = require('sequelize');
 
@@ -26,6 +26,8 @@ const fs = require('fs-extra');
 const webConf = require('../../config/webConf');
 
 const logger = require('../../logger');
+
+const Update = require('./update');
 
 const Db = {};
 
@@ -59,6 +61,7 @@ databases.forEach((db) => {
         host,
         port,
         dialect: 'mysql',
+        charset: charset,
         dialectOptions: {
             charset,
         },
@@ -76,40 +79,68 @@ databases.forEach((db) => {
         })() //获取当前时区并做转换
     });
 
-    // 测试是否连接成功
-    (async function () {
-        try {
-            await sequelize.authenticate();
-        } catch (err) {
-            /* Ignore */
-        }
-    }());
-
     const tableObj = {};
     const dbModelsPath = `${__dirname}/${database}_models`;
     const dbModels = fs.readdirSync(dbModelsPath);
-    dbModels.forEach(async (dbModel) => {
+    for (let i = 0; i < dbModels.length; i++) {
+        let dbModel = dbModels[i];
         const tableName = dbModel.replace(/\.js$/g, '');
-        try {
-            tableObj[_.camelCase(tableName)] = sequelize.import(`${dbModelsPath}/${tableName}`);
-            // sync 无表创建表， alter 新增字段
-            // tableObj[_.camelCase(tableName)].sync();
-            if (webConf.webConf.alter) {
-                await tableObj[_.camelCase(tableName)].sync({
-                    alter: true
-                });
-            }
-
-            // logger.info('sync ' + database + '.' + tableName + ' succ');
-
-        } catch (e) {
-            logger.info('sync ' + database + '.' + tableName + ' error:', e);
-        }
-    });
+        tableObj[_.camelCase(tableName)] = sequelize.import(`${dbModelsPath}/${tableName}`);
+    };
 
     Db[database] = tableObj;
     Db[database].sequelize = sequelize;
-    sequelize.sync();
+
+    // 测试是否连接成功
+    (async function () {
+        try {
+            // 初始化sequelize
+            const s = new Sequelize("", user, password, {
+                host,
+                port,
+                dialect: 'mysql',
+                charset: charset,
+                dialectOptions: {
+                    charset: charset,
+                },
+                pool: {
+                    max: pool.max || 10,
+                    min: pool.min || 0,
+                    idle: pool.idle || 10000,
+                }
+            });
+
+            await s.authenticate();
+
+            await s.query(`CREATE DATABASE IF NOT EXISTS ${database} DEFAULT CHARSET ${charset};`);
+
+            console.log(`${database} authenticate succ, charset:${charset}`);
+
+            if (webConf.webConf.alter) {
+                try {
+
+                    for (let o in tableObj) {
+                        tableObj[o].sync({
+                            alter: true
+                        });
+                    }
+
+                } catch (e) {
+                    console.log('database sync error:', e);
+                    process.exit(-1);
+                }
+            }
+
+            if (database == "db_dcache_relation") {
+                await Update.update(tableObj);
+            }
+
+        } catch (err) {
+            console.log(err);
+
+        }
+    }());
+
 });
 
 const {
@@ -136,9 +167,9 @@ const {
 const {
     tApplyCacheModuleConf
 } = Db.db_cache_web;
-const {
-    tApplyCacheServerConf
-} = Db.db_cache_web;
+// const {
+//     tApplyCacheServerConf
+// } = Db.db_cache_web;
 
 tApplyCacheModuleConf.belongsTo(tApplyAppBase, {
     foreignKey: 'apply_id',
@@ -149,7 +180,6 @@ tApplyCacheModuleConf.belongsTo(tApplyCacheModuleBase, {
     foreignKey: 'module_id',
     as: 'ModuleBase',
 });
-
 
 
 module.exports = Db;
