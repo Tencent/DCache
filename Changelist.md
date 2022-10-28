@@ -1,3 +1,14 @@
+# v2.4.0 2022.10.28
+
+### en
+
+- web add db_dcache_relation and init db_dcache_relation when start web
+- install.sh upload_patch_package KVCacheServer和MKVCacheServer修改-Fmodule_name=KVCacheServer/MKVCacheServer与DCacheWebServer一致
+- fix mkcache install bug
+### en
+- web启动的时候增加了数据库的初始化
+- 修复mk cache 安装时的bug
+- 修复安装脚本
 # v2.3.1 2022.06.10
 
 ### en
