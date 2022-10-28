@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "start": "node src/app.js",
+        "test": "cross-env TARS_CONFIG=/usr/local/app/tars/tarsnode/data/DCache.DCacheWebServer/conf/DCache.DCacheWebServer.config.conf ./node_modules/.bin/nodemon node src/app.js",
         "local": "cross-env NODE_ENV=local ./node_modules/.bin/nodemon src/app.js",
         "remote": "cross-env NODE_ENV=remote ./node_modules/.bin/nodemon src/app.js",
         "dev": "cross-env NODE_ENV=dev ./node_modules/.bin/nodemon src/bin/app.js"

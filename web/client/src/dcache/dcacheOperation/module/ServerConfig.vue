@@ -827,6 +827,11 @@ export default {
       }
       if (this.$refs.detailForm.validate()) {
         if (this.isDbAccess() && this.isMkCache) {
+          if (this.isDbAccess() && this.dbAccess.dbaccess_ip.length == 0) {
+            this.$tip.error(`${this.$t("cache.dbaccessIp")}`);
+            return;
+          }
+
           this.showMKModal = true;
         } else if (this.checkSameShmKey(this.moduleData)) {
           this.addServerConfig();

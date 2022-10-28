@@ -18,10 +18,10 @@ const path = require('path');
 const assert = require('assert');
 
 const {
-  DCacheOptPrx
+    DCacheOptPrx
 } = require('../../common/rpc');
 const {
-  DCacheOptStruct
+    DCacheOptStruct
 } = require('../../common/rpc/struct');
 const logger = require('../../logger');
 
@@ -43,93 +43,93 @@ const service = {};
  * @returns {Promise<void>}
  */
 service.optExpandDCache = async function ({
-  appName,
-  moduleName,
-  expandServers,
-  cache_version,
-  replace = true
-}) {
-  const hostServer = expandServers.find(item => item.server_type === 'M');
-  const cacheHost = expandServers.map(item => ({
-    serverName: `DCache.${item.server_name}`,
-    serverIp: item.server_ip,
-    templateFile: item.template_name || 'tars.default',
-    type: item.server_type,
-    // 主机的 bakSrcServerName 为 空， 备机和镜像为主机的名称
-    bakSrcServerName: item.server_type === 'M' ? '' : `DCache.${hostServer.server_name}`,
-    idc: item.area,
-    priority: item.server_type === 'M' ? '1' : '2',
-    groupName: item.group_name,
-    shmSize: item.memory.toString(),
-    // 共享内存key?
-    shmKey: item.shmKey,
-    isContainer: (!!item.is_docker).toString(),
-  }));
-  const option = new DCacheOptStruct.ExpandReq();
-  option.readFromObject({
     appName,
     moduleName,
-    cacheHost,
-    cacheType: cache_version,
-    version: '',
-    replace,
-  });
-  const {
-    __return,
-    expandRsp,
-    expandRsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.expandDCache(option);
-  assert(__return === 0, errMsg);
-  return expandRsp;
+    expandServers,
+    cache_version,
+    replace = true
+}) {
+    const hostServer = expandServers.find(item => item.server_type === 'M');
+    const cacheHost = expandServers.map(item => ({
+        serverName: `DCache.${item.server_name}`,
+        serverIp: item.server_ip,
+        templateFile: item.template_name || 'tars.default',
+        type: item.server_type,
+        // 主机的 bakSrcServerName 为 空， 备机和镜像为主机的名称
+        bakSrcServerName: item.server_type === 'M' ? '' : `DCache.${hostServer.server_name}`,
+        idc: item.area,
+        priority: item.server_type === 'M' ? '1' : '2',
+        groupName: item.group_name,
+        shmSize: item.memory.toString(),
+        // 共享内存key?
+        shmKey: item.shmKey,
+        isContainer: (!!item.is_docker).toString(),
+    }));
+    const option = new DCacheOptStruct.ExpandReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        cacheHost,
+        cacheType: cache_version,
+        version: '',
+        replace,
+    });
+    const {
+        __return,
+        expandRsp,
+        expandRsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.expandDCache(option);
+    assert(__return === 0, errMsg);
+    return expandRsp;
 };
 
 service.releaseServer = async function ({
-  expandServers
+    expandServers
 }) {
-  const serverList = [];
-  expandServers.forEach((item) => {
-    const releaseInfo = new DCacheOptStruct.ReleaseInfo();
-    releaseInfo.readFromObject({
-      appName: 'DCache',
-      serverName: item.server_name,
-      nodeName: item.server_ip,
-      groupName: cache_version==1?"KVCacheServer": "MKVCacheServeer",
-      version: item.patch_version,
-      user: 'adminUser',
-      md5: '',
-      status: 0,
-      error: '',
-      ostype: '',
+    const serverList = [];
+    expandServers.forEach((item) => {
+        const releaseInfo = new DCacheOptStruct.ReleaseInfo();
+        releaseInfo.readFromObject({
+            appName: 'DCache',
+            serverName: item.server_name,
+            nodeName: item.server_ip,
+            groupName: cache_version == 1 ? "KVCacheServer" : "MKVCacheServer",
+            version: item.patch_version,
+            user: 'adminUser',
+            md5: '',
+            status: 0,
+            error: '',
+            ostype: '',
+        });
+        serverList.push(releaseInfo);
     });
-    serverList.push(releaseInfo);
-  });
-  const option = new TarsStream.List(DCacheOptStruct.ReleaseInfo);
-  option.readFromObject(serverList);
+    const option = new TarsStream.List(DCacheOptStruct.ReleaseInfo);
+    option.readFromObject(serverList);
 
-  const {
-    __return,
-    releaseRsp,
-    releaseRsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.releaseServer(option);
-  assert(__return === 0, errMsg);
-  return releaseRsp;
+    const {
+        __return,
+        releaseRsp,
+        releaseRsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.releaseServer(option);
+    assert(__return === 0, errMsg);
+    return releaseRsp;
 };
 
 service.putInServerConfig = async function ({
-  appName,
-  servers
+    appName,
+    servers
 }) {
-  const apply = await applyService.findApplyByName({
-    appName
-  });
-  servers.forEach((item) => {
-    item.apply_id = apply.id;
-  });
-  return serverConfigService.addExpandServer(servers);
+    const apply = await applyService.findApplyByName({
+        appName
+    });
+    servers.forEach((item) => {
+        item.apply_id = apply.id;
+    });
+    return serverConfigService.addExpandServer(servers);
 };
 
 /**
@@ -145,46 +145,46 @@ service.putInServerConfig = async function ({
  5 require string version;
  */
 service.transferDCache = async function ({
-  appName,
-  moduleName,
-  srcGroupName,
-  servers,
-  cacheType
-}) {
-  const hostServer = servers.find(item => item.server_type === 'M');
-  const cacheHost = servers.map(item => ({
-    serverName: `DCache.${item.server_name}`,
-    serverIp: item.server_ip,
-    templateFile: item.template_name || 'tars.default',
-    type: item.server_type,
-    // 主机的 bakSrcServerName 为 空， 备机和镜像为主机的名称
-    bakSrcServerName: item.server_type === 'M' ? '' : `DCache.${hostServer.server_name}`,
-    idc: item.area,
-    priority: item.server_type === 'M' ? '1' : '2',
-    groupName: item.group_name,
-    shmSize: item.memory.toString(),
-    // 共享内存key?
-    shmKey: item.shmKey,
-    isContainer: (!!item.is_docker).toString(),
-  }));
-  const option = new DCacheOptStruct.TransferReq();
-  option.readFromObject({
     appName,
     moduleName,
     srcGroupName,
-    cacheHost,
-    cacheType,
-    version: '1.1.0',
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.transferDCache(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    servers,
+    cacheType
+}) {
+    const hostServer = servers.find(item => item.server_type === 'M');
+    const cacheHost = servers.map(item => ({
+        serverName: `DCache.${item.server_name}`,
+        serverIp: item.server_ip,
+        templateFile: item.template_name || 'tars.default',
+        type: item.server_type,
+        // 主机的 bakSrcServerName 为 空， 备机和镜像为主机的名称
+        bakSrcServerName: item.server_type === 'M' ? '' : `DCache.${hostServer.server_name}`,
+        idc: item.area,
+        priority: item.server_type === 'M' ? '1' : '2',
+        groupName: item.group_name,
+        shmSize: item.memory.toString(),
+        // 共享内存key?
+        shmKey: item.shmKey,
+        isContainer: (!!item.is_docker).toString(),
+    }));
+    const option = new DCacheOptStruct.TransferReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        srcGroupName,
+        cacheHost,
+        cacheType,
+        version: '1.1.0',
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.transferDCache(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -200,29 +200,29 @@ service.transferDCache = async function ({
  * @returns {Promise<void>}
  */
 service.transferDCacheGroup = async function ({
-  appName,
-  moduleName,
-  srcGroupName,
-  dstGroupName,
-  transferData
-}) {
-  const option = new DCacheOptStruct.TransferGroupReq();
-  option.readFromObject({
     appName,
     moduleName,
     srcGroupName,
     dstGroupName,
     transferData
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.transferDCacheGroup(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+}) {
+    const option = new DCacheOptStruct.TransferGroupReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        srcGroupName,
+        dstGroupName,
+        transferData
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.transferDCacheGroup(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -241,31 +241,31 @@ service.transferDCacheGroup = async function ({
  * @returns {Promise.<void>}
  */
 service.configTransfer = async function ({
-  appName,
-  moduleName,
-  type = 1,
-  srcGroupName = [],
-  dstGroupName = [],
-  transferData = true,
-}) {
-  const option = new DCacheOptStruct.ConfigTransferReq();
-  option.readFromObject({
     appName,
     moduleName,
-    type,
-    srcGroupName,
-    dstGroupName,
-    transferData,
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.configTransfer(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    type = 1,
+    srcGroupName = [],
+    dstGroupName = [],
+    transferData = true,
+}) {
+    const option = new DCacheOptStruct.ConfigTransferReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        type,
+        srcGroupName,
+        dstGroupName,
+        transferData,
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.configTransfer(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 /**
  * 查询路由变更(迁移，扩容，缩容)
@@ -278,36 +278,36 @@ service.configTransfer = async function ({
  * number: 一次获取数据的个数(获取全部数据 number设置为-1)
  */
 service.getRouterChange = async function ({
-  appName = '',
-  moduleName = '',
-  srcGroupName = '',
-  dstGroupName = '',
-  status = '',
-  type = '',
+    appName = '',
+    moduleName = '',
+    srcGroupName = '',
+    dstGroupName = '',
+    status = '',
+    type = '',
 }) {
-  const option = new DCacheOptStruct.RouterChangeReq();
-  const cond = {};
-  if (appName) cond.appName = appName;
-  if (moduleName) cond.moduleName = moduleName;
-  if (status) cond.status = status;
-  if (srcGroupName) cond.srcGroupName = srcGroupName;
-  if (dstGroupName) cond.dstGroupName = dstGroupName;
-  if (type) cond.type = type;
-  // cond.type = type;
-  option.readFromObject({
-    index: 0,
-    number: -1,
-    cond,
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.getRouterChange(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    const option = new DCacheOptStruct.RouterChangeReq();
+    const cond = {};
+    if (appName) cond.appName = appName;
+    if (moduleName) cond.moduleName = moduleName;
+    if (status) cond.status = status;
+    if (srcGroupName) cond.srcGroupName = srcGroupName;
+    if (dstGroupName) cond.dstGroupName = dstGroupName;
+    if (type) cond.type = type;
+    // cond.type = type;
+    option.readFromObject({
+        index: 0,
+        number: -1,
+        cond,
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.getRouterChange(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -318,35 +318,35 @@ service.getRouterChange = async function ({
  *
  * */
 service.reduceDCache = async function ({
-  appName = '',
-  moduleName = '',
-  srcGroupName = []
+    appName = '',
+    moduleName = '',
+    srcGroupName = []
 }) {
-  const option = new DCacheOptStruct.ReduceReq();
-  option.readFromObject({
-    appName,
-    moduleName,
-    srcGroupName,
-  });
-  const {
-    __return,
-    reduceRsp,
-    reduceRsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.reduceDCache(option);
-  assert(__return === 0, errMsg);
-  const configTransferRsp = await service.configTransfer({
-    appName,
-    moduleName,
-    type: 2,
-    srcGroupName,
-    dstGroupName: [],
-  });
-  return {
-    reduceRsp,
-    configTransferRsp,
-  };
+    const option = new DCacheOptStruct.ReduceReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        srcGroupName,
+    });
+    const {
+        __return,
+        reduceRsp,
+        reduceRsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.reduceDCache(option);
+    assert(__return === 0, errMsg);
+    const configTransferRsp = await service.configTransfer({
+        appName,
+        moduleName,
+        type: 2,
+        srcGroupName,
+        dstGroupName: [],
+    });
+    return {
+        reduceRsp,
+        configTransferRsp,
+    };
 };
 
 /**
@@ -359,30 +359,30 @@ service.reduceDCache = async function ({
  *
  */
 service.stopTransfer = async function ({
-  appName = '',
-  moduleName = '',
-  type = '1',
-  srcGroupName = '',
-  dstGroupName = '',
+    appName = '',
+    moduleName = '',
+    type = '1',
+    srcGroupName = '',
+    dstGroupName = '',
 }) {
-  const option = new DCacheOptStruct.StopTransferReq();
-  option.readFromObject({
-    appName,
-    moduleName,
-    type: `${type}`,
-    srcGroupName,
-    dstGroupName,
-  });
-  const res = await DCacheOptPrx.stopTransfer(option);
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = res;
-  assert(__return === 0, errMsg);
-  return rsp;
+    const option = new DCacheOptStruct.StopTransferReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        type: `${type}`,
+        srcGroupName,
+        dstGroupName,
+    });
+    const res = await DCacheOptPrx.stopTransfer(option);
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = res;
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -395,30 +395,30 @@ service.stopTransfer = async function ({
  *
  */
 service.restartTransfer = async function ({
-  appName = '',
-  moduleName = '',
-  type = '1',
-  srcGroupName = '',
-  dstGroupName = ''
+    appName = '',
+    moduleName = '',
+    type = '1',
+    srcGroupName = '',
+    dstGroupName = ''
 }) {
-  const option = new DCacheOptStruct.RestartTransferReq();
-  option.readFromObject({
-    appName,
-    moduleName,
-    type,
-    srcGroupName,
-    dstGroupName,
-  });
-  const res = await DCacheOptPrx.restartTransfer(option);
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = res;
-  assert(__return === 0, errMsg);
-  return rsp;
+    const option = new DCacheOptStruct.RestartTransferReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        type,
+        srcGroupName,
+        dstGroupName,
+    });
+    const res = await DCacheOptPrx.restartTransfer(option);
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = res;
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -431,30 +431,30 @@ service.restartTransfer = async function ({
  *
  */
 service.deleteTransfer = async function ({
-  appName = '',
-  moduleName = '',
-  type = '1',
-  srcGroupName = '',
-  dstGroupName = '',
+    appName = '',
+    moduleName = '',
+    type = '1',
+    srcGroupName = '',
+    dstGroupName = '',
 }) {
-  const option = new DCacheOptStruct.DeleteTransferReq();
-  option.readFromObject({
-    appName,
-    moduleName,
-    type: `${type}`,
-    srcGroupName,
-    dstGroupName,
-  });
-  const res = await DCacheOptPrx.deleteTransfer(option);
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = res;
-  assert(__return === 0, errMsg);
-  return rsp;
+    const option = new DCacheOptStruct.DeleteTransferReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        type: `${type}`,
+        srcGroupName,
+        dstGroupName,
+    });
+    const res = await DCacheOptPrx.deleteTransfer(option);
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = res;
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 /**
@@ -467,63 +467,63 @@ service.deleteTransfer = async function ({
  * @returns {Promise<void>}
  */
 service.switchServer = async function ({
-  appName,
-  moduleName,
-  groupName,
-  forceSwitch = false,
-  diffBinlogTime = 5,
-}) {
-  const option = new DCacheOptStruct.SwitchReq();
-  option.readFromObject({
     appName,
     moduleName,
     groupName,
-    forceSwitch,
-    diffBinlogTime,
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.switchServer(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    forceSwitch = false,
+    diffBinlogTime = 5,
+}) {
+    const option = new DCacheOptStruct.SwitchReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        groupName,
+        forceSwitch,
+        diffBinlogTime,
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.switchServer(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 // 主备切换
 service.switchMainBackup = async function ({
-  moduleName,
-  groupName
+    moduleName,
+    groupName
 }) {
-  const main = await serverConfigService.findOne({
-    where: {
-      module_name: moduleName,
-      group_name: groupName,
-      server_type: 1,
-    },
-  });
-  const backup = await serverConfigService.findOne({
-    where: {
-      module_name: moduleName,
-      group_name: groupName,
-      server_type: 0,
-    },
-  });
+    const main = await serverConfigService.findOne({
+        where: {
+            module_name: moduleName,
+            group_name: groupName,
+            server_type: 1,
+        },
+    });
+    const backup = await serverConfigService.findOne({
+        where: {
+            module_name: moduleName,
+            group_name: groupName,
+            server_type: 0,
+        },
+    });
 
-  if (main && backup) {
-    return Promise.all([
-      main.update({
-        server_type: 0
-      }),
-      backup.update({
-        server_type: 1
-      }),
-    ]);
-  } else {
-    return {};
-  }
+    if (main && backup) {
+        return Promise.all([
+            main.update({
+                server_type: 0
+            }),
+            backup.update({
+                server_type: 1
+            }),
+        ]);
+    } else {
+        return {};
+    }
 };
 
 /**
@@ -536,67 +536,67 @@ service.switchMainBackup = async function ({
  * @returns {Promise<void>}
  */
 service.switchMIServer = async function ({
-  appName,
-  moduleName,
-  groupName,
-  imageIdc,
-  forceSwitch = false,
-  diffBinlogTime = 5,
-}) {
-  const option = new DCacheOptStruct.SwitchMIReq();
-  option.readFromObject({
     appName,
     moduleName,
     groupName,
     imageIdc,
-    forceSwitch,
-    diffBinlogTime,
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.switchMIServer(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    forceSwitch = false,
+    diffBinlogTime = 5,
+}) {
+    const option = new DCacheOptStruct.SwitchMIReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        groupName,
+        imageIdc,
+        forceSwitch,
+        diffBinlogTime,
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.switchMIServer(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 // 主备切换
 service.switchMainImage = async function ({
-  moduleName,
-  groupName,
-  imageIdc
+    moduleName,
+    groupName,
+    imageIdc
 }) {
-  const main = await serverConfigService.findOne({
-    where: {
-      module_name: moduleName,
-      group_name: groupName,
-      server_type: 2,
-      area: imageIdc,
-    },
-  });
-  const image = await serverConfigService.findOne({
-    where: {
-      module_name: moduleName,
-      group_name: groupName,
-      server_type: 0,
-    },
-  });
+    const main = await serverConfigService.findOne({
+        where: {
+            module_name: moduleName,
+            group_name: groupName,
+            server_type: 2,
+            area: imageIdc,
+        },
+    });
+    const image = await serverConfigService.findOne({
+        where: {
+            module_name: moduleName,
+            group_name: groupName,
+            server_type: 0,
+        },
+    });
 
-  if (main && image) {
-    return Promise.all([
-      main.update({
-        server_type: 0
-      }),
-      image.update({
-        server_type: 2
-      }),
-    ]);
-  } else {
-    return {};
-  }
+    if (main && image) {
+        return Promise.all([
+            main.update({
+                server_type: 0
+            }),
+            image.update({
+                server_type: 2
+            }),
+        ]);
+    } else {
+        return {};
+    }
 };
 
 /*
@@ -611,26 +611,26 @@ struct RecoverMirrorReq
 };
 */
 service.recoverMirrorStatus = async function ({
-  appName,
-  moduleName,
-  groupName,
-  mirrorIdc
-}) {
-  const option = new DCacheOptStruct.RecoverMirrorReq();
-  option.readFromObject({
     appName,
     moduleName,
     groupName,
     mirrorIdc
-  });
-  const {
-    __return,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.recoverMirrorStatus(option);
-  assert(__return === 0, errMsg);
-  return true;
+}) {
+    const option = new DCacheOptStruct.RecoverMirrorReq();
+    option.readFromObject({
+        appName,
+        moduleName,
+        groupName,
+        mirrorIdc
+    });
+    const {
+        __return,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.recoverMirrorStatus(option);
+    assert(__return === 0, errMsg);
+    return true;
 };
 
 /*
@@ -651,55 +651,55 @@ service.recoverMirrorStatus = async function ({
 };
 */
 service.getSwitchInfo = async function ({
-  appName = '',
-  moduleName = '',
-  groupName = '',
-  msterServer = '',
-  slaveServer = '',
+    appName = '',
+    moduleName = '',
+    groupName = '',
+    msterServer = '',
+    slaveServer = '',
 }) {
-  const option = new DCacheOptStruct.SwitchInfoReq();
-  const cond = {};
-  if (appName) cond.appName = appName;
-  if (moduleName) cond.moduleName = moduleName;
-  if (groupName) cond.groupName = groupName;
-  if (msterServer) cond.msterServer = msterServer;
-  if (slaveServer) cond.slaveServer = slaveServer;
-  option.readFromObject({
-    index: 0,
-    number: -1,
-    cond,
-  });
-  const {
-    __return,
-    rsp,
-    rsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.getSwitchInfo(option);
-  assert(__return === 0, errMsg);
-  return rsp;
+    const option = new DCacheOptStruct.SwitchInfoReq();
+    const cond = {};
+    if (appName) cond.appName = appName;
+    if (moduleName) cond.moduleName = moduleName;
+    if (groupName) cond.groupName = groupName;
+    if (msterServer) cond.msterServer = msterServer;
+    if (slaveServer) cond.slaveServer = slaveServer;
+    option.readFromObject({
+        index: 0,
+        number: -1,
+        cond,
+    });
+    const {
+        __return,
+        rsp,
+        rsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.getSwitchInfo(option);
+    assert(__return === 0, errMsg);
+    return rsp;
 };
 
 service.getReleaseProgress = async function (releaseId, appName, moduleName, type, srcGroupName, dstGroupName, transferData) {
-  try {
-    const {
-      percent
-    } = await ModuleConfigService.getReleaseProgress(releaseId);
-    if (+percent !== 100) {
-      setTimeout(service.getReleaseProgress.bind(this, releaseId, appName, moduleName, type, srcGroupName, dstGroupName, transferData), 1500);
-    } else {
-      await service.configTransfer({
-        appName,
-        moduleName,
-        type,
-        srcGroupName,
-        dstGroupName,
-        transferData
-      });
+    try {
+        const {
+            percent
+        } = await ModuleConfigService.getReleaseProgress(releaseId);
+        if (+percent !== 100) {
+            setTimeout(service.getReleaseProgress.bind(this, releaseId, appName, moduleName, type, srcGroupName, dstGroupName, transferData), 1500);
+        } else {
+            await service.configTransfer({
+                appName,
+                moduleName,
+                type,
+                srcGroupName,
+                dstGroupName,
+                transferData
+            });
+        }
+    } catch (err) {
+        logger.error('[getReleaseProgress]:', err);
     }
-  } catch (err) {
-    logger.error('[getReleaseProgress]:', err);
-  }
 };
 
 /**
@@ -715,86 +715,86 @@ service.getReleaseProgress = async function (releaseId, appName, moduleName, typ
  * };
  */
 service.uninstallModule4DCache = async function ({
-  unType = 2,
-  appName,
-  moduleName,
-  serverName = '',
-  groupName = ''
-}) {
-  const option = new DCacheOptStruct.UninstallReq();
-  option.readFromObject({
-    unType,
+    unType = 2,
     appName,
     moduleName,
-    serverName,
-    groupName,
-  });
-  const {
-    __return,
-    uninstallRsp,
-    uninstallRsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.uninstall4DCache(option);
-  assert(__return === 0, errMsg);
-  const module = await ModuleConfigService.getModuleConfigByName({
-    moduleName
-  });
-  if (module) await ModuleConfigService.removeModuleConfig({
-    module_name: moduleName,
-    module_id: module.module_id
-  });
-  await service.getUninstallPercent(option);
-  return uninstallRsp;
+    serverName = '',
+    groupName = ''
+}) {
+    const option = new DCacheOptStruct.UninstallReq();
+    option.readFromObject({
+        unType,
+        appName,
+        moduleName,
+        serverName,
+        groupName,
+    });
+    const {
+        __return,
+        uninstallRsp,
+        uninstallRsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.uninstall4DCache(option);
+    assert(__return === 0, errMsg);
+    const module = await ModuleConfigService.getModuleConfigByName({
+        moduleName
+    });
+    if (module) await ModuleConfigService.removeModuleConfig({
+        module_name: moduleName,
+        module_id: module.module_id
+    });
+    await service.getUninstallPercent(option);
+    return uninstallRsp;
 };
 
 service.uninstallServer4DCache = async function ({
-  unType = 0,
-  appName,
-  moduleName,
-  serverName,
-  groupName = ''
-}) {
-  const option = new DCacheOptStruct.UninstallReq();
-  option.readFromObject({
-    unType,
+    unType = 0,
     appName,
     moduleName,
     serverName,
-    groupName,
-  });
-  const {
-    __return,
-    uninstallRsp,
-    uninstallRsp: {
-      errMsg
-    }
-  } = await DCacheOptPrx.uninstall4DCache(option);
-  assert(__return === 0, errMsg);
-  await serverConfigService.removeServer({
-    server_name: serverName.replace('DCache.', '')
-  });
-  await service.getUninstallPercent(option);
-  return uninstallRsp;
+    groupName = ''
+}) {
+    const option = new DCacheOptStruct.UninstallReq();
+    option.readFromObject({
+        unType,
+        appName,
+        moduleName,
+        serverName,
+        groupName,
+    });
+    const {
+        __return,
+        uninstallRsp,
+        uninstallRsp: {
+            errMsg
+        }
+    } = await DCacheOptPrx.uninstall4DCache(option);
+    assert(__return === 0, errMsg);
+    await serverConfigService.removeServer({
+        server_name: serverName.replace('DCache.', '')
+    });
+    await service.getUninstallPercent(option);
+    return uninstallRsp;
 };
 
 service.getUninstallPercent = async function (option) {
-  const {
-    __return,
-    progressRsp: {
-      percent,
-      errMsg
+    const {
+        __return,
+        progressRsp: {
+            percent,
+            errMsg
+        }
+    } = await DCacheOptPrx.getUninstallPercent(option);
+    assert(__return === 0, errMsg);
+    if (percent !== 100) {
+        await new Promise((resolve) => {
+            setTimeout(async () => {
+                await service.getUninstallPercent(option);
+                resolve();
+            }, 500);
+        });
     }
-  } = await DCacheOptPrx.getUninstallPercent(option);
-  assert(__return === 0, errMsg);
-  if (percent !== 100) {
-    await new Promise((resolve) => {
-      setTimeout(async () => {
-        await service.getUninstallPercent(option);
-        resolve();
-      }, 500);
-    });
-  }
 };
 
 module.exports = service;

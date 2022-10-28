@@ -53,7 +53,7 @@
         </let-form-item>
 
         <br />
-        <span style="margin-left:20px;">{{
+        <span style="margin-left: 20px">{{
           $t("service.routerDbNameTip")
         }}</span
         ><br />
@@ -72,7 +72,7 @@
           >
           </let-input>
         </let-form-item>
-        <let-tag theme="danger" style="margin-left:20px;">{{
+        <let-tag theme="danger" style="margin-left: 20px">{{
           $t("service.databaseTips")
         }}</let-tag>
         <br />

@@ -117,7 +117,7 @@ const initialize = async () => {
     } else {
         const client = require("@tars/rpc/protal.js").client;
 
-        client.setProperty("locator", "tars.tarsregistry.QueryObj@tcp -h 192.168.3.2 -p 17890");
+        client.setProperty("locator", webConf.webConf.locator);
 
     }
 

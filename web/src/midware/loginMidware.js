@@ -21,25 +21,27 @@ let ignore = [`${WebConf.path}/get_locale`];
 
 module.exports = async (ctx, next) => {
 
-	if (ignore.indexOf(ctx.request.path) == -1) {
+    if (ignore.indexOf(ctx.request.path) == -1) {
 
-		let ticket = ctx.paramsObj.ticket || ctx.cookies.get("ticket") || ctx.request.header["x-token"];
+        let ticket = ctx.paramsObj.ticket || ctx.cookies.get("ticket") || ctx.request.header["x-token"];
 
-		if (!ticket) {
-			ctx.makeResObj(403, "no auth", {});
-			return;
-		}
+        console.log(ticket);
 
-		let uid = await AdminService.checkTicket(ticket);
+        if (!ticket) {
+            ctx.makeResObj(403, "no ticket cause no auth", {});
+            return;
+        }
 
-		if (!uid) {
-			ctx.makeResObj(403, "no auth", {});
-			return;
-		}
+        let uid = await AdminService.checkTicket(ticket);
 
-		ctx.uid = uid;
-	}
+        if (!uid) {
+            ctx.makeResObj(403, "check ticket error, no auth", {});
+            return;
+        }
 
-	await next();
+        ctx.uid = uid;
+    }
+
+    await next();
 
 };

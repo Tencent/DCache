@@ -45,7 +45,7 @@ config:
     content: |
       {
           "webConf": {
-              "port": 10500,
+              "port": 16535,
               "alter": true
           },
           "dbConf": {
