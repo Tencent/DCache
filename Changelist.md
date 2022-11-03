@@ -1,3 +1,16 @@
+
+# v2.4.1 2022.11.03
+
+### en
+
+- fix offline dcache bug
+- fix mkcache without database install bug
+
+### en
+
+- fix 下线cache bug
+- fix mkcache(不需要数据库时安装的bug
+
 # v2.4.0 2022.10.28
 
 ### en
