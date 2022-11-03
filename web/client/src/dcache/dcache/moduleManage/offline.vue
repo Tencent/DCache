@@ -168,10 +168,8 @@ export default {
       const appName = offlineServers[0].app_name;
       const moduleName = offlineServers[0].module_name;
       const option = { unType, appName, moduleName, serverNames };
-      let loading = this.$Loading({
-        text: "loading...",
-      });
-      loading.show();
+      const loading = this.$Loading.show();
+      //   loading.show();
       try {
         const data = await uninstall4DCache(option);
         this.$tip.success("下线成功!");

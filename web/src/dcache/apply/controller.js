@@ -251,7 +251,7 @@ ApplyController.installAndPublish = async (ctx) => {
             // replace: apply.status === 2,
         });
 
-        console.log(option);
+        // console.log(option);
 
         const args = await DCacheOptPrx.installApp(option);
         // logger.info('[DCacheOptPrx.installApp]:', args);
@@ -269,7 +269,7 @@ ApplyController.installAndPublish = async (ctx) => {
             // 先获取发布包id
             const defaultProxyPackage = await AdminService.getPatchPackage("DCache", "ProxyServer", 0);
 
-            console.log(defaultProxyPackage);
+            // console.log(defaultProxyPackage);
             // const defaultProxyPackage = await PatchService.find({
             //     where: {
             //         server: 'DCache.ProxyServer',

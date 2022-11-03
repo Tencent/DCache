@@ -55,9 +55,9 @@ bool Tool::isInactive(AdminRegPrx &adminPrx, const string & application, const s
 
     int ret = adminPrx->getServerState(application, servername, host, state, sError);
 
-    if(ret == 0)
+    if (ret == 0)
     {
-        return state.presentStateInNode == "inactive";
+        return state.presentStateInNode == "Inactive";
     }
 
     return false;
@@ -247,6 +247,8 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
 
             if (!isInactive(adminPrx, sApplication, sServerName, cacheData[0]["ip"], sError))
             {
+				TLOG_ERROR(sApplication << "." << sServerName << ", " << cacheData[0]["ip"] << " is not inacive." << endl);
+
                 throw runtime_error(sError);
             }
 
@@ -267,33 +269,23 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
                     sKey = shmKeyData[0]["config_value"];
                 }
 
-                //备份共享内存
-//                string sNodeObj("");
-//                if (-1 == getNodeObj(mysqlTarsDb, cacheData[0]["ip"], sNodeObj))
-//                {
-//                    TLOG_ERROR(FUN_LOG << "failed to get node obj|cache server name:" + sFullCacheServer + "|ip:" + cacheData[0]["ip"] << endl);
-//                }
-//                else
-//                {
-//                    NodePrx nodePrx = Application::getCommunicator()->stringToProxy<NodePrx>(sNodeObj);
-                    try
-                    {
-                        int iRet = adminPrx->delCache(cacheData[0]["ip"], sFullCacheServer, sCacheBakPath, sKey, sError);
-                        if (iRet == -1)
-                        {
-                            throw runtime_error(sError);
-                        }
-                    }
-                    catch(exception &e)
-                    {
-                        string sError =  e.what();
-                        TLOG_ERROR(FUN_LOG << "del cache catch exception:" + sError << endl);
-                        if (string::npos == sError.find("timeout"))
-                        {
-                            throw runtime_error(e.what());
-                        }
-                    }
-//                }
+				try
+				{
+					int iRet = adminPrx->delCache(cacheData[0]["ip"], sFullCacheServer, sCacheBakPath, sKey, sError);
+					if (iRet == -1)
+					{
+						throw runtime_error(sError);
+					}
+				}
+				catch(exception &e)
+				{
+					string sError =  e.what();
+					TLOG_ERROR(FUN_LOG << "del cache catch exception:" + sError << endl);
+					if (string::npos == sError.find("timeout"))
+					{
+						throw runtime_error(e.what());
+					}
+				}
             }
 
             sQuerySql = "select * from t_config_table where server_name='" + sFullCacheServer + "' and level = 2";
@@ -353,73 +345,19 @@ int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, const string &sTarsServerNa
         try
         {
 
-                TC_Config tcConf;
-                tcConf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
+			TC_Config tcConf;
+			tcConf.parseFile(ServerConfig::BasePath + "DCacheOptServer.conf");
 
-                int unstallTimeOut = TC_Common::strto<int>(tcConf.get("/Main/Uninstall<Timeout>", "10"));
+			int unstallTimeOut = TC_Common::strto<int>(tcConf.get("/Main/Uninstall<Timeout>", "10"));
 
-                int iRet = adminPrx->tars_set_timeout(unstallTimeOut*1000)->uninstallServer(sApplication, sServerName, sIp, sError);
+			int iRet = adminPrx->tars_set_timeout(unstallTimeOut*1000)->uninstallServer(sApplication, sServerName, sIp, sError);
 
-                if(iRet != 0)
-                {
-                    TLOG_ERROR(FUN_LOG << sError << endl);
-                    return 0;
-                }
+			if(iRet != 0)
+			{
+				TLOG_ERROR(FUN_LOG << sError << endl);
+				return 0;
+			}
 
-            //     string sSql = "update t_server_conf set registry_timestamp='" + TC_Common::tm2str(TNOW) + "' where application='" + mysqlTarsDb.escapeString(sApplication) + "' and server_name='" + mysqlTarsDb.escapeString(sServerName) + "'";
-            //     mysqlTarsDb.execute(sSql);
-
-            //     int iRet = 0;
-            //     try
-            //     {
-            //         iRet = adminPrx->destroyServer(sApplication, sServerName, sIp, sError);
-            //     }
-            //     catch(exception &ex)
-            //     {
-            //         //如果异常值不是 -10，就返回错误，否则也可以继续下去
-            //         if (iRet != -10)
-            //         {
-            //             sError = string("destroy server catch exception:") + ex.what();
-            //             TLOG_ERROR(FUN_LOG << sError << endl);
-            //             return -1;
-            //         }
-            //         else
-            //             iRet = 0;
-            //     }
-
-            //     if ((iRet == 0) || (iRet == -1) || (iRet == -2))
-            //     {
-            //         if (iRet == -1)
-            //         {
-            //             if (sError.find("not exist") == string::npos)
-            //             {
-            //                 return -1;
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         return -1;
-            //     }
-
-            // //删除tars服务本身的记录
-            // string sWhere = "where application='" + sApplication + "' and server_name='" + sServerName + "' and node_name='" + sIp + "'";
-            // mysqlTarsDb.deleteRecord("t_adapter_conf", sWhere);
-            // mysqlTarsDb.deleteRecord("t_server_conf", sWhere);
-
-            // //删除节点配置
-            // sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and host='"+ sIp + "' and level=3";
-            // mysqlTarsDb.deleteRecord("t_config_files", sWhere);
-
-            // string sql = "select * from t_server_conf where application='" + sApplication + "' and server_name='" + sServerName + "'";
-            // TC_Mysql::MysqlData data = mysqlTarsDb.queryRecord(sql);
-            // if (data.size() == 0)
-            // {
-            //     sWhere = "where server_name ='" + sApplication + "."+sServerName+ "' and level=2";
-            //     mysqlTarsDb.deleteRecord("t_config_files", sWhere);
-            // }
-
-            // TLOG_DEBUG(FUN_LOG << "success to destroy server remotely|server name:" << sTarsServerName << endl);
             return 0;
         }
         catch(exception &ex)
