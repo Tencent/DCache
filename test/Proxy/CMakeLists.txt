@@ -14,7 +14,7 @@ foreach(TEST_CPP ${TEST_CPPS})
 
     add_executable(test-${TEST_NAME} ${TEST_CPP})
 
-    target_link_libraries(test-${TEST_NAME} mysqlclient gtest gmock libProxy cache_comm tarsservant tarsutil)
+    target_link_libraries(test-${TEST_NAME} mysqlclient gtest gmock libProxy cache_comm tarsservant tarsutil ssl crypto)
 
     add_dependencies(test-${TEST_NAME} libProxy cache_comm TarsComm ProxyServer RouterServer KVCacheServer MKVCacheServer)
 
