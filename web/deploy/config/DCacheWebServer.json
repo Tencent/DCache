@@ -1,0 +1,43 @@
+{
+    "force": "true",
+    "application": "DCache",
+    "filename": "config.json",
+    "level": 5,
+    "server_name": "DCacheWebServer",
+    "set_area": "",
+    "set_group": "",
+    "set_name": "",
+    "config": "{\n
+   \"webConf\": {\n
+       \"port\": 6000,\n
+       \"alter\": true\n
+   },\n
+   \"dbConf\": {\n
+       \"host\": \"dcache_host\",\n
+       \"port\": \"dcache_port\",\n
+       \"user\": \"dcache_user\",\n
+       \"password\": \"dcache_pass\",\n
+       \"database\": \"db_cache_web\",\n
+       \"charset\": \"utf8\",\n
+       \"pool\": {\n
+           \"max\": 10,\n
+           \"min\": 0,\n
+           \"idle\": 10000\n
+       }\n
+   },\n
+   \"relationDb\": {\n
+       \"host\": \"dcache_host\",\n
+       \"port\": \"dcache_port\",\n
+       \"user\": \"dcache_user\",\n
+       \"database\": \"db_dcache_relation\",\n
+       \"password\": \"dcache_pass\",\n
+       \"charset\": \"utf8\",\n
+       \"pool\": {\n
+           \"max\": 10,\n
+           \"min\": 0,\n
+           \"idle\": 10000\n
+       }\n
+   },\n
+   \"path\": \"/plugins/dcache\"\n
+}"
+}
