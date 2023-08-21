@@ -1,5 +1,5 @@
 {
-    "name": "tarsgateway-web",
+    "name": "tarsdcache-web",
     "version": "3.0.0",
     "private": true,
     "scripts": {
@@ -14,6 +14,7 @@
         "@tars/logs": "^2.1.1",
         "@tars/rpc": "^2.0.14",
         "@tars/stream": "^2.0.3",
+        "@tars/node-agent": "*",
         "axios": "^0.19.2",
         "circular-json": "^0.5.9",
         "compressing": "^1.6.0",
