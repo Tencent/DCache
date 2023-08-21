@@ -1,0 +1,23 @@
+{
+    "application": "DCache",
+    "server_name": "DCacheWebServer",
+    "node_name": "host_ip",
+    "server_type": "tars_nodejs",
+    "template_name": "tars.default",
+    "setting_state": "active",
+    "enable_set": false,
+    "set_name": "",
+    "set_area": "",
+    "set_group": "",
+    "adapters": [{
+        "obj_name": "WebObj",
+        "bind_ip": "host_ip",
+        "port": "15200",
+        "port_type": "tcp",
+        "protocol": "not_tars",
+        "thread_num": 1,
+        "max_connections": 10000,
+        "queuecap": 100000,
+        "queuetimeout": 20000
+    }]
+}
