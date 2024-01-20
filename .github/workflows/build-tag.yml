@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.pass }}
       - name: Get version
         id: get_version
-        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/}"
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
       - name: Create Build
         run: |
           docker run --rm --privileged tonistiigi/binfmt:latest --install all
