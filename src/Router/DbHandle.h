@@ -103,6 +103,8 @@ public:
 
     virtual void execute(const string &sql) { _mySql.execute(sql); }
 
+    virtual string escapeString(const string &value) { return _mySql.escapeString(value); }
+
     virtual void disconnect() { _mySql.disconnect(); }
 
     virtual tars::TC_Mysql::MysqlData queryRecord(const string &sql)

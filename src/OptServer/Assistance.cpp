@@ -14,6 +14,7 @@
 #include "servant/Application.h"
 
 #include "Assistance.h"
+#include "SqlHelper.h"
 
 const long Assistance::C_PAGE_BEGIN = 0;
 const long Assistance::C_PAGE_END   = 429496;
@@ -97,7 +98,7 @@ bool Tool::isInactive(AdminRegPrx &adminPrx, const string & application, const s
 void Tool::delRouteInfo4CacheServer(TC_Mysql &mysqlRouterDb, const string & CacheServer)
 {
     //删除服务器信息
-    string sWhere = "where server_name='" + CacheServer + "'";
+    string sWhere = "where server_name=" + DCacheSql::quote(mysqlRouterDb, CacheServer);
     mysqlRouterDb.deleteRecord("t_router_server", sWhere);
 
     //删除服务组中的相关信息
@@ -107,21 +108,21 @@ void Tool::delRouteInfo4CacheServer(TC_Mysql &mysqlRouterDb, const string & Cach
 void Tool::delConfigInfo4CacheServer(TC_Mysql &mysqlRelationDb, const string & sFullCacheServer)
 {
     //删除服务器信息
-    string sWhere = "where server_name='" + sFullCacheServer + "' and level=2";
+    string sWhere = "where server_name=" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer) + " and level=2";
     mysqlRelationDb.deleteRecord("t_config_table", sWhere);
 }
 
 void Tool::delReferConfig4CacheServer(TC_Mysql &mysqlRelationDb, const string & sFullCacheServer)
 {
     //删除关联配置信息
-    string sWhere = "where server_name='" + sFullCacheServer + "'";
+    string sWhere = "where server_name=" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer);
     mysqlRelationDb.deleteRecord("t_config_reference", sWhere);
 }
 
 void Tool::delRelation4CacheServer(TC_Mysql &mysqlRelationDb, const string & sFullCacheServer)
 {
     //删除关联配置信息
-    string sWhere = "where cache_name ='" + sFullCacheServer.substr(7) + "'";
+    string sWhere = "where cache_name =" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer.substr(7));
     mysqlRelationDb.deleteRecord("t_cache_router", sWhere);
 }
 
@@ -131,12 +132,12 @@ int Tool::cleanProxyConf(TC_Mysql &mysqlRelationDb, const string &proxyName)
 
     try
     {
-        string sql = "select * from t_proxy_app where proxy_name = '" + proxyName +"'";
+        string sql = "select * from t_proxy_app where proxy_name = " + DCacheSql::quote(mysqlRelationDb, proxyName);
         TC_Mysql::MysqlData proxyData = mysqlRelationDb.queryRecord(sql);
 
         if (proxyData.size() == 1)
         {
-            string sWhere = "where id = '" + proxyData[0]["id"] +"'";
+            string sWhere = "where id = " + DCacheSql::quote(mysqlRelationDb, proxyData[0]["id"]);
             int n = mysqlRelationDb.deleteRecord("t_proxy_app", sWhere);
 
             TLOG_DEBUG(FUN_LOG << "delete t_proxy_app affect row:" << n << "|proxy server name:" << proxyName << endl);
@@ -162,11 +163,11 @@ int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
 
     try
     {
-        string sql = "select * from t_router_app where router_name = '" + routerName + "'";
+        string sql = "select * from t_router_app where router_name = " + DCacheSql::quote(mysqlRelationDb, routerName);
         TC_Mysql::MysqlData routerData = mysqlRelationDb.queryRecord(sql);
         if (routerData.size() == 1)
         {
-            string sWhere = "where id = '" + routerData[0]["id"] +"'";
+            string sWhere = "where id = " + DCacheSql::quote(mysqlRelationDb, routerData[0]["id"]);
             int n = mysqlRelationDb.deleteRecord("t_router_app", sWhere);
 
             TLOG_DEBUG(FUN_LOG << "delete t_router_app affect row:" << n << "|router server name:" << routerName << endl);
@@ -177,11 +178,11 @@ int Tool::cleanRouterConf(TC_Mysql &mysqlRelationDb, const string &routerName)
             return -1;
         }
 
-        sql = "select * from t_proxy_router where router_name='" + routerName + ".RouterObj'";
+        sql = "select * from t_proxy_router where router_name=" + DCacheSql::quote(mysqlRelationDb, routerName + ".RouterObj");
         TC_Mysql::MysqlData prdata = mysqlRelationDb.queryRecord(sql);
         if (prdata.size() == 1)
         {
-            string sWhere = "where id = '" + prdata[0]["id"] +"'";
+            string sWhere = "where id = " + DCacheSql::quote(mysqlRelationDb, prdata[0]["id"]);
             int n = mysqlRelationDb.deleteRecord("t_proxy_router", sWhere);
 
             TLOG_DEBUG(FUN_LOG << "delete t_proxy_router affect row:" << n << "|router server name:" << routerName << endl);
@@ -206,12 +207,12 @@ int Tool::cleanDBaccessConf(TC_Mysql &mysqlRelationDb, const string &dbaccessNam
 
     try
     {
-        string sql = "select * from t_dbaccess_app where dbaccess_name = '" + dbaccessName +"'";
+        string sql = "select * from t_dbaccess_app where dbaccess_name = " + DCacheSql::quote(mysqlRelationDb, dbaccessName);
         TC_Mysql::MysqlData dbaccessData = mysqlRelationDb.queryRecord(sql);
 
         if (dbaccessData.size() == 1)
         {
-            string sWhere = "where id = '" + dbaccessData[0]["id"] +"'";
+            string sWhere = "where id = " + DCacheSql::quote(mysqlRelationDb, dbaccessData[0]["id"]);
             int n = mysqlRelationDb.deleteRecord("t_dbaccess_app", sWhere);
 
             TLOG_DEBUG(FUN_LOG << "delete t_dbaccess_app affect row:" << n << "|dbaccess server name:" << dbaccessName << endl);
@@ -235,7 +236,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
 {
     try
     {
-        string sQuerySql = "select ip from t_router_server where server_name='" + sFullCacheServer + "'";
+        string sQuerySql = "select ip from t_router_server where server_name=" + DCacheSql::quote(mysqlRouterDb, sFullCacheServer);
         TC_Mysql::MysqlData cacheData = mysqlRouterDb.queryRecord(sQuerySql);
         if (cacheData.size() == 1)
         {
@@ -261,7 +262,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
                 TC_Mysql::MysqlData shmKeyId;
                 shmKeyId = mysqlRelationDb.queryRecord(sQuerySql);
 
-                sQuerySql = "select * from t_config_table where server_name='" + sFullCacheServer + "' and item_id=" + shmKeyId[0]["id"];
+                sQuerySql = "select * from t_config_table where server_name=" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer) + " and item_id=" + TC_Common::tostr(TC_Common::strto<int>(shmKeyId[0]["id"]));
                 TC_Mysql::MysqlData shmKeyData;
                 shmKeyData = mysqlRelationDb.queryRecord(sQuerySql);
                 if (shmKeyData.size() == 1)
@@ -288,7 +289,7 @@ void Tool::UninstallCacheServer(AdminRegPrx &adminPrx, TC_Mysql &mysqlRouterDb, 
 				}
             }
 
-            sQuerySql = "select * from t_config_table where server_name='" + sFullCacheServer + "' and level = 2";
+            sQuerySql = "select * from t_config_table where server_name=" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer) + " and level = 2";
             TC_Mysql::MysqlData sConfigData;
             sConfigData = mysqlRelationDb.queryRecord(sQuerySql);
             if (sConfigData.size() >= 1)
@@ -386,4 +387,3 @@ int Tool::UninstallTarsServer(AdminRegPrx &adminPrx, const string &sTarsServerNa
 
     return -1;
 }
-

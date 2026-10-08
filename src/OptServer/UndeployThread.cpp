@@ -14,6 +14,7 @@
 #include "UndeployThread.h"
 #include "UninstallThread.h"
 #include "DCacheOptServer.h"
+#include "SqlHelper.h"
 
 extern DCacheOptServer g_app;
 
@@ -98,14 +99,14 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                 TC_Mysql tcMysql(routerDbInfo);
                 tcMysql.connect();
 
-                string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + data[i]["src_group"] + "' limit 1";
+                string sql = "select * from t_router_record where module_name=" + DCacheSql::quote(tcMysql, data[i]["module_name"]) + " and group_name=" + DCacheSql::quote(tcMysql, data[i]["src_group"]) + " limit 1";
                 TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
                 if (routerRecordData.size() == 0)
                 {
                     // 该组已经没有路由记录则可以下线
 
                     // 查询该组的全部服务名和ip
-                    sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + data[i]["src_group"] + "'";
+                    sSql = "select cache_name,cache_ip from t_cache_router where group_name=" + DCacheSql::quote(_mysqlRelationDB, data[i]["src_group"]);
                     TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
                     if (cacheData.size() > 0)
                     {
@@ -215,7 +216,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                 vector<string> srcGroupName = TC_Common::sepstr<string>(data[i]["modify_group_name"], "|");
                 for (size_t ii = 0; ii < srcGroupName.size(); ++ii)
                 {
-                    string sql = "select * from t_router_record where module_name='" + data[i]["module_name"] + "' and group_name='" + srcGroupName[ii] + "' limit 1";
+                    string sql = "select * from t_router_record where module_name=" + DCacheSql::quote(tcMysql, data[i]["module_name"]) + " and group_name=" + DCacheSql::quote(tcMysql, srcGroupName[ii]) + " limit 1";
 
                     TC_Mysql::MysqlData routerRecordData = tcMysql.queryRecord(sql);
                     if (routerRecordData.size() == 0)
@@ -223,7 +224,7 @@ void UndeployThread::doUndeploy(time_t tLastCheck)
                         // 该组已经没有路由记录则可以下线
 
                         // 查询该组的全部服务名和ip
-                        sSql = "select cache_name,cache_ip from t_cache_router where group_name='" + srcGroupName[ii] + "'";
+                        sSql = "select cache_name,cache_ip from t_cache_router where group_name=" + DCacheSql::quote(_mysqlRelationDB, srcGroupName[ii]);
 
                         TC_Mysql::MysqlData cacheData = _mysqlRelationDB.queryRecord(sSql);
                         if (cacheData.size() > 0)
@@ -325,7 +326,7 @@ int UndeployThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbIn
     try
     {
         string sSql("");
-        sSql = "select * from t_cache_router where app_name='" + appName + "'";
+        sSql = "select * from t_cache_router where app_name=" + DCacheSql::quote(_mysqlRelationDB, appName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
@@ -358,5 +359,4 @@ int UndeployThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbIn
 
     return -1;
 }
-
 

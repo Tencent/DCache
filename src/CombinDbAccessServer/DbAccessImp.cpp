@@ -114,7 +114,7 @@ int DbAccessImp::get( const string &keyItem, string &value, int &expireTime , ta
 			string sSql;
 			// if (isStr)
 			// {
-				sSql = "select * from " + sDbName + "." + sTableName + " where `" + _sigKeyNameInDB + "`='" + _mysql->escapeString(keyItem) + "'";
+				sSql = "select * from " + TC_Mysql::quoteIdentifier(sDbName) + "." + TC_Mysql::quoteIdentifier(sTableName) + " where " + TC_Mysql::quoteIdentifier(_sigKeyNameInDB) + "='" + _mysql->escapeString(keyItem) + "'";
 			// }
 			// else
 			// {
@@ -277,7 +277,7 @@ int DbAccessImp::set( const string & keyItem, const string &value, int expireTim
 			}      
 
 			optDBTpye = "replace";
-            _mysql->replaceRecord(sDbName +"." + sTableName,updateData);
+            _mysql->replaceRecord(sDbName + "." + sTableName,updateData);
             LOG->debug() << "set, key:" << TC_Common::tostr(keyItem) << ", table:" << sDbName +"." + sTableName << endl;
 			endTime = TC_TimeProvider::getInstance()->getNowMs();
 			Application::getCommunicator()->getStatReport()->report("DCache."+ServerConfig::ServerName,ServerConfig::LocalIp,/*"DCDB."+sDbName+"_"+sTableName*/"DCDB.db",mapDBInfo[mysqlNum].ip+"_"+TC_Common::tostr(mapDBInfo[mysqlNum].port),0,optDBTpye, tars::StatReport::STAT_SUCC,endTime-beginTime);
@@ -357,7 +357,7 @@ int DbAccessImp::del(const string & keyItem , tars::TarsCurrentPtr current )
 			string sCondition;
 			// if(isStr)
 			// {
-               sCondition ="where `"+_sigKeyNameInDB+"`='"+ _mysql->escapeString(keyItem) + "'";
+			   sCondition ="where " + TC_Mysql::quoteIdentifier(_sigKeyNameInDB) + "='"+ _mysql->escapeString(keyItem) + "'";
 			// }
 			// else
 			// {
@@ -366,7 +366,7 @@ int DbAccessImp::del(const string & keyItem , tars::TarsCurrentPtr current )
 
 			optDBTpye = "delete";
 
-            _mysql->deleteRecord(sDbName + "." +sTableName,sCondition);
+            _mysql->deleteRecord(sDbName + "." + sTableName,sCondition);
 
             LOG->debug() << "sql:" << _mysql->getLastSQL() << endl;
 
@@ -1042,4 +1042,3 @@ int DbAccessImp::delCond( const string & mainKey, const vector<DbCondition> &vtC
 // 		return eDbNotImplement;
 // 	}
 // }
-

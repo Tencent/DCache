@@ -1,6 +1,11 @@
 #include "MKDbOperator.h"
 #include "servant/RemoteLogger.h"
 
+static string sqlIntegerValue(const string &value)
+{
+	return TC_Common::tostr(TC_Common::strto<long long>(value));
+}
+
 string MKDbOperator::buildConditionSQL(const vector<DbCondition> &vtCond, TC_Mysql *pMysql)
 {
 	string sWhere;
@@ -11,10 +16,10 @@ string MKDbOperator::buildConditionSQL(const vector<DbCondition> &vtCond, TC_Mys
 	sWhere += " where ";
 	for(size_t i = 0; i < vtCond.size(); i ++)
 	{
-		sWhere += "`" + vtCond[i].fieldName + "`" + OP2STR(vtCond[i].op);
+		sWhere += TC_Mysql::quoteIdentifier(vtCond[i].fieldName) + OP2STR(vtCond[i].op);
 		if(vtCond[i].type == INT)
 		{
-			sWhere += pMysql->escapeString(vtCond[i].value);
+			sWhere += sqlIntegerValue(vtCond[i].value);
 		}
 		else
 		{
@@ -43,13 +48,13 @@ string MKDbOperator::buildUpdateSQL(const map<string, DbUpdateValue> &mpValue, T
 		{
 			sUpdate += ", ";
 		}
-		sUpdate += "`" + it->first + "`=";
+		sUpdate += TC_Mysql::quoteIdentifier(it->first) + "=";
 		if(it->second.op == ADD)
 		{
 			// 自增
 			if(it->second.type == INT)
 			{
-				sUpdate += "`" + it->first + "`+" + pMysql->escapeString(it->second.value);
+				sUpdate += TC_Mysql::quoteIdentifier(it->first) + "+" + sqlIntegerValue(it->second.value);
 			}
 			else
 			{
@@ -61,7 +66,7 @@ string MKDbOperator::buildUpdateSQL(const map<string, DbUpdateValue> &mpValue, T
 			// 自减
 			if(it->second.type == INT)
 			{
-				sUpdate += "`" + it->first + "`-" + pMysql->escapeString(it->second.value);
+				sUpdate += TC_Mysql::quoteIdentifier(it->first) + "-" + sqlIntegerValue(it->second.value);
 			}
 			else
 			{
@@ -73,7 +78,7 @@ string MKDbOperator::buildUpdateSQL(const map<string, DbUpdateValue> &mpValue, T
 			// SET
 			if(it->second.type == INT)
 			{
-				sUpdate += pMysql->escapeString(it->second.value);
+				sUpdate += sqlIntegerValue(it->second.value);
 			}
 			else
 			{
@@ -181,7 +186,7 @@ tars::Int32 MKDbOperator::select(const string &mainKey, const string &field, con
 		{
 			for(size_t i = 0; i < vtFields.size(); i ++)
 			{
-				sSql += "`" + vtFields[i] + "`";
+				sSql += TC_Mysql::quoteIdentifier(vtFields[i]);
 				if(i != vtFields.size() - 1)
 				{
 					sSql += ", ";
@@ -189,11 +194,11 @@ tars::Int32 MKDbOperator::select(const string &mainKey, const string &field, con
 			}
 		}
         if(!_bOrder)
-            sSql += " from " + sDbName + "." + sTableName + buildConditionSQL(vtCond, mysql) + " limit " +TC_Common::tostr(_iSelectLimit);
+			sSql += " from " + TC_Mysql::quoteIdentifier(sDbName) + "." + TC_Mysql::quoteIdentifier(sTableName) + buildConditionSQL(vtCond, mysql) + " limit " +TC_Common::tostr(_iSelectLimit);
         else if(_basc)
-            sSql += " from " + sDbName + "." + sTableName + buildConditionSQL(vtCond, mysql) + " order by " + _orderItem + " asc limit " +TC_Common::tostr(_iSelectLimit);
+			sSql += " from " + TC_Mysql::quoteIdentifier(sDbName) + "." + TC_Mysql::quoteIdentifier(sTableName) + buildConditionSQL(vtCond, mysql) + " order by " + TC_Mysql::quoteIdentifier(_orderItem) + " asc limit " +TC_Common::tostr(_iSelectLimit);
         else
-            sSql += " from " + sDbName + "." + sTableName + buildConditionSQL(vtCond, mysql) + " order by " + _orderItem + " desc limit " +TC_Common::tostr(_iSelectLimit);
+			sSql += " from " + TC_Mysql::quoteIdentifier(sDbName) + "." + TC_Mysql::quoteIdentifier(sTableName) + buildConditionSQL(vtCond, mysql) + " order by " + TC_Mysql::quoteIdentifier(_orderItem) + " desc limit " +TC_Common::tostr(_iSelectLimit);
 
         LOG->debug() << sSql << endl;
 

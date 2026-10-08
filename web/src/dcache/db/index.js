@@ -112,6 +112,12 @@ databases.forEach((db) => {
 
             await s.authenticate();
 
+            // Database and charset names are SQL identifiers/tokens, not values.
+            // Keep them to their expected alphanumeric forms before interpolating
+            // them into the CREATE DATABASE statement.
+            if (!/^[A-Za-z0-9_]+$/.test(database) || !/^[A-Za-z0-9_]+$/.test(charset)) {
+                throw new Error('invalid database name or charset');
+            }
             await s.query(`CREATE DATABASE IF NOT EXISTS ${database} DEFAULT CHARSET ${charset};`);
 
             console.log(`${database} authenticate succ, charset:${charset}`);

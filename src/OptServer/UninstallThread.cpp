@@ -12,6 +12,7 @@
 * and limitations under the License.
 */
 #include "UninstallThread.h"
+#include "SqlHelper.h"
 
 UninstallRequestQueueManager::UninstallRequestQueueManager()
 {
@@ -272,17 +273,17 @@ void UninstallThread::doUninstallRequest(UninstallRequest & request)
             {
                 //按模块
                 // 先删除 t_router_module 和 t_router_record 的记录
-                string sWhere = "where module_name='" + uninstallInfo.moduleName + "'";
+                string sWhere = "where module_name=" + DCacheSql::quote(mysqlRouterDb, uninstallInfo.moduleName);
                 mysqlRouterDb.deleteRecord("t_router_module", sWhere);
                 mysqlRouterDb.deleteRecord("t_router_record", sWhere);
 
-                sWhere = "where module_name='" + uninstallInfo.moduleName + "'";
+                sWhere = "where module_name=" + DCacheSql::quote(mysqlRouterDb, uninstallInfo.moduleName);
                 sQuerySql = "select server_name from t_router_group " + sWhere;
             }
             else
             {
                 //按组
-                sQuerySql = "select server_name from t_router_group where group_name='" + uninstallInfo.groupName + "'";
+                sQuerySql = "select server_name from t_router_group where group_name=" + DCacheSql::quote(mysqlRouterDb, uninstallInfo.groupName);
             }
 
             cacheData = mysqlRouterDb.queryRecord(sQuerySql);
@@ -353,7 +354,7 @@ int UninstallThread::getRouterInfo(TC_Mysql &mysqlRelationDb, const string &sFul
 {
     try
     {
-        string sSql = "select * from t_cache_router where cache_name='" + sFullCacheServer.substr(7) + "'";
+        string sSql = "select * from t_cache_router where cache_name=" + DCacheSql::quote(mysqlRelationDb, sFullCacheServer.substr(7));
 
         TC_Mysql::MysqlData data = mysqlRelationDb.queryRecord(sSql);
         if (data.size() != 1)
@@ -411,7 +412,7 @@ int UninstallThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbI
     try
     {
         string sSql("");
-        sSql = "select * from t_cache_router where app_name='" + appName + "'";
+        sSql = "select * from t_cache_router where app_name=" + DCacheSql::quote(_mysqlRelationDb, appName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDb.queryRecord(sSql);
         if (data.size() > 0)
@@ -444,4 +445,3 @@ int UninstallThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbI
 
     return -1;
 }
-

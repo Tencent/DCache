@@ -199,6 +199,50 @@ public:
     */
     string escapeString(const string& sFrom);
 
+    /** Quote a SQL identifier (table, column, or schema name). */
+    static string quoteIdentifier(const string& identifier)
+    {
+        if (identifier.find('\0') != string::npos)
+        {
+            throw TC_Mysql_Exception("invalid SQL identifier");
+        }
+        string quoted("`");
+        for (string::const_iterator it = identifier.begin(); it != identifier.end(); ++it)
+        {
+            if (*it == '`')
+            {
+                quoted += "``";
+            }
+            else
+            {
+                quoted += *it;
+            }
+        }
+        quoted += '`';
+        return quoted;
+    }
+
+    static string quoteQualifiedIdentifier(const string& identifier)
+    {
+        string quoted;
+        string::size_type begin = 0;
+        while (begin <= identifier.size())
+        {
+            string::size_type end = identifier.find('.', begin);
+            if (!quoted.empty())
+            {
+                quoted += '.';
+            }
+            quoted += quoteIdentifier(identifier.substr(begin, end == string::npos ? string::npos : end - begin));
+            if (end == string::npos)
+            {
+                break;
+            }
+            begin = end + 1;
+        }
+        return quoted;
+    }
+
     /**
     * Update or insert ...
     * @param sSql : sql语句

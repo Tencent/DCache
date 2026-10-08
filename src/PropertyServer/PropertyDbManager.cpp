@@ -18,6 +18,26 @@
 #include "PropertyHashMap.h"
 #include "CacheInfoManager.h"
 #include "PropertyReapThread.h"
+#include <cctype>
+
+static bool isSafePropertyIdentifier(const string &value)
+{
+    if (value.empty()) return false;
+    for (string::const_iterator it = value.begin(); it != value.end(); ++it)
+    {
+        if (!(isalnum(static_cast<unsigned char>(*it)) || *it == '_')) return false;
+    }
+    return true;
+}
+
+static string quotePropertyIdentifier(const string &value)
+{
+    if (!isSafePropertyIdentifier(value))
+    {
+        throw TC_Mysql_Exception("invalid property SQL identifier");
+    }
+    return "`" + value + "`";
+}
 
 void PropertyDbManager::init(TC_Config& conf)
 {
@@ -196,15 +216,19 @@ int PropertyDbManager::queryPropData(const DCache::QueryPropCond &req, vector<DC
         auto nameMap = g_app.getPropertyNameMap();
         for (auto &&prop : nameMap)
         {
-            sql_stream << ",`" << prop.second << "`";
+            sql_stream << "," << quotePropertyIdentifier(prop.second);
         }
         if (getAllServer || getSpecificServer)
             sql_stream << ",`master_name`";
 
-        sql_stream << " from " << sTbName
-                   << " where module_name ='" << req.moduleName << "'";
+        if (!isSafePropertyIdentifier(sTbName))
+        {
+            throw TC_Mysql_Exception("invalid property table identifier");
+        }
+        sql_stream << " from " << quotePropertyIdentifier(sTbName)
+                   << " where module_name ='" << _mysql.escapeString(req.moduleName) << "'";
         if (getSpecificServer)
-            sql_stream << " and master_name='" << req.serverName << "'";
+            sql_stream << " and master_name='" << _mysql.escapeString(req.serverName) << "'";
         
         if (!getSpecificServer && !getAllServer)    //模块整体统计，只计算主cache
             sql_stream << " and server_status='M'";
@@ -213,23 +237,23 @@ int PropertyDbManager::queryPropData(const DCache::QueryPropCond &req, vector<DC
         {
             stringstream exsql;
             exsql << sql_stream.str();
-            exsql << " and f_date=" << date;
+            exsql << " and f_date='" << _mysql.escapeString(date) << "'";
 
             if (date == lastDate)
             {
                 if(req.startTime > lastTime)
                     continue;
                 else
-                    exsql << " and f_tflag >='" << req.startTime << "'";
+                    exsql << " and f_tflag >='" << _mysql.escapeString(req.startTime) << "'";
                 
                 if (req.endTime > lastTime)
-                    exsql << " and f_tflag <='" << lastTime << "'";
+                    exsql << " and f_tflag <='" << _mysql.escapeString(lastTime) << "'";
                 else
-                    exsql << " and f_tflag <='" << req.endTime << "'";
+                    exsql << " and f_tflag <='" << _mysql.escapeString(req.endTime) << "'";
             }
             else if (date < lastDate)
             {
-                exsql << " and f_tflag >='" << req.startTime << "' and f_tflag <='" << req.endTime << "'";
+                exsql << " and f_tflag >='" << _mysql.escapeString(req.startTime) << "' and f_tflag <='" << _mysql.escapeString(req.endTime) << "'";
             }
             else
                 continue;
@@ -365,13 +389,17 @@ int PropertyDbManager::insert2Db(const PropertyMsg &mPropMsg, const string &sDat
 
     try
     {
+        if (!isSafePropertyIdentifier(sTbName))
+        {
+            throw TC_Mysql_Exception("invalid property table identifier");
+        }
         createTable(sTbName);
 
-        osSqlPre << "insert ignore into " + sTbName + " (f_date,f_tflag,app_name,module_name,group_name,idc_area,server_status,master_name,master_ip,set_name,set_area,set_id";
+        osSqlPre << "insert ignore into " + quotePropertyIdentifier(sTbName) + " (f_date,f_tflag,app_name,module_name,group_name,idc_area,server_status,master_name,master_ip,set_name,set_area,set_id";
         const map<string, string> & nameMap = g_app.getPropertyNameMap();
         for(auto && item : nameMap)
         {
-            osSqlPre << "," << item.second;
+            osSqlPre << "," << quotePropertyIdentifier(item.second);
         }
         osSqlPre << ") values ";
 
@@ -444,7 +472,8 @@ bool PropertyDbManager::hasTableExist(const string &sTbName)
 {
     try
     {
-        TC_Mysql::MysqlData tTotalRecord = _mysql.queryRecord("show tables like '%" + sTbName + "%'");
+        if (!isSafePropertyIdentifier(sTbName)) return false;
+        TC_Mysql::MysqlData tTotalRecord = _mysql.queryRecord("show tables like '%" + _mysql.escapeString(sTbName) + "%'");
         TLOGINFO("PropertyDbManager::hasTableExist|show tables like '%" << sTbName << "%|affected:" << tTotalRecord.size() << endl);
         if (tTotalRecord.size() > 0)
         {
@@ -467,6 +496,10 @@ int PropertyDbManager::createTable(const string &sTbName)
 {
     try
     {
+        if (!isSafePropertyIdentifier(sTbName))
+        {
+            throw TC_Mysql_Exception("invalid property table identifier");
+        }
         if (!hasTableExist(sTbName))
         {
             string sSql = TC_Common::replace(_sql, "${TABLE}", sTbName);
@@ -487,6 +520,10 @@ int PropertyDbManager::createEcsTable(const string &sTbName, const string &sSql)
 {
     try
     {
+        if (!isSafePropertyIdentifier(sTbName))
+        {
+            throw TC_Mysql_Exception("invalid property table identifier");
+        }
         if (!hasTableExist(sTbName))
         {
             TLOG_DEBUG("PropertyDbManager::createEcsTable " << sSql << endl);
@@ -508,7 +545,7 @@ int PropertyDbManager::updateEcsStatus(const string &sLastTime, const string &sT
     {
         for (size_t i = 0; i < _appNames.size(); ++i)
         {
-            string sCondition = "where appname='" + _appNames[i] + "' and action=0";
+            string sCondition = "where appname='" + _mysql.escapeString(_appNames[i]) + "' and action=0";
             
             TC_Mysql::RECORD_DATA rd;
             rd["lasttime"] = make_pair(TC_Mysql::DB_STR, sLastTime);

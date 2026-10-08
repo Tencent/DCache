@@ -13,6 +13,7 @@
 */
 #include "TransferThread.h"
 #include "DCacheOptImp.h"
+#include "SqlHelper.h"
 
 using namespace std;
 
@@ -88,7 +89,7 @@ void* TransferThread::Run(void* arg)
                         vector<string> tmp = TC_Common::sepstr<string>(data[i]["router_transfer_id"], "|");
                         for (size_t j = 0; j < tmp.size(); ++j)
                         {
-                            sSql = "select * from t_router_transfer where id=" + tmp[j];
+                            sSql = "select * from t_router_transfer where id=" + TC_Common::tostr(TC_Common::strto<int>(tmp[j]));
 
                             TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
                             if (transferData.size() == 0)
@@ -116,7 +117,7 @@ void* TransferThread::Run(void* arg)
                                 }
                                 m_update["remark"] = make_pair(TC_Mysql::DB_STR, "");
 
-                                string condition = "where id=" + tmp[j];
+                                string condition = "where id=" + TC_Common::tostr(TC_Common::strto<int>(tmp[j]));
                                 tcMysql.updateRecord("t_router_transfer", m_update, condition);
 
                                 map<pair<string, string>, int>::iterator it = pthis->_mFailCounts.find(make_pair(transferData[0]["module_name"], transferData[0]["group_name"]));
@@ -151,7 +152,7 @@ void* TransferThread::Run(void* arg)
 
                         if (finished)
                         {
-                            string condition = "where id=" + data[i]["id"];
+                            string condition = "where id=" + TC_Common::tostr(TC_Common::strto<int>(data[i]["id"]));
 
                             map<string, pair<TC_Mysql::FT, string> > m_update;
                             m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_FINISH));
@@ -206,7 +207,7 @@ int TransferThread::getRouterObj(const string & appName, string & routerObj, str
     {
         errmsg = "";
 
-        string sSql = "select * from t_cache_router where app_name='" + appName + "' limit 1";
+        string sSql = "select * from t_cache_router where app_name=" + DCacheSql::quote(_mysqlRelationDB, appName) + " limit 1";
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
@@ -238,7 +239,7 @@ int TransferThread::getRouterObj(const string & appName, string & routerObj, str
 int TransferThread::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo)
 {
     string sSql("");
-    sSql = "select * from t_cache_router where app_name='" + appName + "'";
+    sSql = "select * from t_cache_router where app_name=" + DCacheSql::quote(_mysqlRelationDB, appName);
 
     TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
     if (data.size() > 0)
@@ -301,4 +302,3 @@ int TransferThread::defragRouterRecord(const string & app, const std::string & r
 
     return -1;
 }
-

@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <set>
+#include <cctype>
 
 #include "servant/Application.h"
 #include "util/tc_common.h"
@@ -37,6 +38,87 @@ std::function<void(const string, const string, const string, const int, const st
 string g_dbaccessError;
 //dbaccess安装数据库表的互斥锁
 TC_ThreadLock g_dbaccessLock;
+
+// Quote data values used in hand-built SQL statements. Prefer prepared
+// statements where the database wrapper supports them; this helper keeps
+// string inputs from being interpreted as SQL in the existing TC_Mysql API.
+static string sqlQuote(TC_Mysql &mysql, const string &value)
+{
+    return "'" + mysql.escapeString(value) + "'";
+}
+
+static string sqlIdentifier(const string &identifier)
+{
+    if (identifier.empty() || identifier.find('\0') != string::npos)
+    {
+        throw invalid_argument("invalid empty SQL identifier");
+    }
+
+    string escaped;
+    escaped.reserve(identifier.size());
+    for (string::const_iterator it = identifier.begin(); it != identifier.end(); ++it)
+    {
+        if (*it == '`')
+        {
+            escaped += "``";
+        }
+        else
+        {
+            escaped += *it;
+        }
+    }
+    return "`" + escaped + "`";
+}
+
+static bool isSafeSqlToken(const string &value)
+{
+    if (value.empty())
+    {
+        return false;
+    }
+    for (string::const_iterator it = value.begin(); it != value.end(); ++it)
+    {
+        if (!(isalnum(static_cast<unsigned char>(*it)) || *it == '_'))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool isSafeDbType(const string &type)
+{
+    static const set<string> baseTypes = {"int", "tinyint", "smallint", "mediumint", "bigint", "float", "double", "decimal", "char", "varchar", "text", "mediumtext", "longtext", "blob", "mediumblob", "longblob", "date", "datetime", "timestamp", "time", "bool", "boolean"};
+    string normalized = type;
+    for (string::size_type i = 0; i < normalized.size(); ++i)
+    {
+        normalized[i] = static_cast<char>(tolower(static_cast<unsigned char>(normalized[i])));
+    }
+    string::size_type open = normalized.find('(');
+    string base = open == string::npos ? normalized : normalized.substr(0, open);
+    if (baseTypes.find(base) == baseTypes.end())
+    {
+        return false;
+    }
+    if (open == string::npos)
+    {
+        return true;
+    }
+    string::size_type close = normalized.find(')', open + 1);
+    if (close == string::npos || normalized.find('(', open + 1) != string::npos || normalized.find(')', close + 1) != string::npos)
+    {
+        return false;
+    }
+    for (string::size_type i = open + 1; i < close; ++i)
+    {
+        if (!(isdigit(static_cast<unsigned char>(normalized[i])) || normalized[i] == ','))
+        {
+            return false;
+        }
+    }
+    string suffix = normalized.substr(close + 1);
+    return suffix.empty() || suffix == " unsigned";
+}
 
 //升级opt服务
 #define CREATE_DBACCESS_CONF "CREATE TABLE `t_dbaccess_app` (   \
@@ -444,11 +526,21 @@ int DCacheOptImp::creatDBAccessTable(const string &serverName, const vector<DCac
 		string dbIP;
 
 		//生成表信息
-		string tableSql = "create table `" + conf.tablePrefix + "${NUM}` (";
+		if (!isSafeSqlToken(conf.tableEngine) || !isSafeSqlToken(conf.tableCharset))
+		{
+			err = "invalid DBAccess table engine or charset";
+			return -1;
+		}
+		string tableSql = "create table " + sqlIdentifier(conf.tablePrefix + "${NUM}") + " (";
 
 		for (unsigned int i = 0; i < vtModuleRecord.size(); i++)
 		{
-			tableSql += "`" + vtModuleRecord[i].fieldName + "` " + vtModuleRecord[i].DBType + " ";
+			if (!isSafeDbType(vtModuleRecord[i].DBType))
+			{
+				err = "invalid DBAccess field type";
+				return -1;
+			}
+			tableSql += sqlIdentifier(vtModuleRecord[i].fieldName) + " " + vtModuleRecord[i].DBType + " ";
 
 			if (vtModuleRecord[i].keyType == "mkey") //主键
 				tableSql += " NOT NULL ";
@@ -476,11 +568,11 @@ int DCacheOptImp::creatDBAccessTable(const string &serverName, const vector<DCac
 			{
 				if (first)
 				{
-					tableSql += "`" + vtModuleRecord[i].fieldName + "`";
+					tableSql += sqlIdentifier(vtModuleRecord[i].fieldName);
 					first = false;
 				}
 				else
-					tableSql += ",`" + vtModuleRecord[i].fieldName + "`";
+					tableSql += "," + sqlIdentifier(vtModuleRecord[i].fieldName);
 			}
 		}
 		tableSql += ")";
@@ -584,7 +676,7 @@ void DCacheOptImp::creatDBAccessTableThread(const string &dbIp, const string &db
 	try
 	{
 		//创建数据库
-		sql = "create database " + dbName;
+        sql = "create database " + sqlIdentifier(dbName);
 		dbConn.execute(sql);
 	}
 	catch (exception &ex) //数据库已经存在
@@ -601,7 +693,7 @@ void DCacheOptImp::creatDBAccessTableThread(const string &dbIp, const string &db
 		}
 	}
 
-	sql = "use " + dbName;
+	sql = "use " + sqlIdentifier(dbName);
 	dbConn.execute(sql);
 
 	unsigned int tableIndexLen = 0;
@@ -1179,10 +1271,10 @@ tars::Int32 DCacheOptImp::transferDCache(const TransferReq & req, TransferRsp & 
                 map<string, pair<TC_Mysql::FT, string> > m_update;
                 m_update["status"]  = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 配置阶段完成
 
-                string condition = "where module_name='"    + req.moduleName
-                                 + "' and src_group='"      + req.srcGroupName
-                                 + "' and app_name='"       + req.appName
-                                 + "' and dst_group='"      + req.cacheHost[0].groupName + "'";
+                string condition = "where module_name=" + sqlQuote(_mysqlRelationDB, req.moduleName)
+                                 + " and src_group=" + sqlQuote(_mysqlRelationDB, req.srcGroupName)
+                                 + " and app_name=" + sqlQuote(_mysqlRelationDB, req.appName)
+                                 + " and dst_group=" + sqlQuote(_mysqlRelationDB, req.cacheHost[0].groupName);
 
                 _mysqlRelationDB.updateRecord("t_transfer_status", m_update, condition);
 
@@ -1272,7 +1364,7 @@ tars::Int32 DCacheOptImp::expandDCache(const ExpandReq & expandReq, ExpandRsp & 
                     map<string, pair<TC_Mysql::FT, string> > m_update;
                     m_update["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER));
 
-                    string condition = "where module_name='" + expandReq.moduleName + "' and app_name='" + expandReq.appName + "' and type=" + TC_Common::tostr(DCache::EXPAND_TYPE);
+                    string condition = "where module_name=" + sqlQuote(_mysqlRelationDB, expandReq.moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, expandReq.appName) + " and type=" + TC_Common::tostr(DCache::EXPAND_TYPE);
 
                     _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
 
@@ -1412,7 +1504,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
 
         //找出服务组中服务节点数最多的组
-        sql = "select group_name,count(*) as num from t_router_group where module_name='" + req.moduleName + "' group by group_name order by num desc";
+        sql = "select group_name,count(*) as num from t_router_group where module_name=" + sqlQuote(tcMysql, req.moduleName) + " group by group_name order by num desc";
         TC_Mysql::MysqlData groupInfo = tcMysql.queryRecord(sql);
 
         if (groupInfo.size() <= 0)
@@ -1423,7 +1515,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         }
 
         //查找务组中服务节点最多的组的服务结构信息
-        sql = "select * from t_router_group where module_name='" + req.moduleName + "' and group_name='" + groupInfo[0]["group_name"] + "'";
+        sql = "select * from t_router_group where module_name=" + sqlQuote(tcMysql, req.moduleName) + " and group_name=" + sqlQuote(tcMysql, groupInfo[0]["group_name"]);
         TC_Mysql::MysqlData groupStruct = tcMysql.queryRecord(sql);
 
         if (groupStruct.size() < 0)
@@ -1444,7 +1536,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
             tmp.type        = groupStruct[i]["server_status"];
 
             //找出服务的idc信息
-            sql = " select * from t_router_server where server_name='" + tmp.serverName + "'";
+            sql = " select * from t_router_server where server_name=" + sqlQuote(tcMysql, tmp.serverName);
             TC_Mysql::MysqlData serverInfoData = tcMysql.queryRecord(sql);
             if (serverInfoData.size() <= 0)
             {
@@ -1491,7 +1583,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         }
 
         //查询主机信息
-        sql = "select * from t_router_group where module_name='" + req.moduleName + "' and server_status='M'";
+        sql = "select * from t_router_group where module_name=" + sqlQuote(tcMysql, req.moduleName) + " and server_status='M'";
         TC_Mysql::MysqlData masterInfo = tcMysql.queryRecord(sql);
         if (masterInfo.size() == 0)
         {
@@ -1510,7 +1602,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
         for (size_t i = 0; i < masterInfo.size(); i++)
         {
             float memSize = 0;
-            sQuerySql = "select config_value from t_config_table where server_name='" + masterInfo[i]["server_name"] + "' and item_id=" + shmSizeId[0]["id"];
+            sQuerySql = "select config_value from t_config_table where server_name=" + sqlQuote(_mysqlRelationDB, masterInfo[i]["server_name"]) + " and item_id=" + TC_Common::tostr(TC_Common::strto<int>(shmSizeId[0]["id"]));
 
             TC_Mysql::MysqlData shmSizeData;
             shmSizeData = _mysqlRelationDB.queryRecord(sQuerySql);
@@ -1559,7 +1651,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
             else
             {
                 //如果没有，就找公有的配置
-                sQuerySql = "select reference_id from t_config_reference where server_name='" + masterInfo[i]["server_name"] + "' limit 1";
+                sQuerySql = "select reference_id from t_config_reference where server_name=" + sqlQuote(_mysqlRelationDB, masterInfo[i]["server_name"]) + " limit 1";
                 TC_Mysql::MysqlData reference_idData;
                 reference_idData = _mysqlRelationDB.queryRecord(sQuerySql);
                 if (reference_idData.size() == 0)
@@ -1569,7 +1661,7 @@ tars::Int32 DCacheOptImp::getModuleStruct(const ModuleStructReq & req,ModuleStru
                     return -1;
                 }
 
-                sQuerySql = "select config_value from t_config_table where config_id=" + reference_idData[0]["reference_id"] + " and item_id=" + shmSizeId[0]["id"];
+                sQuerySql = "select config_value from t_config_table where config_id=" + TC_Common::tostr(TC_Common::strto<int>(reference_idData[0]["reference_id"])) + " and item_id=" + TC_Common::tostr(TC_Common::strto<int>(shmSizeId[0]["id"]));
                 TC_Mysql::MysqlData shmSizeData;
                 shmSizeData = _mysqlRelationDB.queryRecord(sQuerySql);
 
@@ -1713,23 +1805,23 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
 
                     if (it->first == "appName")
                     {
-                        condition += "app_name like '%" + it->second + "%'";
+                        condition += "app_name like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "moduleName")
                     {
-                        condition += "module_name like '%" + it->second + "%'";
+                        condition += "module_name like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "srcGroupName")
                     {
-                        condition += "src_group like '%" + it->second + "%'";
+                        condition += "src_group like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "dstGroupName")
                     {
-                        condition += "dst_group like '%" + it->second + "%'";
+                        condition += "dst_group like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "status")
                     {
-                        condition += it->first + "=" + it->second;
+                        condition += "status=" + TC_Common::tostr(TC_Common::strto<int>(it->second));
                     }
                     else
                     {
@@ -1786,10 +1878,10 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
 
                     vector<string> vPageInfo = TC_Common::sepstr<string>(data[i]["router_transfer_id"], "|");
 
-                    sSql = "select * from t_router_transfer where module_name='" + tmpInfo.moduleName
-                         + "' and group_name='" + tmpInfo.srcGroupName
-                         + "' and trans_group_name='" + tmpInfo.dstGroupName
-                         + "' and id in (";
+                    sSql = "select * from t_router_transfer where module_name=" + sqlQuote(tcMysql, tmpInfo.moduleName)
+                         + " and group_name=" + sqlQuote(tcMysql, tmpInfo.srcGroupName)
+                         + " and trans_group_name=" + sqlQuote(tcMysql, tmpInfo.dstGroupName)
+                         + " and id in (";
 
                     for (size_t i = 0; i < vPageInfo.size(); ++i)
                     {
@@ -1798,7 +1890,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
                             sSql += ",";
                         }
 
-                        sSql += vPageInfo[i];
+                        sSql += TC_Common::tostr(TC_Common::strto<int>(vPageInfo[i]));
                     }
                     sSql += ")";
 
@@ -1869,20 +1961,20 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
 
                     if (it->first == "appName")
                     {
-                        condition += "app_name like '%" + it->second + "%'";
+                        condition += "app_name like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "moduleName")
                     {
-                        condition += "module_name like '%" + it->second + "%'";
+                        condition += "module_name like " + sqlQuote(_mysqlRelationDB, "%" + it->second + "%");
                     }
                     else if (it->first == "type")
                     {
-                        condition += it->first + "=" + it->second;
+                        condition += "type=" + TC_Common::tostr(TC_Common::strto<int>(it->second));
                     }
                     else if (it->first == "status")
                     {
                         iStatus = TC_Common::strto<int>(it->second);
-                        condition += it->first + "=" + it->second;
+                        condition += "status=" + TC_Common::tostr(iStatus);
                     }
                     else
                     {
@@ -1947,7 +2039,7 @@ tars::Int32 DCacheOptImp::getRouterChange(const RouterChangeReq & req,RouterChan
 
                     for (size_t j = 0; j < tmp.size(); ++j)
                     {
-                        sSql = "select * from t_router_transfer where id=" + tmp[j];
+                        sSql = "select * from t_router_transfer where id=" + TC_Common::tostr(TC_Common::strto<int>(tmp[j]));
 
                         TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
                         if (transferData.size() == 0)
@@ -2171,47 +2263,47 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
 
             if (iter->first == "appName")
             {
-                sql += "app_name like '%" + iter->second + "%'";
+                sql += "app_name like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "moduleName")
             {
-                sql += "module_name like'%" + iter->second + "%'";
+                sql += "module_name like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "groupName")
             {
-                sql += "group_name like '%" + iter->second + "%'";
+                sql += "group_name like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "masterServer")
             {
-                sql += "master_server like '%" + iter->second + "%'";
+                sql += "master_server like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "slaveServer")
             {
-                sql += "slave_server like '%" + iter->second + "%'";
+                sql += "slave_server like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "mirrorIdc")
             {
-                sql += "mirror_idc like '%" + iter->second + "%'";
+                sql += "mirror_idc like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "masterMirror")
             {
-                sql += "master_mirror like '%" + iter->second + "%'";
+                sql += "master_mirror like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "slaveMirror")
             {
-                sql += "slave_mirror like '%" + iter->second + "%'";
+                sql += "slave_mirror like " + sqlQuote(_mysqlRelationDB, "%" + iter->second + "%");
             }
             else if (iter->first == "switchType")
             {
-                sql += "switch_type=" + iter->second;
+                sql += "switch_type=" + TC_Common::tostr(TC_Common::strto<int>(iter->second));
             }
             else if(iter->first == "switchResult")
             {
-                sql += "switch_result=" + iter->second;
+                sql += "switch_result=" + TC_Common::tostr(TC_Common::strto<int>(iter->second));
             }
             else if(iter->first == "groupStatus")
             {
-                sql += "access_status=" + iter->second;
+                sql += "access_status=" + TC_Common::tostr(TC_Common::strto<int>(iter->second));
             }
             else if (iter->first == "switch_time")
             {
@@ -2224,7 +2316,7 @@ tars::Int32 DCacheOptImp::getSwitchInfo(const SwitchInfoReq & req, SwitchInfoRsp
                     return -1;
                 }
 
-                sql += "(switch_time>='" + vTimes[0] + "' and switch_time<='" + vTimes[1] + "')";
+                sql += "(switch_time>=" + sqlQuote(_mysqlRelationDB, vTimes[0]) + " and switch_time<=" + sqlQuote(_mysqlRelationDB, vTimes[1]) + ")";
             }
             else
             {
@@ -2470,7 +2562,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
         tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
 
 
-        string sSql = "select cacheType from t_config_appMod where appName='" + req.appName + "' and moduleName='" + req.moduleName + "'";
+        string sSql = "select cacheType from t_config_appMod where appName=" + sqlQuote(_mysqlRelationDB, req.appName) + " and moduleName=" + sqlQuote(_mysqlRelationDB, req.moduleName);
         TC_Mysql::MysqlData dataCacheType = _mysqlRelationDB.queryRecord(sSql);
         if (dataCacheType.size() > 0)
         {
@@ -2482,7 +2574,7 @@ tars::Int32 DCacheOptImp::getCacheServerList(const CacheServerListReq& req, Cach
             return 0;
         }
 
-        sSql = "select * from t_cache_router where app_name='" + req.appName + "' and module_name='" + req.moduleName + "'";
+        sSql = "select * from t_cache_router where app_name=" + sqlQuote(_mysqlRelationDB, req.appName) + " and module_name=" + sqlQuote(_mysqlRelationDB, req.moduleName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
 
         for (size_t i = 0; i < data.size(); ++i)
@@ -2523,7 +2615,7 @@ tars::Int32 DCacheOptImp::addCacheConfigItem(const CacheConfigReq & configReq, C
     std::string &errmsg = configRsp.errMsg;
     try
     {
-        string sSql = "select id from t_config_item where item='" + configReq.item + "' and path='" + configReq.path + "'";
+        string sSql = "select id from t_config_item where item=" + sqlQuote(_mysqlRelationDB, configReq.item) + " and path=" + sqlQuote(_mysqlRelationDB, configReq.path);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -2562,7 +2654,7 @@ tars::Int32 DCacheOptImp::updateCacheConfigItem(const CacheConfigReq & configReq
         m_update["reload"] = make_pair(TC_Mysql::DB_STR, configReq.reload);
         m_update["period"] = make_pair(TC_Mysql::DB_STR, configReq.period);
 
-        string condition = "where id=" + configReq.id;
+        string condition = "where id=" + sqlQuote(_mysqlRelationDB, configReq.id);
 
         _mysqlRelationDB.updateRecord("t_config_item", m_update, condition);
     }
@@ -2582,7 +2674,7 @@ tars::Int32 DCacheOptImp::deleteCacheConfigItem(const CacheConfigReq & configReq
     std::string &errmsg = configRsp.errMsg;
     try
     {
-        string condition = "where id=" + configReq.id;
+        string condition = "where id=" + sqlQuote(_mysqlRelationDB, configReq.id);
 
         _mysqlRelationDB.deleteRecord("t_config_item", condition);
     }
@@ -2658,12 +2750,12 @@ tars::Int32 DCacheOptImp::addServerConfigItem(const ServerConfigReq & configReq,
         m["config_id"]    = make_pair(TC_Mysql::DB_INT, configId);
         m["server_name"]  = make_pair(TC_Mysql::DB_STR, serverName);
         m["host"]         = make_pair(TC_Mysql::DB_STR, nodeName);
-        m["item_id"]      = make_pair(TC_Mysql::DB_INT, configReq.itemId);
+        m["item_id"]      = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TC_Common::strto<int>(configReq.itemId)));
         m["config_value"] = make_pair(TC_Mysql::DB_STR, configReq.configValue);
         m["level"]        = make_pair(TC_Mysql::DB_INT, level);
         m["posttime"]     = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
         m["lastuser"]     = make_pair(TC_Mysql::DB_STR, configReq.lastUser);
-        m["config_flag"]  = make_pair(TC_Mysql::DB_INT, configReq.configFlag); // 这个配置没啥用，建议删除，建表语句把这个字段也删除
+        m["config_flag"]  = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TC_Common::strto<int>(configReq.configFlag))); // 这个配置没啥用，建议删除，建表语句把这个字段也删除
 
         _mysqlRelationDB.insertRecord("t_config_table", m);
     }
@@ -2687,7 +2779,7 @@ tars::Int32 DCacheOptImp::updateServerConfigItem(const ServerConfigReq& configRe
         m_update["config_value"] = make_pair(TC_Mysql::DB_STR, configReq.configValue);
         m_update["lastuser"]     = make_pair(TC_Mysql::DB_STR, configReq.lastUser);
 
-        string condition = "where id=" + configReq.indexId;
+        string condition = "where id=" + sqlQuote(_mysqlRelationDB, configReq.indexId);
 
         _mysqlRelationDB.updateRecord("t_config_table", m_update, condition);
     }
@@ -2731,7 +2823,7 @@ tars::Int32 DCacheOptImp::deleteServerConfigItem(const ServerConfigReq & configR
     std::string &errmsg = configRsp.errMsg;
     try
     {
-        string condition = "where id=" + configReq.indexId;
+        string condition = "where id=" + sqlQuote(_mysqlRelationDB, configReq.indexId);
 
         _mysqlRelationDB.deleteRecord("t_config_table", condition);
     }
@@ -2776,7 +2868,10 @@ tars::Int32 DCacheOptImp::getServerNodeConfigItemList(const ServerConfigReq & co
 
     try
     {
-        string selectSql = "select ct.*, ci.remark, ci.item, ci.path, ci.reload, ci.period from t_config_table ct join t_config_item ci on ct.item_id = ci.id where server_name='" +  configReq.serverName + "' and host='" + configReq.nodeName + "'";
+        // These values come from the console request and must remain data.
+        string selectSql = "select ct.*, ci.remark, ci.item, ci.path, ci.reload, ci.period from t_config_table ct join t_config_item ci on ct.item_id = ci.id where server_name='" +
+                           _mysqlRelationDB.escapeString(configReq.serverName) + "' and host='" +
+                           _mysqlRelationDB.escapeString(configReq.nodeName) + "'";
 
         TC_Mysql::MysqlData itemListData = _mysqlRelationDB.queryRecord(selectSql);
         configRsp.configItemList = itemListData.data();
@@ -3098,7 +3193,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
         if (iRet == 0)
         {
             // 不存在，则新建
-            string sSql = "create database " + param.dbName;
+            string sSql = "create database " + sqlIdentifier(param.dbName);
             iRet = mysql_real_query(pMysql, sSql.c_str(), sSql.length());
             if (iRet != 0)
             {
@@ -3108,7 +3203,7 @@ int DCacheOptImp::createRouterDB(const RouterParam &param, string &errmsg)
             }
         }
 
-        string sSql2 = "use " + param.dbName;
+        string sSql2 = "use " + sqlIdentifier(param.dbName);
         mysql_real_query(pMysql, sSql2.c_str(), sSql2.length());
 
         // 检查routerDB中各个表是否存在，不存在则新建
@@ -3423,7 +3518,7 @@ int DCacheOptImp::createProxyConf(const string &sModuleName, const ProxyParam &s
 
 int DCacheOptImp::matchItemId(const string &item, const string &path, string &item_id)
 {
-    string sql = "select id from t_config_item where item = '" + item + "' and path = '" + path + "'";
+    string sql = "select id from t_config_item where item = " + sqlQuote(_mysqlRelationDB, item) + " and path = " + sqlQuote(_mysqlRelationDB, path);
     TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
     if (data.size() != 1)
     {
@@ -3451,7 +3546,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
         else
             _mysqlRelationDB.insertRecord("t_config_appMod", m);
 
-        string sSql = "select id from t_config_appMod where appName='" + appName + "' and moduleName='" + moduleName + "'";
+        string sSql = "select id from t_config_appMod where appName=" + sqlQuote(_mysqlRelationDB, appName) + " and moduleName=" + sqlQuote(_mysqlRelationDB, moduleName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() != 1)
         {
@@ -3488,7 +3583,7 @@ int DCacheOptImp::insertAppModTable(const string &appName, const string &moduleN
         else
             _mysqlRelationDB.insertRecord("t_config_appMod", m);
 
-        string sSql = "select id from t_config_appMod where appName='" + appName + "' and moduleName='" + moduleName + "'";
+        string sSql = "select id from t_config_appMod where appName=" + sqlQuote(_mysqlRelationDB, appName) + " and moduleName=" + sqlQuote(_mysqlRelationDB, moduleName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() != 1)
         {
@@ -3921,7 +4016,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
     {
         tcMysql.init(routerDbInfo);
 
-        if (tcMysql.getRecordCount("t_router_module", "where module_name='" + sModuleName + "'") == 0)
+        if (tcMysql.getRecordCount("t_router_module", "where module_name=" + sqlQuote(tcMysql, sModuleName)) == 0)
         {
             map<string, pair<TC_Mysql::FT, string> > mpModule;
             mpModule["module_name"] = make_pair(TC_Mysql::DB_STR, sModuleName);
@@ -3938,7 +4033,7 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         else
         {
             // 已经存在，则更新版本号
-            string updateVersion = string("update t_router_module set version = version+1 where module_name='") + sModuleName + "';";
+            string updateVersion = string("update t_router_module set version = version+1 where module_name=") + sqlQuote(tcMysql, sModuleName) + ";";
             TLOG_DEBUG(FUN_LOG << "module name:" << sModuleName << " already exist, update router version, do SQL:" << updateVersion << endl);
             tcMysql.execute(updateVersion);
         }
@@ -4095,20 +4190,20 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
             mpServer["POSTTIME"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
             mpServer["LASTUSER"] = make_pair(TC_Mysql::DB_STR, "sys");
 
-            if (tcMysql.getRecordCount("t_router_server", "where server_name='" + vtCacheHost[i].serverName + "'") == 0)
+            if (tcMysql.getRecordCount("t_router_server", "where server_name=" + sqlQuote(tcMysql, vtCacheHost[i].serverName)) == 0)
             {
                 tcMysql.insertRecord("t_router_server", mpServer);
             }
 
             //避免主机重复
-            if (!bReplace && (vtCacheHost[i].type == "M") && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "'") > 0)
+            if (!bReplace && (vtCacheHost[i].type == "M") && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name=" + sqlQuote(tcMysql, sModuleName) + " AND group_name=" + sqlQuote(tcMysql, vtCacheHost[i].groupName)) > 0)
             {
                 errmsg = string("module_name:") + sModuleName + ", group_name:" + vtCacheHost[i].groupName + " has master cache server|server name:" + vtCacheHost[i].serverName;
                 TLOG_ERROR(FUN_LOG << errmsg << endl);
                 continue;
             }
 
-            string groupsql = "SELECT * FROM t_router_group WHERE module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "' AND server_name='" + vtCacheHost[i].serverName + "'";
+            string groupsql = "SELECT * FROM t_router_group WHERE module_name=" + sqlQuote(tcMysql, sModuleName) + " AND group_name=" + sqlQuote(tcMysql, vtCacheHost[i].groupName) + " AND server_name=" + sqlQuote(tcMysql, vtCacheHost[i].serverName);
             TC_Mysql::MysqlData existRouterGroup = tcMysql.queryRecord(groupsql);
             if (existRouterGroup.size() > 0)
             {
@@ -4141,9 +4236,9 @@ int DCacheOptImp::insertCache2RouterDb(const string& sModuleName, const string &
         }
 
         // 删除可能存在的模块路由信息
-        tcMysql.deleteRecord("t_router_record", "where module_name = '" + sModuleName + "'");
+        tcMysql.deleteRecord("t_router_record", "where module_name = " + sqlQuote(tcMysql, sModuleName));
 
-        string sSql = "select group_name from t_router_group where module_name = '" + sModuleName + "' group by group_name order by group_name";
+        string sSql = "select group_name from t_router_group where module_name = " + sqlQuote(tcMysql, sModuleName) + " group by group_name order by group_name";
         TC_Mysql::MysqlData data = tcMysql.queryRecord(sSql);
         if (data.size() <= 0)
         {
@@ -4660,7 +4755,7 @@ int DCacheOptImp::selectPort(TC_Mysql &tcMysql, const string &sServerName, const
 {
     try
     {
-        string sSql = "select binlog_port,cache_port,routerclient_port,backup_port,wcache_port,controlack_port from t_router_server where server_name = '" + sServerName +"' and ip = '"+ sIp + "'";
+        string sSql = "select binlog_port,cache_port,routerclient_port,backup_port,wcache_port,controlack_port from t_router_server where server_name = " + sqlQuote(tcMysql, sServerName) + " and ip = " + sqlQuote(tcMysql, sIp);
         TC_Mysql::MysqlData data = tcMysql.queryRecord(sSql);
         if (data.size() != 1)
         {
@@ -4715,7 +4810,7 @@ int DCacheOptImp::checkTable(TC_Mysql &tcMysql, const string &sDbName, const str
 {
     try
     {
-        string sSql = "show tables from " + sDbName;
+        string sSql = "show tables from " + sqlIdentifier(sDbName);
         TC_Mysql::MysqlData data = tcMysql.queryRecord(sSql);
 
         string sField = "Tables_in_" + sDbName;
@@ -4878,7 +4973,7 @@ void DCacheOptImp::insertProxyRouter(const string &sProxyName, const string &sRo
         mpProxyRouter["db_name"]        = make_pair(TC_Mysql::DB_STR, sDbName);
         mpProxyRouter["db_ip"]          = make_pair(TC_Mysql::DB_STR, sIp);
 
-        string sql = "select * from t_proxy_router where proxy_name='" + sProxyName + "' and router_name='" + sRouterName + "'";
+        string sql = "select * from t_proxy_router where proxy_name=" + sqlQuote(_mysqlRelationDB, sProxyName) + " and router_name=" + sqlQuote(_mysqlRelationDB, sRouterName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
         string mnlist = sModuleNameList;
         if (data.size() == 1)
@@ -4932,7 +5027,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         return -1;
     }
 
-    string sSql = "select * from t_router_app where router_name='" + vRouterName[0] + "." + vRouterName[1] + "'";
+    string sSql = "select * from t_router_app where router_name=" + sqlQuote(_mysqlRelationDB, vRouterName[0] + "." + vRouterName[1]);
     TC_Mysql::MysqlData appNameData = _mysqlRelationDB.queryRecord(sSql);
     if (appNameData.size() != 1)
     {
@@ -4945,7 +5040,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
     try
     {
         TC_Mysql mysqlRouterDb(routerDbInfo);
-        sSql = "select * from t_router_group where server_name='DCache." + sCacheName + "'";
+        sSql = "select * from t_router_group where server_name=" + sqlQuote(mysqlRouterDb, "DCache." + sCacheName);
         TC_Mysql::MysqlData groupInfo = mysqlRouterDb.queryRecord(sSql);
         if (groupInfo.size() != 1)
         {
@@ -4955,7 +5050,7 @@ int DCacheOptImp::insertCacheRouter(const string &sCacheName, const string &sCac
         }
 
 
-        sSql = "select idc_area from t_router_server where server_name='DCache." + sCacheName + "'";
+        sSql = "select idc_area from t_router_server where server_name=" + sqlQuote(mysqlRouterDb, "DCache." + sCacheName);
         TC_Mysql::MysqlData serverInfo = mysqlRouterDb.queryRecord(sSql);
         if (serverInfo.size() != 1)
         {
@@ -5014,7 +5109,7 @@ int DCacheOptImp::getRouterDBFromAppTable(const string &appName, TC_DBConf &rout
         errmsg = "";
         string sSql("");
 
-        sSql = "select * from t_proxy_app where app_name='" + appName + "'";
+        sSql = "select * from t_proxy_app where app_name=" + sqlQuote(_mysqlRelationDB, appName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
 
@@ -5025,7 +5120,7 @@ int DCacheOptImp::getRouterDBFromAppTable(const string &appName, TC_DBConf &rout
                 sProxyName.push_back(data[i]["proxy_name"]);
             }
 
-            sSql = "select * from t_router_app where app_name='" + appName + "'";
+            sSql = "select * from t_router_app where app_name=" + sqlQuote(_mysqlRelationDB, appName);
             data = _mysqlRelationDB.queryRecord(sSql);
             if (data.size() > 0)
             {
@@ -5155,7 +5250,7 @@ int DCacheOptImp::getAppModConfigId(const string &appName, const string &moduleN
 {
     try
     {
-        string sSql = "select id from t_config_appMod where appName = '" + appName + "' and moduleName = '" + moduleName + "'";
+        string sSql = "select id from t_config_appMod where appName = " + sqlQuote(_mysqlRelationDB, appName) + " and moduleName = " + sqlQuote(_mysqlRelationDB, moduleName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() != 1)
         {
@@ -5329,7 +5424,7 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
             mpServer["POSTTIME"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
             mpServer["LASTUSER"] = make_pair(TC_Mysql::DB_STR, "sys");
 
-            if (tcMysql.getRecordCount("t_router_server", "where server_name='" + vtCacheHost[i].serverName + "'") == 0)
+            if (tcMysql.getRecordCount("t_router_server", "where server_name=" + sqlQuote(tcMysql, vtCacheHost[i].serverName)) == 0)
             {
                 if (bReplace)
                     tcMysql.replaceRecord("t_router_server", mpServer);
@@ -5339,14 +5434,14 @@ int DCacheOptImp::expandCache2RouterDb(const string &sModuleName, const TC_DBCon
 
             //save cache server info to routerdb.t_router_group
             //避免主机重复
-            if (!bReplace && vtCacheHost[i].type == "M" && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "' AND server_status='M'") > 0)
+            if (!bReplace && vtCacheHost[i].type == "M" && tcMysql.getRecordCount("t_router_group", "where server_status='M' AND module_name=" + sqlQuote(tcMysql, sModuleName) + " AND group_name=" + sqlQuote(tcMysql, vtCacheHost[i].groupName) + " AND server_status='M'") > 0)
             {
                 errmsg = string("module_name:") + sModuleName + ", group_name:" + vtCacheHost[i].groupName + " has master cache server|server name:" + vtCacheHost[i].serverName;
                 TLOG_ERROR(FUN_LOG << errmsg << endl);
                 return -1;
             }
 
-            string sSql = "select * from t_router_group where module_name='" + sModuleName + "' AND group_name='" + vtCacheHost[i].groupName + "' AND server_name='" + vtCacheHost[i].serverName + "'";
+            string sSql = "select * from t_router_group where module_name=" + sqlQuote(tcMysql, sModuleName) + " AND group_name=" + sqlQuote(tcMysql, vtCacheHost[i].groupName) + " AND server_name=" + sqlQuote(tcMysql, vtCacheHost[i].serverName);
             TC_Mysql::MysqlData existRouterGroup = tcMysql.queryRecord(sSql);
             if (existRouterGroup.size() > 0)
             {
@@ -5399,11 +5494,11 @@ int DCacheOptImp::getRouterObj(const string & sWhereName, string & routerObj, st
         string sSql ("");
         if (type == 1)
         {
-            sSql = "select * from t_cache_router where app_name='" + sWhereName + "' limit 1";
+            sSql = "select * from t_cache_router where app_name=" + sqlQuote(_mysqlRelationDB, sWhereName) + " limit 1";
         }
         else
         {
-            sSql = "select * from t_cache_router where cache_name='" + sWhereName + "' limit 1";
+            sSql = "select * from t_cache_router where cache_name=" + sqlQuote(_mysqlRelationDB, sWhereName) + " limit 1";
         }
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
@@ -5438,7 +5533,7 @@ int DCacheOptImp::getRouterDBInfo(const string &appName, TC_DBConf &routerDbInfo
     try
     {
         string sSql("");
-        sSql = "select * from t_cache_router where app_name='" + appName + "'";
+        sSql = "select * from t_cache_router where app_name=" + sqlQuote(_mysqlRelationDB, appName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
@@ -5567,10 +5662,10 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
         //往已存在服务迁移
         if (transferExisted)
         {
-            string sSql = "select * from t_transfer_status where module_name='" + moduleName
-                        + "' and src_group='"   + srcGroupName
-                        + "' and app_name='"    + appName
-                        + "' and dst_group='"   + dstGroupName + "'";
+            string sSql = "select * from t_transfer_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName)
+                        + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName)
+                        + " and app_name=" + sqlQuote(_mysqlRelationDB, appName)
+                        + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName);
 
             TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
             if (data.size() == 0)
@@ -5593,10 +5688,10 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
                 m["status"]                 = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(CONFIG_SERVER)); // 1: 配置阶段完成
                 m["transfer_start_time"]    = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
 
-                string cond = "where module_name='" + moduleName
-                            + "' and src_group='"   + srcGroupName
-                            + "' and app_name='"    + appName
-                            + "' and dst_group='"   + dstGroupName + "'";
+                string cond = "where module_name=" + sqlQuote(_mysqlRelationDB, moduleName)
+                            + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName)
+                            + " and app_name=" + sqlQuote(_mysqlRelationDB, appName)
+                            + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName);
 
                 _mysqlRelationDB.updateRecord("t_transfer_status", m, cond);
             }
@@ -5609,10 +5704,10 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
         else
         {
             //往新部署服务迁移
-            string sSql = "select * from t_transfer_status where module_name='" + moduleName
-                        + "' and src_group='"   + srcGroupName
-                        + "' and app_name='"    + appName
-                        + "' and dst_group='"   + dstGroupName + "'";
+            string sSql = "select * from t_transfer_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName)
+                        + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName)
+                        + " and app_name=" + sqlQuote(_mysqlRelationDB, appName)
+                        + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName);
 
             TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
             if ((data.size() > 0) && (data[0]["status"] != TC_Common::tostr(TRANSFER_FINISH)))
@@ -5653,10 +5748,10 @@ int DCacheOptImp::insertTransferStatusRecord(const std::string & appName,const s
                     m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(NEW_TASK)); // 0: 新建迁移任务
                     m["transfer_start_time"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
 
-                    string cond = "where module_name='" + moduleName
-                                + "' and src_group='"   + srcGroupName
-                                + "' and app_name='"    + appName
-                                + "' and dst_group='"   + dstGroupName + "'";
+                    string cond = "where module_name=" + sqlQuote(_mysqlRelationDB, moduleName)
+                                + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName)
+                                + " and app_name=" + sqlQuote(_mysqlRelationDB, appName)
+                                + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName);
 
                     _mysqlRelationDB.updateRecord("t_transfer_status", m, cond);
                 }
@@ -5679,7 +5774,7 @@ int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, con
     TLOG_DEBUG(FUN_LOG << "|app name:" << appName << "|module name:" << moduleName << "|type:" << etos(type) << endl);
     try
     {
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
+        string sSql = "select * from t_expand_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(type));
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         {
@@ -5705,7 +5800,7 @@ int DCacheOptImp::insertExpandReduceStatusRecord(const std::string& appName, con
                 m["expand_start_time"]  = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
                 m["modify_group_name"]  = make_pair(TC_Mysql::DB_STR, TC_Common::tostr(groupName.begin(), groupName.end())); // 多个组名以"|"隔开
 
-                string cond = "where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
+                string cond = "where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(type));
 
                 _mysqlRelationDB.updateRecord("t_expand_status", m, cond);
             }
@@ -5753,12 +5848,12 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
 
                 tcMysql.insertRecord("t_router_transfer", m);
 
-                string sql = string("select * from t_router_transfer where module_name='") + module
-                           + string("' and from_page_no=") + TC_Common::tostr<int>(begin)
+                string sql = string("select * from t_router_transfer where module_name=") + sqlQuote(tcMysql, module)
+                           + string(" and from_page_no=") + TC_Common::tostr<int>(begin)
                            + string(" and to_page_no=") + TC_Common::tostr<int>(end)
-                           + string(" and group_name='") + srcGroup
-                           + string("' and trans_group_name='") + destGroup
-                           + string("' order by id desc limit 1");
+                           + string(" and group_name=") + sqlQuote(tcMysql, srcGroup)
+                           + string(" and trans_group_name=") + sqlQuote(tcMysql, destGroup)
+                           + string(" order by id desc limit 1");
 
                 TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sql);
 
@@ -5777,12 +5872,12 @@ int DCacheOptImp::insertTransferRecord2RouterDb(TC_Mysql &tcMysql, const string 
             m["state"]              = make_pair(TC_Mysql::DB_INT, "3"); // 3-设置迁移页
             tcMysql.insertRecord("t_router_transfer", m);
 
-            string sql = string("select * from t_router_transfer where module_name='") + module
-                       + string("' and from_page_no=") + TC_Common::tostr<int>(fromPage)
+            string sql = string("select * from t_router_transfer where module_name=") + sqlQuote(tcMysql, module)
+                       + string(" and from_page_no=") + TC_Common::tostr<int>(fromPage)
                        + string(" and to_page_no=") + TC_Common::tostr<int>(toPage)
-                       + string(" and group_name='") + srcGroup
-                       + string("' and trans_group_name='") + destGroup
-                       + string("' order by id desc limit 1");
+                       + string(" and group_name=") + sqlQuote(tcMysql, srcGroup)
+                       + string(" and trans_group_name=") + sqlQuote(tcMysql, destGroup)
+                       + string(" order by id desc limit 1");
 
             TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sql);
 
@@ -5816,10 +5911,10 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
             return -1;
         }
 
-        string sSql = "select * from t_transfer_status where module_name='" + moduleName
-                    + "' and src_group='"   + srcGroupName
-                    + "' and dst_group='"   + dstGroupName
-                    + "' and app_name='"    + appName + "'";
+        string sSql = "select * from t_transfer_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName)
+                    + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName)
+                    + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName)
+                    + " and app_name=" + sqlQuote(_mysqlRelationDB, appName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
@@ -5828,7 +5923,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
             tcMysql.init(routerDbInfo);
             tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
 
-            string sql = string("select * from t_router_record where module_name='") + moduleName + string("' and group_name='") + srcGroupName + string("'");
+            string sql = string("select * from t_router_record where module_name=") + sqlQuote(tcMysql, moduleName) + string(" and group_name=") + sqlQuote(tcMysql, srcGroupName);
 
             TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sql);
             if (recordData.size() == 0)
@@ -5851,7 +5946,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING)); // 设置迁移状态为 3: 迁移中
                 m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, id_str);
 
-                string condition = "where id=" + data[0]["id"];
+                string condition = "where id=" + sqlQuote(_mysqlRelationDB, data[0]["id"]);
 
                 _mysqlRelationDB.updateRecord("t_transfer_status", m_update, condition);
 
@@ -5861,7 +5956,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                     map<string, pair<TC_Mysql::FT, string> > m_update;
                     m_update["state"] = make_pair(TC_Mysql::DB_INT, "0"); // 设置路由迁移任务状态为 0: 未迁移
 
-                    string condition = "where id=" + tmp[j];
+                    string condition = "where id=" + sqlQuote(tcMysql, tmp[j]);
 
                     tcMysql.updateRecord("t_router_transfer", m_update, condition);
                 }
@@ -5874,11 +5969,11 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                     map<string, pair<TC_Mysql::FT, string> > m;
                     m["group_name"] = make_pair(TC_Mysql::DB_STR, dstGroupName);
 
-                    tcMysql.updateRecord("t_router_record", m, "where id=" + recordData[i]["id"]);
+                    tcMysql.updateRecord("t_router_record", m, "where id=" + sqlQuote(tcMysql, recordData[i]["id"]));
                 }
 
                 //修改模块版本号
-                sql = "select * from t_router_module where module_name='" +  moduleName + "'";
+                sql = "select * from t_router_module where module_name=" + sqlQuote(tcMysql, moduleName);
                 TC_Mysql::MysqlData moduleData = tcMysql.queryRecord(sql);
                 if (moduleData.size() == 0)
                 {
@@ -5889,7 +5984,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 map<string, pair<TC_Mysql::FT, string> > m;
                 m["version"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TC_Common::strto<int>(moduleData[0]["version"]) + 1));
 
-                tcMysql.updateRecord("t_router_module", m, "where id=" + moduleData[0]["id"]);
+                tcMysql.updateRecord("t_router_module", m, "where id=" + sqlQuote(tcMysql, moduleData[0]["id"]));
 
                 //根据appName查询 router obj
                 string routerObj("");
@@ -5914,7 +6009,7 @@ int DCacheOptImp::insertTransfer2RouterDb(const std::string & appName,const std:
                 map<string, pair<TC_Mysql::FT, string> > m_update;
                 m_update["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_FINISH));
 
-                _mysqlRelationDB.updateRecord("t_transfer_status", m_update, "where id=" + data[0]["id"]);
+                _mysqlRelationDB.updateRecord("t_transfer_status", m_update, "where id=" + sqlQuote(_mysqlRelationDB, data[0]["id"]));
             }
 
             return 0;
@@ -5949,7 +6044,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(DCache::EXPAND_TYPE);
+        string sSql = "select * from t_expand_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(DCache::EXPAND_TYPE));
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -5958,7 +6053,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                 tcMysql.init(routerDbInfo);
                 tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
 
-                sSql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name='") + moduleName + string("' order by num asc");
+                sSql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name=") + sqlQuote(tcMysql, moduleName) + string(" order by num asc");
 
                 TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sSql);
                 if (recordData.size() == 0)
@@ -6260,7 +6355,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                 m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING));
                 m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, id_str);
 
-                string condition = "where id=" + data[0]["id"];
+                string condition = "where id=" + sqlQuote(_mysqlRelationDB, data[0]["id"]);
 
                 _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
 
@@ -6270,7 +6365,7 @@ int DCacheOptImp::insertExpandTransfer2RouterDb(const std::string & appName,cons
                     map<string, pair<TC_Mysql::FT, string> > m_update;
                     m_update["state"] = make_pair(TC_Mysql::DB_INT, "0");
 
-                    string condition = "where id=" + tmp[j];
+                    string condition = "where id=" + sqlQuote(tcMysql, tmp[j]);
                     tcMysql.updateRecord("t_router_transfer", m_update, condition);
                 }
 
@@ -6321,7 +6416,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(DCache::REDUCE_TYPE);
+        string sSql = "select * from t_expand_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(DCache::REDUCE_TYPE));
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6332,7 +6427,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 tcMysql.init(routerDbInfo);
                 tcMysql.connect(); //连不上时抛出异常,加上此句方便捕捉异常
 
-                string sql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name='") + moduleName + string("' order by num asc");
+                string sql = string("select *,to_page_no-from_page_no+1 as num from t_router_record where module_name=") + sqlQuote(tcMysql, moduleName) + string(" order by num asc");
                 TC_Mysql::MysqlData recordData = tcMysql.queryRecord(sql);
                 if (recordData.size() == 0)
                 {
@@ -6608,7 +6703,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                 m_update["status"]              = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING));
                 m_update["router_transfer_id"]  = make_pair(TC_Mysql::DB_STR, ids);
 
-                string condition = "where id=" + data[0]["id"];
+                string condition = "where id=" + sqlQuote(_mysqlRelationDB, data[0]["id"]);
 
                 _mysqlRelationDB.updateRecord("t_expand_status", m_update, condition);
                 TLOG_DEBUG("upadte t_expand_status sql:" << _mysqlRelationDB.getLastSQL() << endl);
@@ -6619,7 +6714,7 @@ int DCacheOptImp::insertReduceTransfer2RouterDb(const std::string& appName, cons
                     map<string, pair<TC_Mysql::FT, string> > m_update;
                     m_update["state"] = make_pair(TC_Mysql::DB_INT, "0");
 
-                    string condition = "where id=" + tmp[j];
+                    string condition = "where id=" + sqlQuote(tcMysql, tmp[j]);
                     tcMysql.updateRecord("t_router_transfer", m_update, condition);
                 }
 
@@ -6666,7 +6761,7 @@ int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &a
         string dbFlagId = itemData[0]["id"];
 
         string referenceID;
-        sSql = "select reference_id from t_config_reference where server_name='" + serverName + "'";
+        sSql = "select reference_id from t_config_reference where server_name=" + sqlQuote(_mysqlRelationDB, serverName);
 
         TC_Mysql::MysqlData referData = _mysqlRelationDB.queryRecord(sSql);
 
@@ -6676,7 +6771,7 @@ int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &a
 
             if (referenceID != "")
             {
-                sSql = "select item_id,config_value from t_config_table where config_id='" + referenceID + "' and (item_id=" + enableEraseId + " or item_id=" + dbFlagId + ")";
+                sSql = "select item_id,config_value from t_config_table where config_id=" + sqlQuote(_mysqlRelationDB, referenceID) + " and (item_id=" + TC_Common::tostr(TC_Common::strto<int>(enableEraseId)) + " or item_id=" + TC_Common::tostr(TC_Common::strto<int>(dbFlagId)) + ")";
 
                 TC_Mysql::MysqlData configData = _mysqlRelationDB.queryRecord(sSql);
 
@@ -6703,7 +6798,7 @@ int DCacheOptImp::getCacheConfigFromDB(const string &serverName, const string &a
             }
         }
 
-        sSql = "select mem_size from t_cache_router where app_name='" + appName + "' and module_name='" + moduleName + "' and group_name='" + groupName + "'";
+        sSql = "select mem_size from t_cache_router where app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and group_name=" + sqlQuote(_mysqlRelationDB, groupName);
 
         TC_Mysql::MysqlData memData = _mysqlRelationDB.queryRecord(sSql);
         if (memData.size() > 0)
@@ -6743,7 +6838,7 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
             return -1;
         }
 
-        string sSql = "select * from t_transfer_status where module_name='" + moduleName + "' and src_group='" + srcGroupName + "' and dst_group='" + dstGroupName + "' and app_name='" + appName + "'";
+        string sSql = "select * from t_transfer_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName) + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName);
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6767,13 +6862,13 @@ int DCacheOptImp::stopTransferForTransfer(const std::string & appName,const std:
                         map<string, pair<TC_Mysql::FT, string> > m;
                         m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // stop
 
-                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j]);
+                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + sqlQuote(tcMysql, transferId[j]));
                     }
 
                     map<string, pair<TC_Mysql::FT, string> > m;
                     m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_STOP));
 
-                    _mysqlRelationDB.updateRecord("t_transfer_status", m, "where id = " + data[0]["id"]);
+                    _mysqlRelationDB.updateRecord("t_transfer_status", m, "where id = " + sqlQuote(_mysqlRelationDB, data[0]["id"]));
 
                     return 0;
                 }
@@ -6809,7 +6904,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
+        string sSql = "select * from t_expand_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(type));
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6833,7 +6928,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
                         map<string, pair<TC_Mysql::FT, string> > m;
                         m["state"] = make_pair(TC_Mysql::DB_INT, "3"); // 3-stop
 
-                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j]);
+                        tcMysql.updateRecord("t_router_transfer", m, "where id = " + sqlQuote(tcMysql, transferId[j]));
                     }
 
                     int count = 3;
@@ -6851,7 +6946,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
                             }
                             else
                             {
-                                sql += string(",") + transferId[j];
+                                sql += string(",") + TC_Common::tostr(TC_Common::strto<int>(transferId[j]));
                             }
                         }
                         sql += ")";
@@ -6876,7 +6971,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
                                 map<string, pair<TC_Mysql::FT, string> > m;
                                 m["state"] = make_pair(TC_Mysql::DB_INT, "3");
 
-                                tcMysql.updateRecord("t_router_transfer", m, "where id = " + transferId[j] + " and state = 1");
+                                tcMysql.updateRecord("t_router_transfer", m, "where id = " + sqlQuote(tcMysql, transferId[j]) + " and state = 1");
                             }
 
                             continue;
@@ -6890,7 +6985,7 @@ int DCacheOptImp::stopTransferForExpandReduce(const std::string & appName,const 
                     map<string, pair<TC_Mysql::FT, string> > m;
                     m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFER_STOP));
 
-                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id = " + data[0]["id"]);
+                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id = " + sqlQuote(_mysqlRelationDB, data[0]["id"]));
 
                     return 0;
                 }
@@ -6926,7 +7021,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
             return -1;
         }
 
-        string sSql = "select * from t_expand_status where module_name='" + moduleName + "' and app_name='" + appName + "' and type=" + TC_Common::tostr(type);
+        string sSql = "select * from t_expand_status where module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and type=" + TC_Common::tostr(static_cast<int>(type));
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sSql);
         if (data.size() > 0)
         {
@@ -6947,7 +7042,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
                     vector<string> transferId = TC_Common::sepstr<string>(data[0]["router_transfer_id"], "|");
                     for (size_t j = 0; j < transferId.size(); j++)
                     {
-                        string sSql = "select * from t_router_transfer where id=" + transferId[j];
+                        string sSql = "select * from t_router_transfer where id=" + sqlQuote(tcMysql, transferId[j]);
 
                         TC_Mysql::MysqlData transferData = tcMysql.queryRecord(sSql);
                         if (transferData.size() > 0)
@@ -6963,7 +7058,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
                                     m_update["from_page_no"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr<int>(TC_Common::strto<int>(transferData[0]["transfered_page_no"]) + 1));
                                 }
 
-                                string condition = "where id=" + transferId[j];
+                                string condition = "where id=" + sqlQuote(tcMysql, transferId[j]);
                                 tcMysql.updateRecord("t_router_transfer", m_update, condition);
                             }
                         }
@@ -6977,7 +7072,7 @@ int DCacheOptImp::restartTransferForExpandReduce(const std::string & appName,con
                     map<string, pair<TC_Mysql::FT, string> > m;
                     m["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(TRANSFERRING)); // 重启迁移后，设置状态为 3-迁移中
 
-                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id=" + data[0]["id"]);
+                    _mysqlRelationDB.updateRecord("t_expand_status", m, "where id=" + sqlQuote(_mysqlRelationDB, data[0]["id"]));
 
                     return 0;
                 }
@@ -7004,7 +7099,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
 
     try
     {
-        string sql = "select * from t_transfer_status where app_name='" + appName + "' and module_name='" + moduleName + "' and src_group='" + srcGroupName + "' and dst_group='" + dstGroupName + "'";
+        string sql = "select * from t_transfer_status where app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and src_group=" + sqlQuote(_mysqlRelationDB, srcGroupName) + " and dst_group=" + sqlQuote(_mysqlRelationDB, dstGroupName);
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
         if (data.size() == 0)
@@ -7033,7 +7128,7 @@ int DCacheOptImp::deleteTransferForTransfer(const std::string & appName,const st
                         + "' and src_group='" + data[i]["src_group"]
                         + "' and dst_group='" + data[i]["dst_group"] + "'";*/
 
-            string cond = "where id=" + data[i]["id"];
+            string cond = "where id=" + sqlQuote(_mysqlRelationDB, data[i]["id"]);
 
             _mysqlRelationDB.deleteRecord("t_transfer_status", cond);
         }
@@ -7054,7 +7149,7 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
     TLOG_DEBUG(FUN_LOG << "app name:" << appName << "|module name:" << moduleName << endl);
     try
     {
-        string sql = "select * from t_expand_status where app_name='" + appName + "' and module_name='" + moduleName + "' and type=" + TC_Common::tostr(type);
+        string sql = "select * from t_expand_status where app_name=" + sqlQuote(_mysqlRelationDB, appName) + " and module_name=" + sqlQuote(_mysqlRelationDB, moduleName) + " and type=" + TC_Common::tostr(static_cast<int>(type));
 
         TC_Mysql::MysqlData data = _mysqlRelationDB.queryRecord(sql);
         if (data.size() == 0)
@@ -7077,7 +7172,7 @@ int DCacheOptImp::deleteTransferForExpandReduce(const std::string & appName,cons
             }
 
             // string cond = "where app_name='" + data[i]["app_name"] + "' and module_name='" + data[i]["module_name"] + "'";
-            string cond = "where id=" + data[i]["id"];
+            string cond = "where id=" + sqlQuote(_mysqlRelationDB, data[i]["id"]);
 
             _mysqlRelationDB.deleteRecord("t_expand_status", cond);
         }
@@ -7100,7 +7195,7 @@ int DCacheOptImp::getCacheGroupRouterPageNo(TC_Mysql &tcMysql, const string& gro
 {
     try
     {
-        string sql = "select sum(to_page_no-from_page_no+1) as router_page_no from t_router_record where group_name='" + groupName + "';";
+        string sql = "select sum(to_page_no-from_page_no+1) as router_page_no from t_router_record where group_name=" + sqlQuote(tcMysql, groupName) + ";";
 
         TC_Mysql::MysqlData groupPageInfo = tcMysql.queryRecord(sql);
 
@@ -7177,7 +7272,7 @@ int DCacheOptImp::loadCacheApp(vector<CacheApp> &cacheApp, tars::CurrentPtr curr
         }
 
         //如果表不存在, 则创建之, 兼容老版本
-		sql = "select * from information_schema.tables where table_schema ='" + _relationDBInfo["dbname"] + "' and table_name = 't_dbaccess_app' limit 1";
+		sql = "select * from information_schema.tables where table_schema =" + sqlQuote(_mysqlRelationDB, _relationDBInfo["dbname"]) + " and table_name = 't_dbaccess_app' limit 1";
 		data = _mysqlRelationDB.queryRecord(sql);
 		if(data.size() == 0)
 		{

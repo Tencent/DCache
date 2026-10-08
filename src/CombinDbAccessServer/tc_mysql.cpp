@@ -152,10 +152,10 @@ string TC_Mysql::buildInsertSQL(const string &sTableName, const RECORD_DATA &mpC
     {
         if (it == mpColumns.begin())
         {
-            sColumnNames << "`" << it->first << "`";
+            sColumnNames << quoteIdentifier(it->first);
             if(it->second.first == DB_INT)
             {
-                sColumnValues << it->second.second;
+                sColumnValues << TC_Common::tostr(TC_Common::strto<long long>(it->second.second));
             }
             else
             {
@@ -164,10 +164,10 @@ string TC_Mysql::buildInsertSQL(const string &sTableName, const RECORD_DATA &mpC
         }
         else
         {
-            sColumnNames << ",`" << it->first << "`";
+            sColumnNames << "," << quoteIdentifier(it->first);
             if(it->second.first == DB_INT)
             {
-                sColumnValues << "," + it->second.second;
+                sColumnValues << "," << TC_Common::tostr(TC_Common::strto<long long>(it->second.second));
             }
             else
             {
@@ -177,7 +177,7 @@ string TC_Mysql::buildInsertSQL(const string &sTableName, const RECORD_DATA &mpC
     }
 
     ostringstream os;
-    os << "insert into " << sTableName << " (" << sColumnNames.str() << ") values (" << sColumnValues.str() << ")";
+    os << "insert into " << quoteQualifiedIdentifier(sTableName) << " (" << sColumnNames.str() << ") values (" << sColumnValues.str() << ")";
     return os.str();
 }
 
@@ -191,10 +191,10 @@ string TC_Mysql::buildReplaceSQL(const string &sTableName, const RECORD_DATA &mp
     {
         if (it == mpColumns.begin())
         {
-            sColumnNames << "`" << it->first << "`";
+            sColumnNames << quoteIdentifier(it->first);
             if(it->second.first == DB_INT)
             {
-                sColumnValues << it->second.second;
+                sColumnValues << TC_Common::tostr(TC_Common::strto<long long>(it->second.second));
             }
             else
             {
@@ -203,10 +203,10 @@ string TC_Mysql::buildReplaceSQL(const string &sTableName, const RECORD_DATA &mp
         }
         else
         {
-            sColumnNames << ",`" << it->first << "`";
+            sColumnNames << "," << quoteIdentifier(it->first);
             if(it->second.first == DB_INT)
             {
-                sColumnValues << "," + it->second.second;
+                sColumnValues << "," << TC_Common::tostr(TC_Common::strto<long long>(it->second.second));
             }
             else
             {
@@ -216,7 +216,7 @@ string TC_Mysql::buildReplaceSQL(const string &sTableName, const RECORD_DATA &mp
     }
 
     ostringstream os;
-    os << "replace into " << sTableName << " (" << sColumnNames.str() << ") values (" << sColumnValues.str() << ")";
+    os << "replace into " << quoteQualifiedIdentifier(sTableName) << " (" << sColumnNames.str() << ") values (" << sColumnValues.str() << ")";
     return os.str();
 }
 
@@ -230,16 +230,16 @@ string TC_Mysql::buildUpdateSQL(const string &sTableName,const RECORD_DATA &mpCo
     {
         if (it == mpColumns.begin())
         {
-            sColumnNameValueSet << "`" << it->first << "`";
+            sColumnNameValueSet << quoteIdentifier(it->first);
         }
         else
         {
-            sColumnNameValueSet << ",`" << it->first << "`";
+            sColumnNameValueSet << "," << quoteIdentifier(it->first);
         }
 
         if(it->second.first == DB_INT)
         {
-            sColumnNameValueSet << "= " << it->second.second;
+            sColumnNameValueSet << "= " << TC_Common::tostr(TC_Common::strto<long long>(it->second.second));
         }
         else
         {
@@ -248,14 +248,14 @@ string TC_Mysql::buildUpdateSQL(const string &sTableName,const RECORD_DATA &mpCo
     }
 
     ostringstream os;
-    os << "update " << sTableName << " set " << sColumnNameValueSet.str() << " " << sWhereFilter;
+    os << "update " << quoteQualifiedIdentifier(sTableName) << " set " << sColumnNameValueSet.str() << " " << sWhereFilter;
 
     return os.str();
 }
 
 string TC_Mysql::getVariables(const string &sName)
 {
-    string sql = "SHOW VARIABLES LIKE '" + sName + "'";
+    string sql = "SHOW VARIABLES LIKE '" + escapeString(sName) + "'";
 
     MysqlData data = queryRecord(sql);
     if(data.size() == 0)
@@ -450,7 +450,7 @@ size_t TC_Mysql::replaceRecord(const string &sTableName, const RECORD_DATA &mpCo
 size_t TC_Mysql::deleteRecord(const string &sTableName, const string &sCondition)
 {
     ostringstream sSql;
-    sSql << "delete from " << sTableName << " " << sCondition;
+    sSql << "delete from " << quoteQualifiedIdentifier(sTableName) << " " << sCondition;
 
     execute(sSql.str());
 
@@ -460,7 +460,7 @@ size_t TC_Mysql::deleteRecord(const string &sTableName, const string &sCondition
 size_t TC_Mysql::getRecordCount(const string& sTableName, const string &sCondition)
 {
     ostringstream sSql;
-    sSql << "select count(*) as num from " << sTableName << " " << sCondition;
+    sSql << "select count(*) as num from " << quoteQualifiedIdentifier(sTableName) << " " << sCondition;
 
     MysqlData data = queryRecord(sSql.str());
 
@@ -485,7 +485,7 @@ size_t TC_Mysql::getSqlCount(const string &sCondition)
 int TC_Mysql::getMaxValue(const string& sTableName, const string& sFieldName,const string &sCondition)
 {
     ostringstream sSql;
-    sSql << "select " << sFieldName << " as f from " << sTableName << " " << sCondition << " order by f desc limit 1";
+    sSql << "select " << quoteIdentifier(sFieldName) << " as f from " << quoteQualifiedIdentifier(sTableName) << " " << sCondition << " order by f desc limit 1";
 
     MysqlData data = queryRecord(sSql.str());
 
@@ -547,4 +547,3 @@ TC_Mysql::MysqlRecord TC_Mysql::MysqlData::operator[](size_t i)
 }
 
 }
-

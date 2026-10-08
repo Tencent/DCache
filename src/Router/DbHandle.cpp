@@ -17,6 +17,11 @@
 
 extern RouterServer g_app;
 
+static string sqlQuote(MySqlHandlerWrapper &mysql, const string &value)
+{
+    return "'" + mysql.escapeString(value) + "'";
+}
+
 DbHandle::DbHandle()
     : _mapPackTables(NULL), _mapPackTables1(NULL), _lastLoadTime(0), _reloadTime(100000)
 {
@@ -310,8 +315,8 @@ int DbHandle::checkRoute()
                     {
                         for (unsigned int j = 0; j < deleteRecord.size(); j++)
                         {
-                            string sSql = "where module_name = '" + deleteRecord[j].moduleName +
-                                          "' and id = " + TC_Common::tostr(deleteRecord[j].id);
+                            string sSql = "where module_name = " + sqlQuote(*_mysql, deleteRecord[j].moduleName) +
+                                          " and id = " + TC_Common::tostr(deleteRecord[j].id);
                             FDLOG("recover")
                                 << "delete router record! module:" << deleteRecord[j].moduleName
                                 << " frompage:" << deleteRecord[j].fromPageNo
@@ -542,8 +547,8 @@ vector<RecordInfo> DbHandle::getDBRecordList(const string &moduleName)
 
     string sSql =
         "select id, from_page_no, to_page_no, group_name"
-        " from t_router_record where module_name = '" +
-        moduleName + "' order by from_page_no asc";
+        " from t_router_record where module_name = " +
+        sqlQuote(*_mysql, moduleName) + " order by from_page_no asc";
     TC_Mysql::MysqlData sqlData = _mysql->queryRecord(sSql);
 
     vector<RecordInfo> vRecords;
@@ -590,9 +595,9 @@ vector<GroupInfo> DbHandle::getDBGroupList()
             "select a.server_name, a.idc_area, b.server_status, b.priority, b.source_server_name, "
             "case when b.server_status in ('Z') then 1 when b.server_status in ('M') then 2 else 3 "
             "end level from t_router_server as a, t_router_group as b where a.server_name = "
-            "b.server_name and b.module_name = '" +
-            info.moduleName + "' and b.group_name = '" + info.groupName +
-            "' order by level, priority";
+            "b.server_name and b.module_name = " +
+            sqlQuote(*_mysql, info.moduleName) + " and b.group_name = " + sqlQuote(*_mysql, info.groupName) +
+            " order by level, priority";
         TC_Mysql::MysqlData sqlData2 = _mysql->queryRecord(sSql2);
         for (size_t j = 0; j < sqlData2.size(); j++)
         {
@@ -612,8 +617,8 @@ vector<GroupInfo> DbHandle::getDBGroupList(const string &moduleName)
 {
     TC_ThreadLock::Lock lock(_dbLock);
     string sSql =
-        "select module_name, group_name, access_status from t_router_group where module_name = '" +
-        moduleName + "' group by module_name, group_name, access_status";
+        "select module_name, group_name, access_status from t_router_group where module_name = " +
+        sqlQuote(*_mysql, moduleName) + " group by module_name, group_name, access_status";
     TC_Mysql::MysqlData sqlData = _mysql->queryRecord(sSql);
 
     vector<GroupInfo> vGroups;
@@ -1501,7 +1506,7 @@ int DbHandle::defragDbRecord(const string &sModuleName,
                             return -1;
                         }
 
-                        string sSql = "where module_name = '" + sModuleName + "' and id in (" +
+                        string sSql = "where module_name = " + sqlQuote(*_mysql, sModuleName) + " and id in (" +
                                       TC_Common::tostr(oldRecords[iBegin].id);
                         ;
                         for (int j = iBegin + 1; j <= iEnd; j++)
@@ -2169,7 +2174,7 @@ int DbHandle::setTransferStatus(const TransferInfo &transferInfo,
             updateData["transfered_page_no"] =
                 make_pair(TC_Mysql::DB_INT, I2S(transferInfo.toPageNo));
             updateData["state"] = make_pair(TC_Mysql::DB_INT, I2S(eway));
-            updateData["endTime"] = make_pair(TC_Mysql::DB_INT, "now()");
+            updateData["endTime"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
             sSql = "where id = " + I2S(transferInfo.id);
         }
 
@@ -2291,7 +2296,7 @@ int DbHandle::getTransferTask(TransferInfo &transferInfo)
 
             TC_Mysql::RECORD_DATA updateData;
             updateData["state"] = make_pair(TC_Mysql::DB_INT, I2S(TRANSFERING));
-            updateData["startTime"] = make_pair(TC_Mysql::DB_INT, "now()");
+            updateData["startTime"] = make_pair(TC_Mysql::DB_STR, TC_Common::now2str("%Y-%m-%d %H:%M:%S"));
             sql = "where id = " + I2S(transferInfo.id) + " and state = " + I2S(UNTRANSFER);
             int affect = _mysql->updateRecord("t_router_transfer", updateData, sql);
             if (affect != 1)
@@ -2328,7 +2333,7 @@ int DbHandle::switchMasterAndSlaveInDbAndMem(const string &moduleName,
                                              const string &lastSlave,
                                              PackTable &packTable)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
 
     try
     {
@@ -2341,7 +2346,7 @@ int DbHandle::switchMasterAndSlaveInDbAndMem(const string &moduleName,
         updateData["access_status"] = make_pair(TC_Mysql::DB_INT, "0");
         updateData["priority"] = make_pair(TC_Mysql::DB_INT, "3");
         int affect = _mysql->updateRecord(
-            "t_router_group", updateData, sSql + " and server_name='" + lastMaster + "'");
+            "t_router_group", updateData, sSql + " and server_name=" + sqlQuote(*_mysql, lastMaster));
         if (affect != 1)
         {
             DAY_ERROR << "DbHandle::switchMasterAndSlaveInDbAndMem " << affect << endl;
@@ -2360,7 +2365,7 @@ int DbHandle::switchMasterAndSlaveInDbAndMem(const string &moduleName,
         updateData["access_status"] = make_pair(TC_Mysql::DB_INT, "0");
         updateData["priority"] = make_pair(TC_Mysql::DB_INT, "1");
         affect = _mysql->updateRecord(
-            "t_router_group", updateData, sSql + " and server_name='" + lastSlave + "'");
+            "t_router_group", updateData, sSql + " and server_name=" + sqlQuote(*_mysql, lastSlave));
         if (affect != 1)
         {
             DAY_ERROR << "DbHandle::switchMasterAndSlaveInDbAndMem " << affect << endl;
@@ -2607,7 +2612,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
                                const string &lastMaster,
                                const string &lastSlave)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
 
     try
     {
@@ -2620,7 +2625,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
         updateData["access_status"] = make_pair(TC_Mysql::DB_INT, "0");
         updateData["priority"] = make_pair(TC_Mysql::DB_INT, "3");
         int affect = _mysql->updateRecord(
-            "t_router_group", updateData, sSql + " and server_name='" + lastMaster + "'");
+            "t_router_group", updateData, sSql + " and server_name=" + sqlQuote(*_mysql, lastMaster));
         if (affect != 1)
         {
             DAY_ERROR << "DbHandle::switchRWDbAndMem " << affect << endl;
@@ -2638,7 +2643,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
         updateData["access_status"] = make_pair(TC_Mysql::DB_INT, "0");
         updateData["priority"] = make_pair(TC_Mysql::DB_INT, "1");
         affect = _mysql->updateRecord(
-            "t_router_group", updateData, sSql + " and server_name='" + lastSlave + "'");
+            "t_router_group", updateData, sSql + " and server_name=" + sqlQuote(*_mysql, lastSlave));
         if (affect != 1)
         {
             DAY_ERROR << "DbHandle::switchRWDbAndMem " << affect << endl;
@@ -2652,7 +2657,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
         }
 
         //修改服务可读状态
-        string sTmpSql = "where server_name = '" + lastMaster + "'";
+        string sTmpSql = "where server_name = " + sqlQuote(*_mysql, lastMaster);
         updateData.clear();
         updateData["status"] = make_pair(TC_Mysql::DB_INT, "-1");
         affect = _mysql->updateRecord("t_router_server", updateData, sTmpSql);
@@ -2660,7 +2665,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
         updateData["source_server_name"] = make_pair(TC_Mysql::DB_STR, lastSlave);
         updateData["access_status"] = make_pair(TC_Mysql::DB_INT, "0");
         _mysql->updateRecord(
-            "t_router_group", updateData, sSql + " and  server_name!='" + lastSlave + "'");
+            "t_router_group", updateData, sSql + " and server_name!=" + sqlQuote(*_mysql, lastSlave));
         updateVersion(moduleName);
         PackTable packTable;
         map<string, PackTable>::const_iterator it = _mapPackTables->find(moduleName);
@@ -2786,7 +2791,7 @@ int DbHandle::switchRWDbAndMem(const string &moduleName,
 }
 int DbHandle::switchReadOnlyInDbAndMem(const string &moduleName, const string &groupName)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
 
     try
     {
@@ -2855,7 +2860,7 @@ int DbHandle::switchMirrorInDbAndMem(const string &moduleName,
                                      const string &groupName,
                                      const string &serverName)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
 
     try
     {
@@ -2880,7 +2885,7 @@ int DbHandle::switchMirrorInDbAndMem(const string &moduleName,
             return -1;
         }
 
-        string sTmpSql = "where server_name = '" + serverName + "'";
+        string sTmpSql = "where server_name = " + sqlQuote(*_mysql, serverName);
         updateData.clear();
         updateData["status"] = make_pair(TC_Mysql::DB_INT, "-1");
         affect = _mysql->updateRecord("t_router_server", updateData, sTmpSql);
@@ -2960,7 +2965,7 @@ int DbHandle::recoverMirrorInDbAndMem(const string &moduleName,
                                       const string &groupName,
                                       const string &serverName)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
 
     try
     {
@@ -2982,7 +2987,7 @@ int DbHandle::recoverMirrorInDbAndMem(const string &moduleName,
             return -1;
         }
 
-        string sTmpSql = "where server_name = '" + serverName + "'";
+        string sTmpSql = "where server_name = " + sqlQuote(*_mysql, serverName);
         updateData.clear();
         updateData["status"] = make_pair(TC_Mysql::DB_INT, "0");
         affect = _mysql->updateRecord("t_router_server", updateData, sTmpSql);
@@ -3070,7 +3075,7 @@ int DbHandle::setServerstatus(const string &moduleName,
         TC_ThreadLock::Lock lock1(_lock);
         TC_Mysql::RECORD_DATA updateData;
 
-        sSql = "where server_name = '" + serverName + "'";
+        sSql = "where server_name = " + sqlQuote(*_mysql, serverName);
         updateData.clear();
         updateData["status"] = make_pair(TC_Mysql::DB_INT, TC_Common::tostr(iStatus));
         int affect = _mysql->updateRecord("t_router_server", updateData, sSql);
@@ -3154,7 +3159,7 @@ int DbHandle::switchMirrorInDbAndMemByIdc(const string &moduleName,
                                           string &masterImage,
                                           string &slaveImage)
 {
-    string sSql = "where module_name='" + moduleName + "' and group_name='" + groupName + "'";
+    string sSql = "where module_name=" + sqlQuote(*_mysql, moduleName) + " and group_name=" + sqlQuote(*_mysql, groupName);
     try
     {
         TC_ThreadLock::Lock lock(_dbLock);
@@ -3205,7 +3210,7 @@ int DbHandle::switchMirrorInDbAndMemByIdc(const string &moduleName,
                         affect =
                             _mysql->updateRecord("t_router_group",
                                                  updateData,
-                                                 sSql + " and server_name='" + mirrorMaster + "'");
+                                                 sSql + " and server_name=" + sqlQuote(*_mysql, mirrorMaster));
                         if (affect != 1)
                         {
                             DAY_ERROR << "DbHandle::switchMirrorInDbAndMemByIdc " << affect << endl;
@@ -3226,7 +3231,7 @@ int DbHandle::switchMirrorInDbAndMemByIdc(const string &moduleName,
                         affect =
                             _mysql->updateRecord("t_router_group",
                                                  updateData,
-                                                 sSql + " and server_name='" + mirrorSlave + "'");
+                                                 sSql + " and server_name=" + sqlQuote(*_mysql, mirrorSlave));
                         if (affect != 1)
                         {
                             DAY_ERROR << "DbHandle::switchMirrorInDbAndMemByIdc " << affect << endl;
@@ -3241,7 +3246,7 @@ int DbHandle::switchMirrorInDbAndMemByIdc(const string &moduleName,
                         }
 
                         //修改服务可读状态
-                        sSql = "where server_name = '" + mirrorMaster + "'";
+                        sSql = "where server_name = " + sqlQuote(*_mysql, mirrorMaster);
                         updateData.clear();
                         updateData["status"] = make_pair(TC_Mysql::DB_INT, "-1");
                         affect = _mysql->updateRecord("t_router_server", updateData, sSql);
@@ -3338,8 +3343,8 @@ void DbHandle::updateStatusToRelationDB(const string &serverName, const string &
     try
     {
         TC_ThreadLock::Lock lock(_relationLock);
-        string sSql = "update t_cache_router set server_status='" + status +
-                      "' where cache_name='" + lastServerName + "'";
+        string sSql = "update t_cache_router set server_status=" + sqlQuote(*_mysqlDBRelation, status) +
+                      " where cache_name=" + sqlQuote(*_mysqlDBRelation, lastServerName);
         _mysqlDBRelation->execute(sSql);
     }
     catch (TC_Mysql_Exception &ex)
@@ -3367,9 +3372,9 @@ int DbHandle::insertSwitchInfo(const string &moduleName,
             "insert into `t_router_switch` (`app_name`,`module_name`,`group_name`,"
             "`master_server`,`slave_server`,`mirror_idc`,`master_mirror`,`switch_type`,`"
             "switch_time`) values("
-            "(select app_name from t_router_app where router_name='DCache." +
-            ServerConfig::ServerName + "'),'" + moduleName + "','" + groupName + "','" +
-            masterServer + "','" + slaveServer + "','" + mirrorIdc + "','" + mirrorServer + "'," +
+            "(select app_name from t_router_app where router_name=" +
+            sqlQuote(*_mysqlDBRelation, "DCache." + ServerConfig::ServerName) + ")," + sqlQuote(*_mysqlDBRelation, moduleName) + "," + sqlQuote(*_mysqlDBRelation, groupName) + "," +
+            sqlQuote(*_mysqlDBRelation, masterServer) + "," + sqlQuote(*_mysqlDBRelation, slaveServer) + "," + sqlQuote(*_mysqlDBRelation, mirrorIdc) + "," + sqlQuote(*_mysqlDBRelation, mirrorServer) + "," +
             I2S(switchType) + ",now())";
 
         _mysqlDBRelation->execute(sSql);
@@ -3418,11 +3423,11 @@ int DbHandle::insertSwitchInfo(const string &moduleName,
             "`master_server`,`slave_server`,`mirror_idc`,`master_mirror`,`slave_mirror`,"
             "`switch_type`,`switch_result`,`access_status`,`comment`,`switch_property`,`"
             "switch_time`,`modify_time`) values("
-            "(select app_name from t_router_app where router_name='DCache." +
-            ServerConfig::ServerName + "'),'" + moduleName + "','" + groupName + "','" +
-            masterServer + "','" + slaveServer + "','" + mirrorIdc + "','" + masterMirror + "','" +
-            slaveMirror + "'," + I2S(switchType) + "," + I2S(switchResult) + "," + I2S(groupSatus) +
-            ",'" + comment + "','" + switchProperty + "',FROM_UNIXTIME(" +
+            "(select app_name from t_router_app where router_name=" +
+            sqlQuote(*_mysqlDBRelation, "DCache." + ServerConfig::ServerName) + ")," + sqlQuote(*_mysqlDBRelation, moduleName) + "," + sqlQuote(*_mysqlDBRelation, groupName) + "," +
+            sqlQuote(*_mysqlDBRelation, masterServer) + "," + sqlQuote(*_mysqlDBRelation, slaveServer) + "," + sqlQuote(*_mysqlDBRelation, mirrorIdc) + "," + sqlQuote(*_mysqlDBRelation, masterMirror) + "," +
+            sqlQuote(*_mysqlDBRelation, slaveMirror) + "," + I2S(switchType) + "," + I2S(switchResult) + "," + I2S(groupSatus) +
+            "," + sqlQuote(*_mysqlDBRelation, comment) + "," + sqlQuote(*_mysqlDBRelation, switchProperty) + ",FROM_UNIXTIME(" +
             TC_Common::tostr(switchBeginTime) + "), now())";
 
         _mysqlDBRelation->execute(sSql);
@@ -3532,9 +3537,9 @@ void DbHandle::updateSwitchGroupStatus(const string &moduleName,
 
         string sSql =
             "update `t_router_switch` set `access_status`=" + tars::TC_Common::tostr(iGroupStatus) +
-            ", `comment`='" + comment + "' where `module_name`='" + moduleName +
-            "' and `group_name`='" + groupName + "' and `mirror_idc`='" + sIdc +
-            "' and `access_status`=2 and `switch_result`=1";
+            ", `comment`=" + sqlQuote(*_mysqlDBRelation, comment) + " where `module_name`=" + sqlQuote(*_mysqlDBRelation, moduleName) +
+            " and `group_name`=" + sqlQuote(*_mysqlDBRelation, groupName) + " and `mirror_idc`=" + sqlQuote(*_mysqlDBRelation, sIdc) +
+            " and `access_status`=2 and `switch_result`=1";
 
         _mysqlDBRelation->execute(sSql);
         int affect = _mysqlDBRelation->getAffectedRows();
@@ -3584,7 +3589,7 @@ int DbHandle::addMirgrateInfo(const string &strIp, const string &strReason)
     {
         TC_ThreadLock::Lock lock(_migrateLock);
 
-        string sSql = "select status from db_dcache_relation.t_migrate_info where ip='" + strIp +
+        string sSql = "select status from db_dcache_relation.t_migrate_info where ip=" + sqlQuote(*_mysqlMigrate, strIp) +
                       "' and (unix_timestamp(now())-unix_timestamp(last_modify_time))<259200;";
         TC_Mysql::MysqlData sqlData = _mysqlMigrate->queryRecord(sSql);
         FDLOG("migrate") << __LINE__ << "|sql:[" << sSql << "]executed. size:" << sqlData.size()
@@ -3593,8 +3598,8 @@ int DbHandle::addMirgrateInfo(const string &strIp, const string &strReason)
         {
             sSql =
                 "insert into db_dcache_relation.t_migrate_info (ip,status,reason, "
-                "last_modify_time) values('" +
-                strIp + "', 0, '" + strReason + "', now());";
+                "last_modify_time) values(" +
+                sqlQuote(*_mysqlMigrate, strIp) + ", 0, " + sqlQuote(*_mysqlMigrate, strReason) + ", now());";
             _mysqlMigrate->execute(sSql);
             int affect = _mysqlMigrate->getAffectedRows();
             if (affect != 1)
@@ -3626,8 +3631,8 @@ int DbHandle::getAllServerInIp(const string &strIp, vector<string> &vServerName)
     {
         TC_ThreadLock::Lock lock(_migrateLock);
 
-        string sSql = "select cache_name from db_dcache_relation.t_cache_router where cache_ip='" +
-                      strIp + "';";
+        string sSql = "select cache_name from db_dcache_relation.t_cache_router where cache_ip=" +
+                      sqlQuote(*_mysqlMigrate, strIp) + ";";
         TC_Mysql::MysqlData sqlData = _mysqlMigrate->queryRecord(sSql);
         FDLOG("migrate") << __LINE__ << "[DbHandle::getAllServerInIp]|sql:[" << sSql
                          << "]executed. size:" << sqlData.size() << "\n";
@@ -3922,7 +3927,7 @@ int DbHandle::checkServerOffline(const string &serverName, bool &bOffline)
     {
         TC_ThreadLock::Lock lock(_dbLock);
 
-        string sSql = "select * from t_router_server where server_name = '" + serverName + "'";
+        string sSql = "select * from t_router_server where server_name = " + sqlQuote(*_mysql, serverName);
 
         TC_Mysql::MysqlData serverData = _mysql->queryRecord(sSql);
         if (serverData.size() <= 0)
