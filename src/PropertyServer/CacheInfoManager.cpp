@@ -63,7 +63,7 @@ void CacheInfoManager::reload()
 
 bool CacheInfoManager::getModuleInfo(const string &cacheName, CacheModuleInfo &moduleInfo) const
 {
-    TC_ThreadWLock rlock(_rwl);
+    TC_ThreadRLock rlock(_rwl);
     
     const map<string, CacheModuleInfo> &infos = _moduleInfos[_moduleInfoIndex];
     map<string, CacheModuleInfo>::const_iterator it = infos.find(cacheName);

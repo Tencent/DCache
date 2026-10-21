@@ -47,7 +47,7 @@ public:
 
     bool get(const std::string &cacheName, CacheInfo &cacheInfo)
     {
-        TC_ThreadWLock rlock(_rwl);
+        TC_ThreadRLock rlock(_rwl);
         if(modules[_index].find(cacheName) != modules[_index].end())
         {
             cacheInfo = modules[_index][cacheName];
